@@ -12,11 +12,23 @@ class Home extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
-          Expanded(child: navigationShell),          NavBar(currentIndex: navigationShell.currentIndex, onTap: (index) {
-            navigationShell.goBranch(index, initialLocation: index == navigationShell.currentIndex);
-          })
+          Expanded(
+            child: SafeArea(
+              bottom: false,
+              child: navigationShell,
+            ),
+          ),
+          NavBar(
+            currentIndex: navigationShell.currentIndex,
+            onTap: (index) {
+              navigationShell.goBranch(
+                index,
+                initialLocation: index == navigationShell.currentIndex,
+              );
+            },
+          ),
         ],
-      )
+      ),
     );
   }
 }
