@@ -10,16 +10,13 @@ class Home extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: navigationShell,
-      bottomNavigationBar: NavBar(
-        currentIndex: navigationShell.currentIndex,
-        onTap: (index) {
-          navigationShell.goBranch(
-            index,
-            initialLocation: index == navigationShell.currentIndex,
-          );
-        },
-      ),
+      body: Column(
+        children: [
+          Expanded(child: navigationShell),          NavBar(currentIndex: navigationShell.currentIndex, onTap: (index) {
+            navigationShell.goBranch(index, initialLocation: index == navigationShell.currentIndex);
+          })
+        ],
+      )
     );
   }
 }
