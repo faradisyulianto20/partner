@@ -39,7 +39,7 @@ class _HomeCTAState extends State<HomeCTA> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: const Color(0xFF1B517A),
-          width: 2,
+          width: 1,
         ),
       ),
       child: SingleChildScrollView(
