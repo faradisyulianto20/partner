@@ -39,6 +39,7 @@ dependencies:
   flutter_svg: ^2.0.10+1
   google_fonts: ^6.2.1
   image_picker: ^1.1.2
+  dotted_border: ^3.1.0
   
 
 dev_dependencies:
@@ -81,6 +82,8 @@ flutter:
 
     - assets/img/happy.svg
     - assets/img/sad.svg
+    - assets/img/happy_white.svg
+    - assets/img/sad_white.svg
 
 
 

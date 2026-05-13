@@ -8,7 +8,7 @@ class Greetings extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Image.asset('assets/img/mascot.png', width: 142),
+        Image.asset('assets/img/mascot.svg', width: 142),
         SizedBox(width: 12),
         Expanded(
         child: Column(
