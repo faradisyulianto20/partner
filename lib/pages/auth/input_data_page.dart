@@ -254,7 +254,7 @@ class _InputDataPageState extends State<InputDataPage> {
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          onTap: () => context.go('/'),
+                          onTap: () => context.go('/home'),
                           borderRadius: BorderRadius.circular(30),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 14),

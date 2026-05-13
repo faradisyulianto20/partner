@@ -6,9 +6,9 @@ import 'package:hackathon/pages/journal/journal_page.dart';
 import 'package:hackathon/pages/profile/profile_page.dart';
 
 final GoRouter router = GoRouter(
-  initialLocation: '/',
+  initialLocation: '/home',
   routes: [
-    GoRoute(path: '/', builder: (context, state) => const HomePage()),
+    GoRoute(path: '/home', builder: (context, state) => const HomePage()),
     GoRoute(path: '/partner', builder: (context, state) => const PartnerPage()),
     GoRoute(path: '/journal', builder: (context, state) => const JournalPage()),
     GoRoute(path: '/profile', builder: (context, state) => const ProfilePage()),

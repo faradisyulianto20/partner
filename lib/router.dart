@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 
 // main route
 import 'package:hackathon/pages/home/home.dart';
+import 'package:hackathon/pages/home/emotion_description_page.dart';
 
 import 'package:hackathon/pages/home/home_page.dart';
 import 'package:hackathon/pages/journal/journal_page.dart';
@@ -22,7 +23,7 @@ bool token = false;
 String get _initialLocation {
   if (firstInstall) return '/onboarding/welcome';
   if (!token) return '/login';
-  return '/';
+  return '/home';
 }
 
 final GoRouter router = GoRouter(
@@ -49,7 +50,13 @@ final GoRouter router = GoRouter(
       },
       branches: [
         StatefulShellBranch(routes: [
-          GoRoute(path: '/', builder: (context, state) => const HomePage()),
+          GoRoute(
+            path: '/home', 
+            builder: (context, state) => const HomePage(),
+            routes: [
+              GoRoute(path: 'emotion-description', builder: (context, state) => const EmotionDescriptionPage()),
+            ]
+          ), 
         ]),
         StatefulShellBranch(routes: [
           GoRoute(

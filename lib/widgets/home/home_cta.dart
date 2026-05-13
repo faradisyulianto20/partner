@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -146,9 +147,7 @@ class _HomeCTAState extends State<HomeCTA> {
                 // Deskripsi Perasaan Button
                 Expanded(
                 child: OutlinedButton(
-                    onPressed: () {
-                      // TODO: Navigate to feeling description
-                    },
+                    onPressed: () => context.push('/home/emotion-description'),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(
                         color: Color(0xFF1B517A),
