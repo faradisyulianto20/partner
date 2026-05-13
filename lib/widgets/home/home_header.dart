@@ -27,7 +27,7 @@ class HomeHeader extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: horizontalGradient,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Column(

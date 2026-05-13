@@ -76,7 +76,7 @@ class NavBar extends StatelessWidget {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF1B517A).withOpacity(0.2),
+                      color: const Color(0xFF1B517A).withValues(alpha: 0.2),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
