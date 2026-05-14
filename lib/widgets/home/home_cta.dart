@@ -112,12 +112,14 @@ class _HomeCTAState extends State<HomeCTA> {
             Row(
               children: [
                 Expanded(
-                  child: Container(
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        gradient: horizontalGradient,
-                        borderRadius: BorderRadius.circular(5),
-                      ),
+                  child: GestureDetector(
+                      onTap: () => context.push('/home/expression-analysis'),
+                      child: Container(
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          gradient: horizontalGradient,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -143,6 +145,7 @@ class _HomeCTAState extends State<HomeCTA> {
                       ),
                     ),
                   ),
+                ),
                 const SizedBox(width: 12),
                 // Deskripsi Perasaan Button
                 Expanded(

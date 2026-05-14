@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class EmotionDescriptionPage extends StatefulWidget {
   const EmotionDescriptionPage({super.key});
@@ -16,9 +17,7 @@ class _EmotionDescriptionPageState extends State<EmotionDescriptionPage> {
           children: [
             Header(),
             Label(),
-            Expanded(
-              child: EmotionDescription(),
-            ),
+            Expanded(child: EmotionDescription()),
           ],
         ),
       ),
@@ -56,13 +55,11 @@ class Header extends StatelessWidget {
 }
 
 class Label extends StatelessWidget {
-
   const Label({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return 
-    SingleChildScrollView(
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -75,10 +72,7 @@ class Label extends StatelessWidget {
             topRight: Radius.circular(12),
           ),
           border: const Border(
-            left: BorderSide(
-              width: 12,
-              color: Color(0xFF578BB3),
-            )
+            left: BorderSide(width: 12, color: Color(0xFF578BB3)),
           ),
           boxShadow: [
             BoxShadow(
@@ -94,7 +88,11 @@ class Label extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Icon(Icons.edit_document, size: 40, color: Color(0xFF1B517A)),
+                const Icon(
+                  Icons.edit_document,
+                  size: 40,
+                  color: Color(0xFF1B517A),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -183,10 +181,7 @@ class _EmotionDescriptionState extends State<EmotionDescription> {
                 decoration: BoxDecoration(
                   color: const Color(0xFFF5F9FC),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                  color: const Color(0xFFB0C8DC),
-                  width: 2,
-                  ),
+                  border: Border.all(color: const Color(0xFFB0C8DC), width: 2),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -196,7 +191,8 @@ class _EmotionDescriptionState extends State<EmotionDescription> {
                       controller: _controller,
                       maxLines: 6,
                       decoration: InputDecoration(
-                        hintText: 'Apa yang sedang memenuhi pikiranmu hari ini? Ceritakan...',
+                        hintText:
+                            'Apa yang sedang memenuhi pikiranmu hari ini? Ceritakan...',
                         hintStyle: TextStyle(
                           color: Colors.grey[500],
                           fontSize: 14,
@@ -218,7 +214,10 @@ class _EmotionDescriptionState extends State<EmotionDescription> {
                         return GestureDetector(
                           onTap: () => _onTagTapped(tag),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               border: Border.all(
                                 color: Colors.black38,
@@ -255,10 +254,7 @@ class _EmotionDescriptionState extends State<EmotionDescription> {
                     gradient: const LinearGradient(
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
-                      colors: [
-                        Color(0xFF2D5F8D),
-                        Color(0xFF1B3E5F),
-                      ],
+                      colors: [Color(0xFF2D5F8D), Color(0xFF1B3E5F)],
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -288,13 +284,10 @@ class _EmotionDescriptionState extends State<EmotionDescription> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: const Color(0xFF1B517A),
-                    width: 2,
-                  ),
+                  border: Border.all(color: const Color(0xFF1B517A), width: 2),
                 ),
                 child: IconButton(
-                  onPressed: () {},
+                  onPressed: () => context.push('/voice-input'),
                   icon: const Icon(
                     Icons.mic,
                     color: Color(0xFF1B517A),

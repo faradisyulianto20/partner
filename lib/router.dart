@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 // main route
 import 'package:hackathon/pages/home/home.dart';
 import 'package:hackathon/pages/home/emotion_description_page.dart';
+import 'package:hackathon/pages/home/expression_analysis.dart';
+import 'package:hackathon/pages/home/voice_input.dart';
 
 import 'package:hackathon/pages/home/home_page.dart';
 import 'package:hackathon/pages/journal/journal_page.dart';
@@ -29,61 +31,93 @@ String get _initialLocation {
 final GoRouter router = GoRouter(
   initialLocation: _initialLocation,
   routes: [
+    // Introduction & Authentication Routes
     GoRoute(
       path: '/onboarding/welcome',
       builder: (context, state) => const WelcomePage(),
     ),
-    GoRoute(
-      path: '/login',
-      builder: (context, state) => const LoginPage(),
-    ),
+    GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
     GoRoute(
       path: '/register',
       builder: (context, state) => const RegisterPage(),
     ),
-    GoRoute(path: '/input-data',
+    GoRoute(
+      path: '/input-data',
       builder: (context, state) => const InputDataPage(),
     ),
+
+    // Route yang tidak memiliki navigation bar
+    GoRoute(
+      path: '/voice-input',
+      builder: (context, state) => const VoiceInput(),
+    ),
+
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return Home(navigationShell: navigationShell);
       },
       branches: [
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/home', 
-            builder: (context, state) => const HomePage(),
-            routes: [
-              GoRoute(path: 'emotion-description', builder: (context, state) => const EmotionDescriptionPage()),
-            ]
-          ), 
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/partner',
-            builder: (context, state) => const PartnerPage(),
-            routes: [
-              GoRoute(path: 'chat', builder: (context, state) {
-                return ChatPage();
-              }),
-              GoRoute(path: 'video-call', builder: (context, state) {
-                return const VideoCallPage();
-              }),
-            ]
-          ),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/journal',
-            builder: (context, state) => const JournalPage(),
-          ),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/profile',
-            builder: (context, state) => const ProfilePage(),
-          ),
-        ]),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/home',
+              builder: (context, state) => const HomePage(),
+              routes: [
+                GoRoute(
+                  path: 'emotion-description',
+                  builder: (context, state) => const EmotionDescriptionPage(),
+                ),
+                GoRoute(
+                  path: 'expression-analysis',
+                  builder: (context, state) => const ExpressionAnalysis(),
+                ),
+                GoRoute(
+                  path: 'voice-input',
+                  builder: (context, state) => const VoiceInput(),
+                ),
+              ],
+            ),
+          ],
+        ),
+
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/partner',
+              builder: (context, state) => const PartnerPage(),
+              routes: [
+                GoRoute(
+                  path: 'chat',
+                  builder: (context, state) {
+                    return ChatPage();
+                  },
+                ),
+                GoRoute(
+                  path: 'video-call',
+                  builder: (context, state) {
+                    return const VideoCallPage();
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/journal',
+              builder: (context, state) => const JournalPage(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/profile',
+              builder: (context, state) => const ProfilePage(),
+            ),
+          ],
+        ),
       ],
     ),
   ],
