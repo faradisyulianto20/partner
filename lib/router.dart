@@ -1,23 +1,23 @@
 import 'package:go_router/go_router.dart';
 
 // main route
-import 'package:hackathon/pages/home/home.dart';
-import 'package:hackathon/pages/home/emotion_description_page.dart';
-import 'package:hackathon/pages/home/expression_analysis.dart';
-import 'package:hackathon/pages/home/voice_input.dart';
+import 'package:hackathon/features/home/home.dart';
+import 'package:hackathon/features/home/pages/emotion_description_page.dart';
+import 'package:hackathon/features/home/pages/expression_analysis.dart';
+import 'package:hackathon/features/home/pages/voice_input.dart';
 
-import 'package:hackathon/pages/home/home_page.dart';
-import 'package:hackathon/pages/journal/journal_page.dart';
-import 'package:hackathon/pages/partner/partner_page.dart';
-import 'package:hackathon/pages/profile/profile_page.dart';
+import 'package:hackathon/features/home/pages/home_page.dart';
+import 'package:hackathon/features/journal/journal_page.dart';
+import 'package:hackathon/features/partner/pages/partner_page.dart';
+import 'package:hackathon/features/profile/profile_page.dart';
 
 // sub route
-import 'package:hackathon/pages/onboarding/welcome_page.dart';
-import 'package:hackathon/pages/partner/chat_page.dart';
-import 'package:hackathon/pages/partner/video_call_page.dart';
-import 'package:hackathon/pages/auth/login_page.dart';
-import 'package:hackathon/pages/auth/register_page.dart';
-import 'package:hackathon/pages/auth/input_data_page.dart';
+import 'package:hackathon/features/onboarding/welcome_page.dart';
+import 'package:hackathon/features/partner/pages/chat_page.dart';
+import 'package:hackathon/features/partner/pages/video_call_page.dart';
+import 'package:hackathon/features/auth/login_page.dart';
+import 'package:hackathon/features/auth/register_page.dart';
+import 'package:hackathon/features/auth/input_data_page.dart';
 
 bool firstInstall = true;
 bool token = false;
