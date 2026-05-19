@@ -1,6 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hackathon/core/widgets/custom_app_bar.dart';
 
 class ExpressionAnalysis extends StatefulWidget {
   const ExpressionAnalysis({super.key});
@@ -93,33 +94,9 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => context.pop(),
-                    icon: const Icon(
-                      Icons.arrow_back_ios,
-                      color: Color(0xFF1B517A),
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      'Deteksi Ekspresi Wajah',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF1B517A),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 48),
-                ],
-              ),
-            ),
+          CustomAppBar(
+            title: 'Deteksi Ekspresi Wajah',
+            onBack: () => context.pop(),
           ),
           const SizedBox(height: 12),
           Expanded(

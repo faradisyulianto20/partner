@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'package:hackathon/features/home/widgets/home_header.dart';
-import 'package:hackathon/features/home/widgets/home_cta.dart';
-import 'package:hackathon/features/home/widgets/home_history.dart';
-import 'package:hackathon/features/home/widgets/home_today.dart';
+import 'package:hackathon/features/home/widgets/header.dart';
+import 'package:hackathon/features/home/widgets/cta.dart';
+import 'package:hackathon/features/home/widgets/history.dart';
+import 'package:hackathon/features/home/widgets/today.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

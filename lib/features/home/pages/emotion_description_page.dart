@@ -254,7 +254,7 @@ class _EmotionDescriptionState extends State<EmotionDescription> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: MaterialButton(
-                    onPressed: () {},
+                    onPressed: () => context.push('/home/analysis-result'),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
