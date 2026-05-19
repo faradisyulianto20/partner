@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/theme/app_gradients.dart';
 
 class AIProfessional extends StatelessWidget {
@@ -70,7 +71,9 @@ class AIProfessional extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () {},
+              onPressed: () {
+                context.go('/partner/professional-partner');
+              },
               icon: const Icon(Icons.chat_bubble_outline, size: 16),
               label: const Text('Cari Psikolog'),
               style: OutlinedButton.styleFrom(

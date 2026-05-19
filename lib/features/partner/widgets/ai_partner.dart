@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/theme/app_gradients.dart';
 
 class AIPartner extends StatelessWidget {
@@ -70,7 +71,9 @@ class AIPartner extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {},
+                  onPressed: () {
+                    context.go('/partner/ai-partner/chat');
+                  },
                   icon: const Icon(Icons.chat_bubble_outline, size: 16),
                   label: const Text('Chat'),
                   style: OutlinedButton.styleFrom(
@@ -100,7 +103,9 @@ class AIPartner extends StatelessWidget {
                     ), // Harus sama dengan radius tombol
                   ),
                   child: ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: () {
+                      context.go('/partner/ai-partner/voice');
+                    },
                     icon: const Icon(Icons.mic, size: 16),
                     label: const Text('Voice'),
                     style: ElevatedButton.styleFrom(

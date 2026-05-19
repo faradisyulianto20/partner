@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/theme/app_gradients.dart';
 
 class HumanPartner extends StatelessWidget {
@@ -82,7 +83,9 @@ class HumanPartner extends StatelessWidget {
               ), // Harus sama dengan radius tombol
             ),
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                context.go('/partner/human-partner');
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors
                     .transparent, // <-- Dibuat transparan agar gradasi terlihat
