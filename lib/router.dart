@@ -5,6 +5,7 @@ import 'package:hackathon/features/home/home.dart';
 import 'package:hackathon/features/home/pages/emotion_description_page.dart';
 import 'package:hackathon/features/home/pages/expression_analysis.dart';
 import 'package:hackathon/features/home/pages/voice_input.dart';
+import 'package:hackathon/features/home/pages/analysis_result.dart';
 
 import 'package:hackathon/features/home/pages/home_page.dart';
 import 'package:hackathon/features/journal/journal_page.dart';
@@ -74,6 +75,10 @@ final GoRouter router = GoRouter(
                 GoRoute(
                   path: 'voice-input',
                   builder: (context, state) => const VoiceInput(),
+                ),
+                GoRoute(
+                  path: 'analysis-result',
+                  builder: (context, state) => const AnalysisResult(),
                 ),
               ],
             ),
