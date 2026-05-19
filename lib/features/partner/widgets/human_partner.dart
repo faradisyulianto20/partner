@@ -1,169 +1,178 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:hackathon/core/theme/app_gradients.dart';
 
-class HumanPartner extends StatefulWidget {
-  final VoidCallback? onStartChat;
-  const HumanPartner({super.key, this.onStartChat});
+class HumanPartner extends StatelessWidget {
+  const HumanPartner({
+    super.key,
+    this.onFindPartner,
+    this.onChat,
+    this.onVoice,
+    this.onVideo,
+  });
 
-  @override
-  _HumanPartnerState createState() => _HumanPartnerState();
-}
+  final VoidCallback? onFindPartner;
+  final VoidCallback? onChat;
+  final VoidCallback? onVoice;
+  final VoidCallback? onVideo;
 
-class _HumanPartnerState extends State<HumanPartner> {
-
-  String selectedPartner = '';
-  String selectedMood = '';
-  int step = 0;
-
-  void choosePartner(String partner) {
-    setState(() {
-      selectedPartner = partner;
-      step = 1;
-    });
-  }
-
-  void chooseMood(String mood) {
-    setState(() {
-      selectedMood = mood;
-      step = 2;
-    });
-    startLoading();
-  }
-
-  void startLoading() {
-    Future.delayed(Duration(seconds: 5), () {
-      if (!mounted) return;
-
-      setState(() {
-        step = 3;
-      });
-      
-    });
-  }
-
-  String getTitle() {
-    if (step == 0) {
-      return 'Pilih Partner';
-    } else if (step == 1) {
-      return 'Pilih Mood';
-    } else if (step == 2) {
-      return 'Mencari Partner..';
-    } else if (step == 3) {
-      return 'Partner Ditemukan!';
-    }
-    else {
-      return 'Summary';
-    }
-  }
-
-  Widget buildContent() {
-    if (step == 0) {
-      return buildChoosePartner();
-    } else if (step == 1) {
-      return buildChooseMood();
-    } else if (step == 2) {
-      return buildLoading();
-    } else if (step == 3) {
-      return buildApproveParnter();
-    } else {
-      return Text('Summary: Partner - $selectedPartner, Mood - $selectedMood', style: TextStyle(color: Colors.white),);
-    }
-  }
   @override
   Widget build(BuildContext context) {
+    const Color primary = Color(0xFF2F6FB4);
+
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 24, horizontal: 2),
-      color: Colors.blueAccent,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              getTitle(),
-              style: TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 14),
-            buildContent(),
-          ],
-          ),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: const Border(
+          left: BorderSide(color: Color(0xFF578BB3), width: 12),
         ),
-      );
-  }
-
-  Widget buildChoosePartner() {
-    return Wrap(
-      alignment: WrapAlignment.center,
-      spacing: 8.0,
-      runSpacing: 8.0,
-      children: [
-        buildButton('Didengar', 'Didengar'),
-        buildButton('Curhat', 'Curhat'),
-        buildButton('Cari teman ngobrol santai', 'Cari teman ngobrol santai'),
-      ],
-    );
-  }
-
-  Widget buildChooseMood() {
-    return Wrap(
-      alignment: WrapAlignment.center,
-      spacing: 8.0,
-      runSpacing: 8.0,
-      children: [
-        buildButton('Happy', 'Happy'),
-        buildButton('Sad', 'Sad'),
-        buildButton('Stressed', 'Stressed'),
-      ],
-    );
-  }
-
-  Widget buildApproveParnter() {
-    return Wrap(
-      alignment: WrapAlignment.center,
-      spacing: 8.0,
-      runSpacing: 8.0,
-      children: [
-          buildButton('Mulai Chat', 'Mulai Chat'),
-          buildButton('Cari Partner Lain', 'Cari Partner Lain')
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 10,
+            offset: Offset(0, 6),
+          ),
         ],
-      );
-  }
-
-  Widget buildLoading() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        CircularProgressIndicator(color: Colors.white,),
-        SizedBox(height: 16),
-        Text('Mencari Partner...', style: TextStyle(color: Colors.white, fontSize: 16),)
-      ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                height: 36,
+                width: 36,
+                decoration: BoxDecoration(
+                  gradient: AppGradients.horizontal,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.person, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Human Partner',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1B517A),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Bertemu dengan Human Partner anonim untuk saling menemani, '
+            'berbagi keluh kesah, dan memberikan dukungan emosional satu sama lain.',
+            textAlign: TextAlign.justify,
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.4,
+              color: Color(0xFF1B517A),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity, // <-- Tetap mempertahankan lebar penuh
+            decoration: BoxDecoration(
+              gradient: AppGradients
+                  .horizontal, // <-- Gradasi horizontal kamu di sini
+              borderRadius: BorderRadius.circular(
+                12,
+              ), // Harus sama dengan radius tombol
+            ),
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors
+                    .transparent, // <-- Dibuat transparan agar gradasi terlihat
+                shadowColor:
+                    Colors.transparent, // <-- Hilangkan bayangan bawaan
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              child: const Text('Cari Partner'),
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Opsi komunikasi:',
+            style: TextStyle(
+              fontSize: 11,
+              color: Color(0xFF6B778C),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.chat_bubble_outline, size: 14),
+                  label: const Text('Chat'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF5B6777),
+                    side: const BorderSide(color: Color(0xFFB7C1CE)),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.mic, size: 14),
+                  label: const Text('Voice'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF5B6777),
+                    side: const BorderSide(color: Color(0xFFB7C1CE)),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.videocam_outlined, size: 14),
+                  label: const Text('Video'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF5B6777),
+                    side: const BorderSide(color: Color(0xFFB7C1CE)),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
-
-  Widget buildButton(String text, String onPressed) {
-  return FilledButton(
-    style: FilledButton.styleFrom(
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      shape: StadiumBorder(),
-      backgroundColor: Colors.white,
-    ),
-    onPressed: () {
-      if (step == 0) {
-        choosePartner(onPressed);
-      } else if (step == 1) {
-        chooseMood(onPressed);
-      } else if (step == 3 && onPressed == 'Mulai Chat') {
-        GoRouter.of(context).push('/partner/chat');
-      } else if (step == 3 && onPressed == 'Cari Partner Lain') {
-        setState(() {
-          step = 2;
-        });
-        startLoading();
-      }
-    },
-    child: Text(
-      text,
-      style: TextStyle(color: Colors.blue, fontSize: 12),
-    ),
-  );
-}
 }

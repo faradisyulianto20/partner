@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class HomeHeader extends StatelessWidget {
+class Header extends StatelessWidget {
   final String userName;
   final String greeting;
   final VoidCallback? onProfileTap;
 
-  const   HomeHeader({
+  const Header({
     super.key,
     this.userName = 'User',
     this.greeting = 'Selamat Pagi',

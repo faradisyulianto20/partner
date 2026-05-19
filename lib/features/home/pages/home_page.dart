@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:hackathon/features/home/widgets/header.dart';
+import 'package:hackathon/core/widgets/header.dart';
 import 'package:hackathon/features/home/widgets/cta.dart';
 import 'package:hackathon/features/home/widgets/history.dart';
 import 'package:hackathon/features/home/widgets/today.dart';
@@ -19,7 +19,7 @@ class _HomePageState extends State<HomePage> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
       child: Column(
         children: [
-          HomeHeader(
+          Header(
             userName: 'Dinda',
             greeting: 'Selamat Pagi',
             onProfileTap: () {
