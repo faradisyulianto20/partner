@@ -10,37 +10,30 @@ class PartnerPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F8),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-          child: Column(
-            children: [
-              Header(
-                userName: 'Dinda',
-                greeting: 'Selamat Pagi',
-                onProfileTap: () {
-                  // Navigate to profile
-                },
-              ),
-              const SizedBox(height: 16),
-              AIPartner(
-                onChat: onStartChat != null
-                    ? () => onStartChat!("chat123")
-                    : null,
-              ),
-              const SizedBox(height: 16),
-              HumanPartner(
-                onFindPartner: onStartChat != null
-                    ? () => onStartChat!("chat123")
-                    : null,
-              ),
-              const SizedBox(height: 16),
-              const AIProfessional(),
-            ],
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+      child: Column(
+        children: [
+          Header(
+            userName: 'Dinda',
+            greeting: 'Selamat Pagi',
+            onProfileTap: () {
+              // Navigate to profile
+            },
           ),
-        ),
+          const SizedBox(height: 16),
+          AIPartner(
+            onChat: onStartChat != null ? () => onStartChat!("chat123") : null,
+          ),
+          const SizedBox(height: 14),
+          HumanPartner(
+            onFindPartner: onStartChat != null
+                ? () => onStartChat!("chat123")
+                : null,
+          ),
+          const SizedBox(height: 16),
+          const AIProfessional(),
+        ],
       ),
     );
   }
