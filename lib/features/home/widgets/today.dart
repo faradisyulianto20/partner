@@ -18,13 +18,9 @@ class HomeToday extends StatelessWidget {
   });
 
   void _showRecommendationDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => RecomendationDialog(
-       ),
-    );
+    showDialog(context: context, builder: (context) => RecomendationDialog());
   }
-        
+
   bool get isChecked => emotion != null;
 
   @override
@@ -34,10 +30,7 @@ class HomeToday extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFF1B517A),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFF1B517A), width: 1),
       ),
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
       child: Column(
@@ -52,8 +45,8 @@ class HomeToday extends StatelessWidget {
             child: Center(
               child: SvgPicture.asset(
                 iconType == 'sad'
-                    ? 'assets/images/sad_white.svg'
-                    : 'assets/images/happy_white.svg',
+                    ? 'assets/images/emoji/sad_white.svg'
+                    : 'assets/images/emoji/happy_white.svg',
                 width: 42,
                 height: 42,
               ),
@@ -105,10 +98,7 @@ class HomeToday extends StatelessWidget {
                   gradient: const LinearGradient(
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
-                    colors: [
-                      Color(0xFF578BB3),
-                      Color(0xFF194F78),
-                    ],
+                    colors: [Color(0xFF578BB3), Color(0xFF194F78)],
                   ),
                   borderRadius: BorderRadius.circular(10),
                 ),

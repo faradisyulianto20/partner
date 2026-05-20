@@ -17,33 +17,35 @@ class AIPartnerChat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        centerTitle: true,
-        title: const Text('AI Partner Chat'),
-        backgroundColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: Colors.white),
-        titleTextStyle: const TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.graphic_eq_rounded),
-            onPressed: () => _handleVoice(context),
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          elevation: 0,
+          centerTitle: true,
+          title: const Text('AI Partner Chat'),
+          backgroundColor: Colors.transparent,
+          iconTheme: const IconThemeData(color: Colors.white),
+          titleTextStyle: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
           ),
-        ],
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppGradients.horizontal),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            onPressed: () => context.pop(),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.graphic_eq_rounded),
+              onPressed: () => _handleVoice(context),
+            ),
+          ],
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(gradient: AppGradients.horizontal),
+          ),
         ),
+        body: Column(children: [ChatContent(), ChatFooter()]),
       ),
-      body: Column(children: [ChatContent(), ChatFooter()]),
     );
   }
 }

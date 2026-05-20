@@ -31,7 +31,7 @@ class _WelcomePageState extends State<WelcomePage> {
                     children: [
                       const SizedBox(height: 92),
                       SvgPicture.asset(
-                        'assets/images/logo-partner.svg',
+                        'assets/images/logo/logo-partner.svg',
                         width: 163,
                         height: 200,
                         colorFilter: const ColorFilter.mode(

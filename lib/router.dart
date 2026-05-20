@@ -56,6 +56,14 @@ final GoRouter router = GoRouter(
       path: '/voice-input',
       builder: (context, state) => const VoiceInput(),
     ),
+    GoRoute(
+      path: '/partner/ai-partner/chat',
+      builder: (context, state) => AIPartnerChat(),
+    ),
+    GoRoute(
+      path: '/partner/ai-partner/voice',
+      builder: (context, state) => AIPartnerVoice(),
+    ),
 
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
@@ -95,14 +103,6 @@ final GoRouter router = GoRouter(
               path: '/partner',
               builder: (context, state) => const PartnerPage(),
               routes: [
-                GoRoute(
-                  path: 'ai-partner/chat',
-                  builder: (context, state) => AIPartnerChat(),
-                ),
-                GoRoute(
-                  path: 'ai-partner/voice',
-                  builder: (context, state) => AIPartnerVoice(),
-                ),
                 GoRoute(
                   path: 'professional-partner',
                   builder: (context, state) => ProfessionalPartnerPage(),

@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -19,20 +18,14 @@ class _LoginPageState extends State<LoginPage> {
   final LinearGradient verticalGradient = const LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [
-      Color(0xFF578BB3),
-      Color(0xFF194F78),
-    ],
+    colors: [Color(0xFF578BB3), Color(0xFF194F78)],
   );
 
   // Horizontal gradient
   final LinearGradient horizontalGradient = const LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [
-      Color(0xFF578BB3),
-      Color(0xFF194F78),
-    ],
+    colors: [Color(0xFF578BB3), Color(0xFF194F78)],
   );
 
   @override
@@ -55,16 +48,14 @@ class _LoginPageState extends State<LoginPage> {
                 flex: 4,
                 child: Container(
                   width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: verticalGradient,
-                  ),
+                  decoration: BoxDecoration(gradient: verticalGradient),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       SizedBox(height: 92),
                       SvgPicture.asset(
-                          'assets/images/logo-partner.svg',
+                        'assets/images/logo/logo-partner.svg',
                         width: 163,
                         height: 200,
                         colorFilter: const ColorFilter.mode(
@@ -94,7 +85,10 @@ class _LoginPageState extends State<LoginPage> {
                     topRight: Radius.circular(42),
                   ),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 50),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 50,
+                ),
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -105,7 +99,6 @@ class _LoginPageState extends State<LoginPage> {
                           fontSize: 24,
                           fontWeight: FontWeight.w800,
                           color: Colors.black87,
-      
                         ),
                         textAlign: TextAlign.left,
                       ),
@@ -126,7 +119,10 @@ class _LoginPageState extends State<LoginPage> {
                         child: Container(
                           padding: const EdgeInsets.all(1),
                           decoration: BoxDecoration(
-                            border: Border.all(color: const Color(0xFFDDDDDD), width: 1),
+                            border: Border.all(
+                              color: const Color(0xFFDDDDDD),
+                              width: 1,
+                            ),
                             borderRadius: BorderRadius.circular(30),
                             gradient: horizontalGradient,
                           ),
@@ -137,7 +133,9 @@ class _LoginPageState extends State<LoginPage> {
                               onTap: () {},
                               borderRadius: BorderRadius.circular(27),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -174,7 +172,9 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           Flexible(
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               child: Text(
                                 'Belum memiliki akun? Daftar terlebih dahulu',
                                 style: GoogleFonts.nunito(
@@ -209,7 +209,9 @@ class _LoginPageState extends State<LoginPage> {
                               onTap: () => context.go('/register'),
                               borderRadius: BorderRadius.circular(30),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                                 child: Center(
                                   child: Text(
                                     'Daftar',

@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:hackathon/core/widgets/waveform.dart';
 
 class VoiceInput extends StatefulWidget {
   const VoiceInput({super.key});
@@ -346,7 +346,7 @@ class _VoiceInputState extends State<VoiceInput> with TickerProviderStateMixin {
             child: AnimatedBuilder(
               animation: _waveController,
               builder: (context, _) {
-                return _Waveform(
+                return Waveform(
                   isActive: _isRecording && !_isPaused,
                   animValue: _waveController.value,
                 );
@@ -473,70 +473,6 @@ class _CircleButton extends StatelessWidget {
               )
             : Icon(icon, color: iconColor, size: size * 0.45),
       ),
-    );
-  }
-}
-
-class _Waveform extends StatelessWidget {
-  final bool isActive;
-  final double animValue;
-
-  const _Waveform({required this.isActive, required this.animValue});
-
-  static const List<double> _baseHeights = [
-    10,
-    18,
-    30,
-    45,
-    55,
-    62,
-    58,
-    48,
-    36,
-    22,
-    14,
-    22,
-    36,
-    48,
-    58,
-    62,
-    55,
-    45,
-    30,
-    18,
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    const barCount = 10;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: List.generate(barCount, (i) {
-        double height;
-
-        if (isActive) {
-          final phase = (animValue + i / barCount) % 1.0;
-          final wave = (sin(phase * 2 * pi) + 1) / 2;
-
-          final base = _baseHeights[i];
-          height = base * 0.6 + base * 0.6 * wave;
-        } else {
-          height = 14.0;
-        }
-
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 80),
-          margin: const EdgeInsets.symmetric(horizontal: 6),
-          width: 10,
-          height: height.clamp(6.0, 70.0),
-          decoration: BoxDecoration(
-            color: Color.fromRGBO(45, 106, 159, isActive ? 0.8 : 0.3),
-            borderRadius: BorderRadius.circular(3),
-          ),
-        );
-      }),
     );
   }
 }

@@ -15,19 +15,13 @@ class _HomeCTAState extends State<HomeCTA> {
   final LinearGradient verticalGradient = const LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [
-      Color(0xFF578BB3),
-      Color(0xFF194F78),
-    ],
+    colors: [Color(0xFF578BB3), Color(0xFF194F78)],
   );
 
   final LinearGradient horizontalGradient = const LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [
-      Color(0xFF578BB3),
-      Color(0xFF194F78),
-    ],
+    colors: [Color(0xFF578BB3), Color(0xFF194F78)],
   );
 
   @override
@@ -38,10 +32,7 @@ class _HomeCTAState extends State<HomeCTA> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFF1B517A),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFF1B517A), width: 1),
       ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
@@ -85,7 +76,7 @@ class _HomeCTAState extends State<HomeCTA> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ),
@@ -93,14 +84,12 @@ class _HomeCTAState extends State<HomeCTA> {
                   top: -60,
                   right: -40,
                   child: SvgPicture.asset(
-                    'assets/images/mascot.svg',
+                    'assets/images/mascot/mascot.svg',
                     width: 120,
                     height: 120,
                     fit: BoxFit.contain,
-                    placeholderBuilder: (context) => Container(
-                      width: 120,
-                      height: 120,
-                    ),
+                    placeholderBuilder: (context) =>
+                        Container(width: 120, height: 120),
                   ),
                 ),
               ],
@@ -112,32 +101,32 @@ class _HomeCTAState extends State<HomeCTA> {
               children: [
                 Expanded(
                   child: GestureDetector(
-                      onTap: () => context.push('/home/expression-analysis'),
-                      child: Container(
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          gradient: horizontalGradient,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
+                    onTap: () => context.push('/home/expression-analysis'),
+                    child: Container(
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        gradient: horizontalGradient,
+                        borderRadius: BorderRadius.circular(5),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                        const Icon(
-                          Icons.camera_alt,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            'Scan Wajah',
-                            style: GoogleFonts.nunito(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                          const Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              'Scan Wajah',
+                              style: GoogleFonts.nunito(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
                               ),
-                            overflow: TextOverflow.ellipsis,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -147,7 +136,7 @@ class _HomeCTAState extends State<HomeCTA> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                child: OutlinedButton(
+                  child: OutlinedButton(
                     onPressed: () => context.push('/home/emotion-description'),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(
@@ -157,7 +146,10 @@ class _HomeCTAState extends State<HomeCTA> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(5),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 12,
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -185,10 +177,10 @@ class _HomeCTAState extends State<HomeCTA> {
                   ),
                 ),
               ],
-          ),
-        ]
-        )
-      )
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -27,10 +27,7 @@ class _HomeHistoryState extends State<HomeHistory> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFF1B517A),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFF1B517A), width: 1),
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -64,7 +61,9 @@ class _HomeHistoryState extends State<HomeHistory> {
               children: List.generate(
                 weekData.length,
                 (index) => Padding(
-                  padding: EdgeInsets.only(right: index < weekData.length - 1 ? 6 : 0),
+                  padding: EdgeInsets.only(
+                    right: index < weekData.length - 1 ? 6 : 0,
+                  ),
                   child: _buildEmotionDay(
                     day: weekData[index]['day']!,
                     emotion: weekData[index]['emotion']!,
@@ -87,12 +86,11 @@ class _HomeHistoryState extends State<HomeHistory> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
       decoration: BoxDecoration(
-        color: iconType == 'happy' ? const Color(0xFFF4F9FF) : const Color(0xFFFDF5EB),
+        color: iconType == 'happy'
+            ? const Color(0xFFF4F9FF)
+            : const Color(0xFFFDF5EB),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Color(0xFFE9E9E9),
-          width: 1,
-        ),
+        border: Border.all(color: Color(0xFFE9E9E9), width: 1),
       ),
       child: Column(
         children: [
@@ -106,11 +104,11 @@ class _HomeHistoryState extends State<HomeHistory> {
           ),
           const SizedBox(height: 12),
           SvgPicture.asset(
-                iconType == 'happy'
-                    ? 'assets/images/happy.svg'
-                    : 'assets/images/sad.svg',
-                width: 16,
-                height: 16,
+            iconType == 'happy'
+                ? 'assets/images/emoji/happy.svg'
+                : 'assets/images/emoji/sad.svg',
+            width: 16,
+            height: 16,
           ),
           const SizedBox(height: 12),
           SizedBox(

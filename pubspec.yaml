@@ -87,14 +87,15 @@ flutter:
   assets:
     - assets/images/doctor1.png
 
-    - assets/images/logo-partner.svg
+    - assets/images/logo/logo-partner.svg
     - assets/images/google-icon.svg
-    - assets/images/mascot.svg
+    - assets/images/mascot/mascot.svg
+    - assets/images/mascot/mascot-white.svg
 
-    - assets/images/happy.svg
-    - assets/images/sad.svg
-    - assets/images/happy_white.svg
-    - assets/images/sad_white.svg
+    - assets/images/emoji/happy.svg
+    - assets/images/emoji/sad.svg
+    - assets/images/emoji/happy_white.svg
+    - assets/images/emoji/sad_white.svg
 
 
 
