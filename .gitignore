@@ -118,3 +118,6 @@ node_modules/
 # Python
 __pycache__/
 *.egg-info/
+
+# Isolate/exclude generated plugin registrant files
+**/generated_plugin_registrant.*
