@@ -27,6 +27,7 @@ import 'package:hackathon/features/partner/pages/professional/professional_partn
 
 import 'package:hackathon/features/profile/profile_page.dart';
 import 'package:hackathon/features/journal/journal_page.dart';
+import 'package:hackathon/features/journal/journal_add.dart';
 
 // sub route
 import 'package:hackathon/features/onboarding/welcome_page.dart';
@@ -95,9 +96,18 @@ final GoRouter router = GoRouter(
       path: '/partner/human-partner/end-call',
       builder: (context, state) => const EndCall(),
     ),
-    GoRoute(path: '/partner/professional-partner/detail', builder: (context, state) => const DetailDoctor()),
-    GoRoute(path: '/partner/professional-partner/booking', builder: (context, state) => const Booking()),
-
+    GoRoute(
+      path: '/partner/professional-partner/detail',
+      builder: (context, state) => const DetailDoctor(),
+    ),
+    GoRoute(
+      path: '/partner/professional-partner/booking',
+      builder: (context, state) => const Booking(),
+    ),
+    GoRoute(
+      path: '/journal/add',
+      builder: (context, state) => const JournalAdd(),
+    ),
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return Home(navigationShell: navigationShell);
