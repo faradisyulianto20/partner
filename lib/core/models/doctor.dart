@@ -2,8 +2,9 @@ class Doctor {
   final int id;
   final String name;
   final String specialization;
-  final String experience;
-  final int rating;
+  final String location;
+  final String condition;
+  final double rating;
   final String imageUrl;
   final int price;
 
@@ -11,7 +12,8 @@ class Doctor {
     required this.id,
     required this.name,
     required this.specialization,
-    required this.experience,
+    required this.location,
+    required this.condition,
     required this.rating,
     required this.imageUrl,
     required this.price,

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/theme/app_gradients.dart';
 
-class AIProfessional extends StatelessWidget {
-  const AIProfessional({super.key, this.onFindPsychologist});
+class ProfessionalPartner extends StatelessWidget {
+  const ProfessionalPartner({super.key, this.onFindPsychologist});
 
   final VoidCallback? onFindPsychologist;
 
@@ -47,7 +47,7 @@ class AIProfessional extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               const Text(
-                'AI Professional',
+                'Professional Partner',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,

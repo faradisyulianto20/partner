@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hackathon/core/widgets/header.dart';
 import 'package:hackathon/features/partner/widgets/ai_partner.dart';
-import 'package:hackathon/features/partner/widgets/ai_professional.dart';
+import 'package:hackathon/features/partner/widgets/professional_partner.dart';
 import 'package:hackathon/features/partner/widgets/human_partner.dart';
 
 class PartnerPage extends StatelessWidget {
@@ -32,7 +32,7 @@ class PartnerPage extends StatelessWidget {
                 : null,
           ),
           const SizedBox(height: 16),
-          const AIProfessional(),
+          const ProfessionalPartner(),
         ],
       ),
     );

@@ -6,49 +6,54 @@ class DoctorService {
     return [
       Doctor(
         id: 1,
-        name: 'Dr. John Doe',
+        name: 'Dr. Priantara, M.Psi',
         specialization: 'Psikolog Klinis Dewasa',
-        experience: '10 tahun',
-        rating: 95,
+        location: 'Sleman, Yogyakarta',
+        condition: 'Anxiety & Overthinking',
+        rating: 4.9,
         imageUrl: 'assets/images/doctor1.png',
-        price: 200000
+        price: 200000,
       ),
       Doctor(
         id: 2,
-        name: 'Dr. Jane Smith',
+        name: 'Dr. Hayunaji, M.Psi',
         specialization: 'Psikolog Anak dan Remaja',
-        experience: '8 tahun',
-        rating: 90,
+        location: 'Tangerang, Jakarta',
+        condition: 'Burnout Recovery',
+        rating: 4.7,
         imageUrl: 'assets/images/doctor1.png',
-        price: 150000
+        price: 150000,
       ),
       Doctor(
         id: 3,
-        name: 'Dr. Emily Johnson',
+        name: 'Amanda, S.Psi, M.Psi',
         specialization: 'Psikolog Keluarga',
-        experience: '12 tahun',
-        rating: 92,
+        location: 'Sleman, Yogyakarta',
+        condition: 'Anxiety & Overthinking',
+        rating: 4.9,
         imageUrl: 'assets/images/doctor1.png',
-        price: 250000
+        price: 250000,
       ),
       Doctor(
         id: 4,
-        name: 'Dr. Michael Brown',
+        name: 'Dr. Budi Utama, M.Psi',
         specialization: 'Psikolog Klinis Dewasa',
-        experience: '15 tahun',
-        rating: 98,
+        location: 'Sleman, Yogyakarta',
+        condition: 'Anxiety & Overthinking',
+        rating: 4.9,
         imageUrl: 'assets/images/doctor1.png',
-        price: 300000
+        price: 300000,
       ),
       Doctor(
         id: 5,
-        name: 'Dr. Sarah Davis',
+        name: 'Dr. Tirtadi, M.Psi',
         specialization: 'Psikolog Anak dan Remaja',
-        experience: '7 tahun',
-        rating: 88,
+        location: 'Sleman, Yogyakarta',
+        condition: 'Anxiety & Overthinking',
+        rating: 4.9,
         imageUrl: 'assets/images/doctor1.png',
-        price: 10000
-      )
-  ];
+        price: 100000,
+      ),
+    ];
   }
 }
