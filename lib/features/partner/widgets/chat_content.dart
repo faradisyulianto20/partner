@@ -2,38 +2,63 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+class ChatMessage {
+  const ChatMessage({
+    required this.isSender,
+    required this.message,
+    required this.time,
+  });
+
+  final bool isSender;
+  final String message;
+  final String time;
+}
+
 class ChatContent extends StatelessWidget {
-  const ChatContent({super.key});
+  const ChatContent({super.key, this.messages});
+
+  final List<ChatMessage>? messages;
+
+  static const List<ChatMessage> _defaultMessages = [
+    ChatMessage(
+      isSender: false,
+      message:
+          'Halo, aku siap mendengarkanmu. Tidak perlu menahan semuanya sendiri. Apa yang sedang memenuhi pikiranmu hari ini?',
+      time: '02:15',
+    ),
+    ChatMessage(
+      isSender: true,
+      message:
+          'Aku sangat lelah hari ini, aku capek banget dari kemarin aku tidur subuh terus ngerjain proyek GDGOC sini',
+      time: '02:16',
+    ),
+    ChatMessage(
+      isSender: false,
+      message:
+          'Turut berduka ya.. Saranku sih gausah dikerjain yaa biar kamu bisa tidur cukup',
+      time: '02:16',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
+    final items = messages ?? _defaultMessages;
+
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24),
-        child: ListView(
+        child: ListView.separated(
           padding: const EdgeInsets.only(top: 16, bottom: 8),
-          children: [
-            ItemChat(
-              isSender: false,
-              message:
-                  'Halo, aku siap mendengarkanmu. Tidak perlu menahan semuanya sendiri. Apa yang sedang memenuhi pikiranmu hari ini?',
-              time: '02:15',
-            ),
-            const SizedBox(height: 12),
-            ItemChat(
-              isSender: true,
-              message:
-                  'Aku sangat lelah hari ini, aku capek banget dari kemarin aku tidur subuh terus ngerjain proyek GDGOC sini',
-              time: '02:16',
-            ),
-            const SizedBox(height: 12),
-            ItemChat(
-              isSender: false,
-              message:
-                  'Turut berduka ya.. Saranku sih gausah dikerjain yaa biar kamu bisa tidur cukup',
-              time: '02:16',
-            ),
-          ],
+          itemBuilder: (context, index) {
+            final item = items[index];
+            return ItemChat(
+              isSender: item.isSender,
+              message: item.message,
+              time: item.time,
+            );
+          },
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemCount: items.length,
         ),
       ),
     );

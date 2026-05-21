@@ -8,10 +8,19 @@ import 'package:hackathon/features/home/pages/voice_input.dart';
 import 'package:hackathon/features/home/pages/analysis_result.dart';
 import 'package:hackathon/features/home/pages/home_page.dart';
 
+// Partner Route
 import 'package:hackathon/features/partner/pages/partner_page.dart';
+// AI Partner
 import 'package:hackathon/features/partner/pages/ai_partner_chat.dart';
 import 'package:hackathon/features/partner/pages/ai_partner_voice.dart';
+// Human Partner
 import 'package:hackathon/features/partner/pages/human_partner.dart';
+import 'package:hackathon/features/partner/pages/human_partner_video_call.dart';
+import 'package:hackathon/features/partner/pages/human_partner_chat.dart';
+import 'package:hackathon/features/partner/pages/human_partner_voice_call.dart';
+import 'package:hackathon/features/partner/pages/human_partner_end_call.dart';
+
+// Professional Partner
 import 'package:hackathon/features/partner/pages/professional_partner.dart';
 
 import 'package:hackathon/features/profile/profile_page.dart';
@@ -64,6 +73,26 @@ final GoRouter router = GoRouter(
       path: '/partner/ai-partner/voice',
       builder: (context, state) => AIPartnerVoice(),
     ),
+    GoRoute(
+      path: '/partner/human-partner',
+      builder: (context, state) => HumanPartnerPage(),
+    ),
+    GoRoute(
+      path: '/partner/human-partner/video-call',
+      builder: (context, state) => const VideoCall(),
+    ),
+    GoRoute(
+      path: '/partner/human-partner/chat',
+      builder: (context, state) => const Chat(),
+    ),
+    GoRoute(
+      path: '/partner/human-partner/voice-call',
+      builder: (context, state) => const VoiceCall(),
+    ),
+    GoRoute(
+      path: '/partner/human-partner/end-call',
+      builder: (context, state) => const EndCall(),
+    ),
 
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
@@ -107,10 +136,7 @@ final GoRouter router = GoRouter(
                   path: 'professional-partner',
                   builder: (context, state) => ProfessionalPartnerPage(),
                 ),
-                GoRoute(
-                  path: 'human-partner',
-                  builder: (context, state) => HumanPartnerPage(),
-                ),
+
                 GoRoute(
                   path: 'video-call',
                   builder: (context, state) {

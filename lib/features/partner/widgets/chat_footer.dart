@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:hackathon/core/theme/app_gradients.dart';
 
 class ChatFooter extends StatelessWidget {
-  const ChatFooter({super.key});
+  const ChatFooter({
+    super.key,
+    this.hintText = 'Ceritakan bagaimana perasaanmu...',
+  });
+
+  final String hintText;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +26,7 @@ class ChatFooter extends StatelessWidget {
                   onPressed: () {},
                   icon: const Icon(Icons.add_rounded),
                 ),
-                hintText: 'Ceritakan bagaimana perasaanmu...',
+                hintText: hintText,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(28),
                   borderSide: BorderSide.none,
