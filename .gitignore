@@ -38,6 +38,8 @@ pubspec.lock
 
 # Generated files
 **/generated_plugin_registrant.dart
+**/generated_plugins.cmake
+**/GeneratedPluginRegistrant.swift
 
 # Firebase
 google-services.json
