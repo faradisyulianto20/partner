@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hackathon/features/home/widgets/recommendation_dialog.dart';
+import 'package:hackathon/features/client/home/widgets/recommendation_dialog.dart';
 
 class HomeToday extends StatelessWidget {
   final String? emotion;

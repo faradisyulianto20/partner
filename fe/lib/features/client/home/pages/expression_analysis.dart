@@ -1,7 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hackathon/core/widgets/custom_app_bar.dart';
+import 'package:hackathon/core/shared_widgets/custom_app_bar.dart';
 
 class ExpressionAnalysis extends StatefulWidget {
   const ExpressionAnalysis({super.key});

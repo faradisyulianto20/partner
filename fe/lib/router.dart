@@ -1,40 +1,40 @@
 import 'package:go_router/go_router.dart';
 
 // Home Route
-import 'package:hackathon/features/home/home.dart';
-import 'package:hackathon/features/home/pages/emotion_description_page.dart';
-import 'package:hackathon/features/home/pages/expression_analysis.dart';
-import 'package:hackathon/features/home/pages/voice_input.dart';
-import 'package:hackathon/features/home/pages/analysis_result.dart';
-import 'package:hackathon/features/home/pages/home_page.dart';
+import 'package:hackathon/features/client/home/home.dart';
+import 'package:hackathon/features/client/home/pages/emotion_description_page.dart';
+import 'package:hackathon/features/client/home/pages/expression_analysis.dart';
+import 'package:hackathon/features/client/home/pages/voice_input.dart';
+import 'package:hackathon/features/client/home/pages/analysis_result.dart';
+import 'package:hackathon/features/client/home/pages/home_page.dart';
 
 // Partner Route
-import 'package:hackathon/features/partner/pages/partner_page.dart';
+import 'package:hackathon/features/client/partner/pages/partner_page.dart';
 // AI Partner
-import 'package:hackathon/features/partner/pages/ai/ai_partner_chat.dart';
-import 'package:hackathon/features/partner/pages/ai/ai_partner_voice.dart';
+import 'package:hackathon/features/client/partner/pages/ai/ai_partner_chat.dart';
+import 'package:hackathon/features/client/partner/pages/ai/ai_partner_voice.dart';
 // Human Partner
-import 'package:hackathon/features/partner/pages/human/human_partner.dart';
-import 'package:hackathon/features/partner/pages/human/human_partner_video_call.dart';
-import 'package:hackathon/features/partner/pages/human/human_partner_chat.dart';
-import 'package:hackathon/features/partner/pages/human/human_partner_voice_call.dart';
-import 'package:hackathon/features/partner/pages/human/human_partner_end_call.dart';
+import 'package:hackathon/features/client/partner/pages/human/human_partner.dart';
+import 'package:hackathon/features/client/partner/pages/human/human_partner_video_call.dart';
+import 'package:hackathon/features/client/partner/pages/human/human_partner_chat.dart';
+import 'package:hackathon/features/client/partner/pages/human/human_partner_voice_call.dart';
+import 'package:hackathon/features/client/partner/pages/human/human_partner_end_call.dart';
 
 // Professional Partner
-import 'package:hackathon/features/partner/pages/professional/professional_partner.dart';
-import 'package:hackathon/features/partner/pages/professional/professional_partner_detail.dart';
-import 'package:hackathon/features/partner/pages/professional/professional_partner_booking.dart';
+import 'package:hackathon/features/client/partner/pages/professional/professional_partner.dart';
+import 'package:hackathon/features/client/partner/pages/professional/professional_partner_detail.dart';
+import 'package:hackathon/features/client/partner/pages/professional/professional_partner_booking.dart';
 
-import 'package:hackathon/features/profile/profile_page.dart';
-import 'package:hackathon/features/journal/journal_page.dart';
-import 'package:hackathon/features/journal/journal_add.dart';
+import 'package:hackathon/features/client/profile/profile_page.dart';
+import 'package:hackathon/features/client/journal/journal_page.dart';
+import 'package:hackathon/features/client/journal/journal_add.dart';
 
 // sub route
 import 'package:hackathon/features/onboarding/welcome_page.dart';
-import 'package:hackathon/features/partner/pages/human/video_call.dart';
-import 'package:hackathon/features/auth/login_page.dart';
-import 'package:hackathon/features/auth/register_page.dart';
-import 'package:hackathon/features/auth/input_data_page.dart';
+import 'package:hackathon/features/client/partner/pages/human/video_call.dart';
+import 'package:hackathon/features/auth/presentation/login_page.dart';
+import 'package:hackathon/features/auth/presentation/register_page.dart';
+import 'package:hackathon/features/auth/presentation/input_data_page.dart';
 
 bool firstInstall = true;
 bool token = false;

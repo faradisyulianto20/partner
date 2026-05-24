@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hackathon/core/models/doctor.dart';
 import 'package:hackathon/core/services/doctor_service.dart';
-import 'package:hackathon/features/partner/widgets/doctor_card.dart';
+import 'package:hackathon/features/client/partner/widgets/doctor_card.dart';
 
 enum PartnerFilter { matchCondition, lowestPrice, highestPrice }
 

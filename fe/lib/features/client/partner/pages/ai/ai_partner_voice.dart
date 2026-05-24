@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/theme/app_gradients.dart';
-import 'package:hackathon/core/widgets/waveform.dart';
+import 'package:hackathon/core/shared_widgets/waveform.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class AIPartnerVoice extends StatefulWidget {

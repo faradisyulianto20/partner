@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/theme/app_gradients.dart';
-import 'package:hackathon/features/partner/widgets/chat_content.dart';
-import 'package:hackathon/features/partner/widgets/chat_footer.dart';
+import 'package:hackathon/features/client/partner/widgets/chat_content.dart';
+import 'package:hackathon/features/client/partner/widgets/chat_footer.dart';
 
 class Chat extends StatelessWidget {
   const Chat({super.key});

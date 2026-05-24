@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/theme/app_gradients.dart';
-import 'package:hackathon/features/partner/widgets/mascot_badge.dart';
+import 'package:hackathon/features/client/partner/widgets/mascot_badge.dart';
 
 class VoiceCall extends StatefulWidget {
   const VoiceCall({super.key});

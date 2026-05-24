@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hackathon/core/widgets/navbar.dart';
+import 'package:hackathon/core/shared_widgets/navbar.dart';
 
 class Home extends StatelessWidget {
   final StatefulNavigationShell navigationShell;

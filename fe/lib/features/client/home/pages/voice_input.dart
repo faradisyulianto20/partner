@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:hackathon/core/widgets/waveform.dart';
+import 'package:hackathon/core/shared_widgets/waveform.dart';
 
 class VoiceInput extends StatefulWidget {
   const VoiceInput({super.key});
