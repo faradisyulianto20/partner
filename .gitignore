@@ -29,11 +29,12 @@ migrate_working_dir/
 .dart_tool/
 .packages
 .flutter-plugins-dependencies
+.flutter-plugins
 .pub-cache/
 .pub/
 pubspec.lock
-/build/
-/coverage/
+**/build/
+**/coverage/
 
 # Generated files
 **/generated_plugin_registrant.dart
@@ -53,24 +54,24 @@ app.*.symbols
 app.*.map.json
 
 # Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+**/android/app/debug
+**/android/app/profile
+**/android/app/release
 
 # iOS
-ios/Pods/
-ios/.symlinks/
-ios/Flutter/Flutter.framework
-ios/Flutter/Flutter.podspec
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
 
 # MacOS
-macos/Flutter/ephemeral/
+**/macos/Flutter/ephemeral/
 
 # Linux
-linux/flutter/ephemeral/
+**/linux/flutter/ephemeral/
 
 # Windows
-windows/flutter/ephemeral/
+**/windows/flutter/ephemeral/
 
 # Temporary
 *.tmp
@@ -92,11 +93,11 @@ firebase_app_id_file.json
 
 # Gradle
 .gradle/
-android/local.properties
+**/android/local.properties
 
 # Generated native files
-ios/Flutter/GeneratedPluginRegistrant.h
-ios/Flutter/GeneratedPluginRegistrant.m
+**/ios/Flutter/GeneratedPluginRegistrant.h
+**/ios/Flutter/GeneratedPluginRegistrant.m
 
 # Generated Dart
 *.g.dart
