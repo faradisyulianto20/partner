@@ -3,24 +3,32 @@ import 'package:flutter/material.dart';
 class NavBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
+  final bool isPsychologist;
 
   const NavBar({
     super.key,
     required this.currentIndex,
     required this.onTap,
+    required this.isPsychologist,
   });
 
   static const _color = Color(0xFF1B517A);
 
-  static const _items = [
-    (icon: Icons.home, label: 'Home'),
-    (icon: Icons.people, label: 'Partner'),
-    (icon: Icons.edit_note, label: 'Journal'),
-    (icon: Icons.person, label: 'Profile'),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final _items = isPsychologist
+        ? const [
+            (icon: Icons.home, label: 'Home'),
+            (icon: Icons.people, label: 'Partner'),
+            (icon: Icons.edit_note, label: 'Journal'),
+            (icon: Icons.person, label: 'Profile'),
+          ]
+        : const [
+            (icon: Icons.home, label: 'Home'),
+            (icon: Icons.edit_note, label: 'Journal'),
+            (icon: Icons.people, label: 'Client'),
+            (icon: Icons.person, label: 'Profile'),
+          ];
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     return Container(
       padding: EdgeInsets.only(

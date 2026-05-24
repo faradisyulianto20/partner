@@ -7,6 +7,7 @@ import 'package:hackathon/features/client/home/pages/expression_analysis.dart';
 import 'package:hackathon/features/client/home/pages/voice_input.dart';
 import 'package:hackathon/features/client/home/pages/analysis_result.dart';
 import 'package:hackathon/features/client/home/pages/home_page.dart';
+import 'package:hackathon/features/client/home/widgets/cta.dart';
 
 // Partner Route
 import 'package:hackathon/features/client/partner/pages/partner_page.dart';
@@ -35,6 +36,12 @@ import 'package:hackathon/features/client/partner/pages/human/video_call.dart';
 import 'package:hackathon/features/auth/presentation/login_page.dart';
 import 'package:hackathon/features/auth/presentation/register_page.dart';
 import 'package:hackathon/features/auth/presentation/input_data_page.dart';
+import 'package:hackathon/core/state/user_role_state.dart';
+
+import 'package:hackathon/features/psikolog/home/home_page.dart';
+import 'package:hackathon/features/psikolog/schedule/schedule_page.dart';
+import 'package:hackathon/features/psikolog/profile/profile_page.dart';
+import 'package:hackathon/features/psikolog/client/client_page.dart';
 
 bool firstInstall = true;
 bool token = false;
@@ -47,6 +54,34 @@ String get _initialLocation {
 
 final GoRouter router = GoRouter(
   initialLocation: _initialLocation,
+  redirect: (context, state) {
+    if (firstInstall || !token) return null;
+
+    final isPsychologist = userRoleState.isPsychologist;
+    final loggingInOrOnboarding =
+        state.matchedLocation == '/login' ||
+        state.matchedLocation == '/register' ||
+        state.matchedLocation == '/onboarding/welcome';
+
+    if (loggingInOrOnboarding) {
+      return isPsychologist ? '/psychologist/dashboard' : '/home';
+    }
+
+    // 3. JAGA: Jika Client mencoba masuk ke path psikolog
+    if (!isPsychologist && state.matchedLocation.startsWith('/psychologist')) {
+      return '/home';
+    }
+
+    // 4. JAGA: Jika Psikolog mencoba masuk ke path client biasa
+    if (isPsychologist &&
+        (state.matchedLocation.startsWith('/home') ||
+            state.matchedLocation.startsWith('/partner'))) {
+      return '/psychologist/dashboard';
+    }
+
+    return null;
+  },
+
   routes: [
     // Introduction & Authentication Routes
     GoRoute(
@@ -60,7 +95,16 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/input-data',
-      builder: (context, state) => const InputDataPage(),
+      builder: (context, state) {
+        final String? roleParam = state.uri.queryParameters['isPsychologist'];
+        final bool isPsychologist = roleParam == null
+            ? userRoleState.isPsychologist
+            : roleParam == 'true';
+        if (roleParam != null) {
+          userRoleState.isPsychologist = isPsychologist;
+        }
+        return InputDataPage(isPsychologist: isPsychologist);
+      },
     ),
 
     // Route yang tidak memiliki navigation bar
@@ -108,74 +152,121 @@ final GoRouter router = GoRouter(
       path: '/journal/add',
       builder: (context, state) => const JournalAdd(),
     ),
-    StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) {
-        return Home(navigationShell: navigationShell);
-      },
-      branches: [
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/home',
-              builder: (context, state) => const HomePage(),
-              routes: [
-                GoRoute(
-                  path: 'emotion-description',
-                  builder: (context, state) => const EmotionDescriptionPage(),
-                ),
-                GoRoute(
-                  path: 'expression-analysis',
-                  builder: (context, state) => const ExpressionAnalysis(),
-                ),
-                GoRoute(
-                  path: 'voice-input',
-                  builder: (context, state) => const VoiceInput(),
-                ),
-                GoRoute(
-                  path: 'analysis-result',
-                  builder: (context, state) => const AnalysisResult(),
-                ),
-              ],
-            ),
-          ],
-        ),
+    clientShellRoute,
+    psychologistShellRoute,
+  ],
+);
 
-        StatefulShellBranch(
+final clientShellRoute = StatefulShellRoute.indexedStack(
+  builder: (context, state, navigationShell) {
+    return Home(navigationShell: navigationShell);
+  },
+  branches: [
+    StatefulShellBranch(
+      routes: [
+        GoRoute(
+          path: '/home',
+          builder: (context, state) => const HomePage(),
           routes: [
             GoRoute(
-              path: '/partner',
-              builder: (context, state) => const PartnerPage(),
-              routes: [
-                GoRoute(
-                  path: 'professional-partner',
-                  builder: (context, state) => ProfessionalPartnerPage(),
-                ),
+              path: 'emotion-description',
+              builder: (context, state) => const EmotionDescriptionPage(),
+            ),
+            GoRoute(
+              path: 'expression-analysis',
+              builder: (context, state) => const ExpressionAnalysis(),
+            ),
+            GoRoute(
+              path: 'voice-input',
+              builder: (context, state) => const VoiceInput(),
+            ),
+            GoRoute(
+              path: 'analysis-result',
+              builder: (context, state) => const AnalysisResult(),
+            ),
+          ],
+        ),
+      ],
+    ),
 
-                GoRoute(
-                  path: 'video-call',
-                  builder: (context, state) {
-                    return const VideoCallPage();
-                  },
-                ),
-              ],
+    StatefulShellBranch(
+      routes: [
+        GoRoute(
+          path: '/partner',
+          builder: (context, state) => const PartnerPage(),
+          routes: [
+            GoRoute(
+              path: 'professional-partner',
+              builder: (context, state) => ProfessionalPartnerPage(),
+            ),
+
+            GoRoute(
+              path: 'video-call',
+              builder: (context, state) {
+                return const VideoCallPage();
+              },
             ),
           ],
         ),
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/journal',
-              builder: (context, state) => const JournalPage(),
-            ),
-          ],
+      ],
+    ),
+    StatefulShellBranch(
+      routes: [
+        GoRoute(
+          path: '/journal',
+          builder: (context, state) => const JournalPage(),
         ),
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/profile',
-              builder: (context, state) => const ProfilePage(),
-            ),
-          ],
+      ],
+    ),
+    StatefulShellBranch(
+      routes: [
+        GoRoute(
+          path: '/profile',
+          builder: (context, state) => const ProfilePage(),
+        ),
+      ],
+    ),
+  ],
+);
+
+final psychologistShellRoute = StatefulShellRoute.indexedStack(
+  builder: (context, state, navigationShell) {
+    return Home(navigationShell: navigationShell);
+  },
+  branches: [
+    StatefulShellBranch(
+      routes: [
+        GoRoute(
+          path: '/psychologist/home',
+          builder: (context, state) =>
+              const PsychologistHomePage(), // Halaman utama isi list pasien/jadwal
+        ),
+      ],
+    ),
+    StatefulShellBranch(
+      routes: [
+        GoRoute(
+          path: '/psychologist/schedule',
+          builder: (context, state) =>
+              const SchedulePage(), // Riwayat konsultasi selesai
+        ),
+      ],
+    ),
+    StatefulShellBranch(
+      routes: [
+        GoRoute(
+          path: '/psychologist/client',
+          builder: (context, state) =>
+              const ClientPage(), // Profil & pengaturan jadwal praktek
+        ),
+      ],
+    ),
+    StatefulShellBranch(
+      routes: [
+        GoRoute(
+          path: '/psychologist/profile',
+          builder: (context, state) =>
+              const ProfilePsychologistPage(), // Profil & pengaturan jadwal praktek
         ),
       ],
     ),

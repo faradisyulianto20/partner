@@ -130,7 +130,7 @@ class _LoginPageState extends State<LoginPage> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(27),
                             child: InkWell(
-                              onTap: () {},
+                              onTap: () => context.push('/psychologist/home'),
                               borderRadius: BorderRadius.circular(27),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(

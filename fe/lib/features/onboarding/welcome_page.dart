@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hackathon/core/theme/app_gradients.dart';
+import 'package:hackathon/core/state/user_role_state.dart';
 
 class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
@@ -109,7 +110,10 @@ class _WelcomePageState extends State<WelcomePage> {
                           child: Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              onTap: () => context.go('/login'),
+                              onTap: () {
+                                userRoleState.isPsychologist = false;
+                                context.go('/login');
+                              },
                               borderRadius: BorderRadius.circular(30),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
@@ -135,7 +139,10 @@ class _WelcomePageState extends State<WelcomePage> {
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton(
-                          onPressed: () => context.go('/login'),
+                          onPressed: () {
+                            userRoleState.isPsychologist = true;
+                            context.go('/login');
+                          },
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(

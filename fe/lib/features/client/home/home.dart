@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/shared_widgets/navbar.dart';
+import 'package:hackathon/core/state/user_role_state.dart';
 
 class Home extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
@@ -9,6 +10,8 @@ class Home extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isPsychologist = userRoleState.isPsychologist;
+
     return Scaffold(
       body: Column(
         children: [
@@ -20,6 +23,7 @@ class Home extends StatelessWidget {
           ),
           NavBar(
             currentIndex: navigationShell.currentIndex,
+            isPsychologist: isPsychologist,
             onTap: (index) {
               navigationShell.goBranch(
                 index,
