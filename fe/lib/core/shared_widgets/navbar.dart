@@ -18,16 +18,16 @@ class NavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final _items = isPsychologist
         ? const [
-            (icon: Icons.home, label: 'Beranda'),
-            (icon: Icons.calendar_today, label: 'Jadwal Sesi'),
-            (icon: Icons.people, label: 'Klien'),
-            (icon: Icons.person, label: 'Profil'),
-          ]
-        : const [
             (icon: Icons.home, label: 'Home'),
             (icon: Icons.people, label: 'Partner'),
             (icon: Icons.edit_note, label: 'Journal'),
             (icon: Icons.person, label: 'Profile'),
+          ]
+        : const [
+            (icon: Icons.home, label: 'Beranda'),
+            (icon: Icons.calendar_today, label: 'Jadwal Sesi'),
+            (icon: Icons.people, label: 'Klien'),
+            (icon: Icons.person, label: 'Profil'),
           ];
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     return Container(
