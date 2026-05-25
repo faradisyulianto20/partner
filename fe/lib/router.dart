@@ -40,8 +40,13 @@ import 'package:hackathon/core/state/user_role_state.dart';
 
 import 'package:hackathon/features/psikolog/home/home_page.dart';
 import 'package:hackathon/features/psikolog/schedule/schedule_page.dart';
-import 'package:hackathon/features/psikolog/profile/profile_page.dart';
 import 'package:hackathon/features/psikolog/client/client_page.dart';
+
+import 'package:hackathon/features/psikolog/profile/profile_page.dart';
+import 'package:hackathon/features/psikolog/profile/review.dart';
+import 'package:hackathon/features/psikolog/profile/income.dart';
+import 'package:hackathon/features/psikolog/profile/schedule.dart';
+import 'package:hackathon/features/psikolog/profile/profile_service.dart';
 
 bool firstInstall = true;
 bool token = false;
@@ -152,6 +157,9 @@ final GoRouter router = GoRouter(
       path: '/journal/add',
       builder: (context, state) => const JournalAdd(),
     ),
+    GoRoute(path: '/psychologist/profile/schedule', builder: (context, state) => const Schedule()),
+    GoRoute(path: '/psychologist/profile/profile-service', builder: (context, state) => const ProfileService()),
+    GoRoute(path: '/psychologist/profile/income', builder: (context, state) => const Income()),
     clientShellRoute,
     psychologistShellRoute,
   ],
@@ -265,8 +273,10 @@ final psychologistShellRoute = StatefulShellRoute.indexedStack(
       routes: [
         GoRoute(
           path: '/psychologist/profile',
-          builder: (context, state) =>
-              const ProfilePsychologistPage(), // Profil & pengaturan jadwal praktek
+          builder: (context, state) => const ProfilePsychologistPage(),
+          routes: [
+            GoRoute(path: 'review', builder: (context, state) => Review()),
+          ], // Profil & pengaturan jadwal praktek
         ),
       ],
     ),
