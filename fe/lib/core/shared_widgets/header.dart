@@ -43,7 +43,7 @@ class Header extends StatelessWidget {
                     Text(
                       greeting + ', ' + userName,
                       style: GoogleFonts.nunito(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                       ),
