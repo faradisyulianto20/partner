@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hackathon/core/theme/app_gradients.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 enum PsychologistDetailMode { session, request, done }
 
@@ -130,6 +131,7 @@ class PsychologistDetailSheet extends StatelessWidget {
                 ),
               ),
               IconButton(
+                
                 onPressed: () => Navigator.pop(context),
                 icon: Icon(Icons.close, color: primaryColor),
               ),
@@ -180,7 +182,7 @@ class PsychologistDetailSheet extends StatelessWidget {
           Text(
             'Informasi Sesi',
             style: GoogleFonts.nunito(
-              fontSize: 13,
+              fontSize: 16,
               fontWeight: FontWeight.w800,
               color: primaryColor,
             ),
@@ -199,7 +201,7 @@ class PsychologistDetailSheet extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _InfoTile(
-            icon: Icons.sentiment_satisfied_alt,
+            icon: 'images/mascot/mascot-white.svg',
             label: 'Mood Terakhir',
             value: data.mood,
           ),
@@ -207,7 +209,7 @@ class PsychologistDetailSheet extends StatelessWidget {
           Text(
             'Catatan Klien',
             style: GoogleFonts.nunito(
-              fontSize: 13,
+              fontSize: 16,
               fontWeight: FontWeight.w800,
               color: primaryColor,
             ),
@@ -218,7 +220,7 @@ class PsychologistDetailSheet extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: const Color(0xFFF7F9FC),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(6),
               border: Border.all(color: softBlue, width: 1),
             ),
             child: Text(
@@ -331,7 +333,7 @@ class _PrimaryButton extends StatelessWidget {
 }
 
 class _InfoTile extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String label;
   final String value;
 
@@ -351,7 +353,15 @@ class _InfoTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.white),
+          SizedBox(
+            width: 32,
+            height: 32,
+            child: icon is IconData
+                ? Icon(icon as IconData, color: Colors.white, size: 22)
+                : icon is String
+                ? SvgPicture.asset(icon as String)
+                : const SizedBox.shrink(), // Jika kosong/tidak sesuai
+          ),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -361,14 +371,14 @@ class _InfoTile extends StatelessWidget {
                 style: GoogleFonts.nunito(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white70,
+                  color: Colors.white,
                 ),
               ),
               Text(
                 value,
                 style: GoogleFonts.nunito(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
                   color: Colors.white,
                 ),
               ),
