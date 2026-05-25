@@ -1,0 +1,47 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+    USER
+    PSYCHOLOGIST
+}
+
+enum Gender {
+    MALE
+    FEMALE
+}
+
+model User {
+    id        String         @id @default(cuid())
+    role      UserRole
+    googleId  String         @unique
+    email     String         @unique
+    name      String?
+    username  String?
+    birthDate DateTime?
+    gender    Gender?
+    photoUrl  String?
+    entries   EmotionEntry[]
+    createdAt DateTime       @default(now())
+    updatedAt DateTime       @updatedAt
+}
+
+model EmotionEntry {
+    id              String   @id @default(cuid())
+    userId          String
+    text            String
+    moodLabel       String
+    moodScore       Float?
+    summary         String?
+    recommendations String?
+    rawResponse     Json?
+    createdAt       DateTime @default(now())
+
+    user User @relation(fields: [userId], references: [id])
+}

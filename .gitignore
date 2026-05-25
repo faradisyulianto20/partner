@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # compiled output
 /dist
 /node_modules
@@ -54,3 +55,131 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+=======
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.packages
+.flutter-plugins-dependencies
+.flutter-plugins
+.pub-cache/
+.pub/
+pubspec.lock
+**/build/
+**/coverage/
+
+# Generated files
+**/generated_plugin_registrant.dart
+**/generated_plugins.cmake
+**/GeneratedPluginRegistrant.swift
+
+# Firebase
+google-services.json
+GoogleService-Info.plist
+
+# Env
+.env
+.env.*
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+**/android/app/debug
+**/android/app/profile
+**/android/app/release
+
+# iOS
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+
+# MacOS
+**/macos/Flutter/ephemeral/
+
+# Linux
+**/linux/flutter/ephemeral/
+
+# Windows
+**/windows/flutter/ephemeral/
+
+# Temporary
+*.tmp
+*.temp
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+
+# Crashlytics
+crashlytics-build.properties
+firebase_app_id_file.json
+
+# Build outputs
+*.apk
+*.ipa
+*.aab
+
+# Gradle
+.gradle/
+**/android/local.properties
+
+# Generated native files
+**/ios/Flutter/GeneratedPluginRegistrant.h
+**/ios/Flutter/GeneratedPluginRegistrant.m
+
+# Generated Dart
+*.g.dart
+*.config.dart
+
+# Test & Coverage
+.nyc_output/
+
+# Vim/Emacs
+*.swo
+*~
+
+# Windows
+thumbs.db
+
+# Node (if web development)
+node_modules/
+
+# Python
+__pycache__/
+*.egg-info/
+
+# Isolate/exclude generated plugin registrant files
+**/generated_plugin_registrant.*
+>>>>>>> origin/main
