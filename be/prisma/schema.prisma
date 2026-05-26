@@ -8,13 +8,15 @@ datasource db {
 }
 
 model Analysis {
-    id              String   @id @default(uuid())
-    createdAt       DateTime @default(now())
+    id              String          @id @default(uuid())
+    createdAt       DateTime        @default(now())
+    userId          String?
     inputText       String
     emotionLabel    String
     summary         String
     recommendations Json?
     narrative       String?
+    energyCategory  EnergyCategory?
     rawJson         Json?
 }
 
@@ -36,4 +38,61 @@ model ChatMessage {
     createdAt DateTime @default(now())
 
     session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+enum EnergyCategory {
+    POSITIVE
+    NEGATIVE
+    NEUTRAL
+}
+
+model PartnerQueue {
+    id        String         @id @default(uuid())
+    userId    String
+    energy    EnergyCategory
+    createdAt DateTime       @default(now())
+}
+
+model PartnerMatch {
+    id        String           @id @default(uuid())
+    userAId   String
+    userBId   String
+    energyA   EnergyCategory
+    energyB   EnergyCategory
+    status    String
+    createdAt DateTime         @default(now())
+    messages  PartnerMessage[]
+}
+
+model PartnerMessage {
+    id        String   @id @default(uuid())
+    matchId   String
+    userId    String
+    content   String
+    createdAt DateTime @default(now())
+
+    match PartnerMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+}
+
+model PartnerFavorite {
+    id        String   @id @default(uuid())
+    userId    String
+    partnerId String
+    createdAt DateTime @default(now())
+}
+
+model PartnerBlock {
+    id            String   @id @default(uuid())
+    userId        String
+    blockedUserId String
+    reason        String?
+    createdAt     DateTime @default(now())
+}
+
+model PartnerReport {
+    id             String   @id @default(uuid())
+    userId         String
+    reportedUserId String
+    reason         String
+    createdAt      DateTime @default(now())
 }

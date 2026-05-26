@@ -25,7 +25,7 @@ export class AnalysisService {
         this.ai = new GoogleGenAI({ apiKey });
     }
 
-    async analyzeText(inputText: string) {
+    async analyzeText(inputText: string, userId?: string) {
         if (!inputText?.trim()) {
             throw new BadRequestException('text is required');
         }
@@ -64,10 +64,12 @@ export class AnalysisService {
 
         const saved = await this.prismaService.analysis.create({
             data: {
+                userId: userId?.trim() || null,
                 inputText,
                 emotionLabel: result.emotionLabel,
                 summary: result.summary,
                 recommendations: result.recommendations,
+                energyCategory: this.deriveEnergyCategory(result.emotionLabel, result.summary),
                 rawJson: parsed,
             },
         });
@@ -79,7 +81,7 @@ export class AnalysisService {
         };
     }
 
-    async analyzeFace(imageBase64: string, mimeType?: string) {
+    async analyzeFace(imageBase64: string, mimeType?: string, userId?: string) {
         if (!imageBase64?.trim()) {
             throw new BadRequestException('imageBase64 is required');
         }
@@ -133,10 +135,12 @@ export class AnalysisService {
 
         const saved = await this.prismaService.analysis.create({
             data: {
+                userId: userId?.trim() || null,
                 inputText: '[face-image]',
                 emotionLabel: result.emotionLabel,
                 summary: result.summary,
                 recommendations: result.recommendations,
+                energyCategory: this.deriveEnergyCategory(result.emotionLabel, result.summary),
                 rawJson: parsed,
             },
         });
@@ -148,7 +152,7 @@ export class AnalysisService {
         };
     }
 
-    async getDashboard() {
+    async getDashboard(userId?: string) {
         const now = new Date();
         const startDate = new Date(now);
         startDate.setHours(0, 0, 0, 0);
@@ -159,6 +163,7 @@ export class AnalysisService {
                 createdAt: {
                     gte: startDate,
                 },
+                userId: userId?.trim() || undefined,
             },
             orderBy: {
                 createdAt: 'desc',
@@ -251,6 +256,39 @@ export class AnalysisService {
     private getDayLabel(date: Date) {
         const labels = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
         return labels[date.getDay()];
+    }
+
+    private deriveEnergyCategory(emotionLabel: string, summary: string) {
+        const text = `${emotionLabel} ${summary}`.toLowerCase();
+        const positiveKeywords = [
+            'bahagia',
+            'senang',
+            'lega',
+            'tenang',
+            'damai',
+            'positif',
+            'semangat',
+        ];
+        const negativeKeywords = [
+            'sedih',
+            'cemas',
+            'khawatir',
+            'takut',
+            'marah',
+            'lelah',
+            'stres',
+            'tertekan',
+            'overthinking',
+            'gelisah',
+        ];
+
+        if (negativeKeywords.some((word) => text.includes(word))) {
+            return 'NEGATIVE';
+        }
+        if (positiveKeywords.some((word) => text.includes(word))) {
+            return 'POSITIVE';
+        }
+        return 'NEUTRAL';
     }
 
     private normalizeBase64Image(imageBase64: string, mimeType?: string) {
