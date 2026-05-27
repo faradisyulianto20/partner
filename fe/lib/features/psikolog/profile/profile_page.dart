@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProfilePsychologistPage extends StatefulWidget {
   const ProfilePsychologistPage({super.key});
@@ -11,6 +12,7 @@ class ProfilePsychologistPage extends StatefulWidget {
 }
 
 class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
+  final SupabaseClient supabase = Supabase.instance.client;
   final Color _primaryColor = const Color(0xFF1B517A);
   final Color _softBlue = const Color(0xFF7DA0C4);
   final LinearGradient _headerGradient = const LinearGradient(
@@ -282,14 +284,16 @@ class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
-        onPressed: () => context.go('/login'),
+        onPressed: () async {
+          await supabase.auth.signOut();
+          if (!mounted) return;
+          context.go('/onboarding/welcome');
+        },
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 14),
           side: const BorderSide(color: Color(0xFFF1A99E), width: 1.2),
           backgroundColor: const Color(0xFFFDECEA),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(6),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         ),
         icon: const Icon(Icons.logout, color: Color(0xFFDE6A5A)),
         label: Text(

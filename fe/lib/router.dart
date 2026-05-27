@@ -69,7 +69,7 @@ final GoRouter router = GoRouter(
         state.matchedLocation == '/onboarding/welcome';
 
     if (loggingInOrOnboarding) {
-      return isPsychologist ? '/psychologist/dashboard' : '/home';
+      return isPsychologist ? '/psychologist/home' : '/home';
     }
 
     // 3. JAGA: Jika Client mencoba masuk ke path psikolog
@@ -81,7 +81,7 @@ final GoRouter router = GoRouter(
     if (isPsychologist &&
         (state.matchedLocation.startsWith('/home') ||
             state.matchedLocation.startsWith('/partner'))) {
-      return '/psychologist/dashboard';
+      return '/psychologist/home';
     }
 
     return null;

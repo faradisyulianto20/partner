@@ -5,34 +5,25 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+class EditProfile extends StatefulWidget {
+  const EditProfile({super.key});
 
   @override
-  State<ProfilePage> createState() => _ProfilePageState();
+  State<EditProfile> createState() => _EditProfileState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _EditProfileState extends State<EditProfile> {
   final SupabaseClient supabase = Supabase.instance.client;
-  final TextEditingController _nameController = TextEditingController(
-    text: 'Alex Ferguson',
-  );
-  final TextEditingController _usernameController = TextEditingController(
-    text: '@alexfer321',
-  );
-  final TextEditingController _bioController = TextEditingController(
-    text:
-        'Hai aku adalah orang baik yang suka menolong tidak suka memerintah, perhatian, dan hobi olahraga dan bermain musik',
-  );
-  final TextEditingController _emailController = TextEditingController(
-    text: 'alexferguso76@gmail.com',
-  );
-  final TextEditingController _birthDateController = TextEditingController(
-    text: '20 Juni 2005',
-  );
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _bioController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _birthDateController = TextEditingController();
+
   File? _profileImage;
   String? _profileImageUrl;
   String _selectedGender = 'Laki-laki';
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -50,6 +41,26 @@ class _ProfilePageState extends State<ProfilePage> {
         .trim();
     if (displayName != null && displayName.isNotEmpty) {
       _nameController.text = displayName;
+    }
+
+    final username = metadata['username']?.toString();
+    if (username != null && username.isNotEmpty) {
+      _usernameController.text = username;
+    }
+
+    final bio = metadata['bio']?.toString();
+    if (bio != null && bio.isNotEmpty) {
+      _bioController.text = bio;
+    }
+
+    final gender = metadata['gender']?.toString();
+    if (gender == 'Perempuan' || gender == 'Laki-laki') {
+      _selectedGender = gender!;
+    }
+
+    final birthDate = metadata['birth_date']?.toString();
+    if (birthDate != null && birthDate.isNotEmpty) {
+      _birthDateController.text = birthDate;
     }
 
     if (user.email != null && user.email!.isNotEmpty) {
@@ -106,11 +117,47 @@ class _ProfilePageState extends State<ProfilePage> {
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
-  Future<void> _handleLogout() async {
-    await supabase.auth.signOut();
-    if (mounted) {
-      context.go('/onboarding/welcome');
+  Future<void> _handleSave() async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
+
+    try {
+      await supabase.auth.updateUser(
+        UserAttributes(
+          data: {
+            'full_name': _nameController.text.trim(),
+            'username': _usernameController.text.trim(),
+            'bio': _bioController.text.trim(),
+            'gender': _selectedGender,
+            'birth_date': _birthDateController.text.trim(),
+          },
+        ),
+      );
+      if (!mounted) return;
+      _showToast('Perubahan profil berhasil disimpan');
+      context.pop();
+    } catch (e) {
+      if (!mounted) return;
+      _showToast('Gagal menyimpan perubahan: $e', isError: true);
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
+  }
+
+  void _showToast(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError
+            ? Colors.red.shade600
+            : const Color(0xFF1F4C7A),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   @override
@@ -136,6 +183,10 @@ class _ProfilePageState extends State<ProfilePage> {
           'Profil Pengguna',
           style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
         ),
+        leading: IconButton(
+          onPressed: () => context.pop(),
+          icon: const Icon(Icons.arrow_back),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -152,18 +203,21 @@ class _ProfilePageState extends State<ProfilePage> {
               label: 'Nama Tampilan',
               controller: _nameController,
               icon: Icons.person_outline,
+              hintText: 'nama kamu',
             ),
             const SizedBox(height: 12),
             _LabeledField(
               label: 'Username',
               controller: _usernameController,
               icon: Icons.alternate_email,
+              hintText: '@username',
             ),
             const SizedBox(height: 12),
             _LabeledField(
               label: 'Bio',
               controller: _bioController,
               maxLines: 4,
+              hintText: 'Ceritakan tentangmu',
             ),
             const SizedBox(height: 12),
             _LabeledField(
@@ -173,7 +227,7 @@ class _ProfilePageState extends State<ProfilePage> {
               readOnly: true,
             ),
             const SizedBox(height: 16),
-            _SectionLabel(text: 'Jenis Kelamin'),
+            const _SectionLabel(text: 'Jenis Kelamin'),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -201,12 +255,13 @@ class _ProfilePageState extends State<ProfilePage> {
               icon: Icons.calendar_month,
               readOnly: true,
               onTap: _pickBirthDate,
+              hintText: 'Kapan tanggal lahirmu?',
             ),
             const SizedBox(height: 18),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {},
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _handleSave,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1F4C7A),
                   foregroundColor: Colors.white,
@@ -215,34 +270,19 @@ class _ProfilePageState extends State<ProfilePage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                icon: const Icon(Icons.edit, size: 18),
-                label: const Text(
-                  'Edit Data Diri',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _handleLogout,
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFFF1A99E)),
-                  backgroundColor: const Color(0xFFFDECEA),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                icon: const Icon(Icons.logout, color: Color(0xFFDE6A5A)),
-                label: const Text(
-                  'Keluar Akun',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFFDE6A5A),
-                  ),
-                ),
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Simpan Perubahan',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
               ),
             ),
           ],
@@ -336,6 +376,7 @@ class _LabeledField extends StatelessWidget {
   final int maxLines;
   final bool readOnly;
   final VoidCallback? onTap;
+  final String? hintText;
 
   const _LabeledField({
     required this.label,
@@ -344,6 +385,7 @@ class _LabeledField extends StatelessWidget {
     this.maxLines = 1,
     this.readOnly = false,
     this.onTap,
+    this.hintText,
   });
 
   @override
@@ -374,7 +416,7 @@ class _LabeledField extends StatelessWidget {
             prefixIcon: icon != null
                 ? Icon(icon, color: const Color(0xFF1F4C7A))
                 : null,
-            hintText: label == 'Bio' ? 'Ceritakan tentangmu' : null,
+            hintText: hintText,
             filled: true,
             fillColor: readOnly ? const Color(0xFFF0F2F6) : Colors.white,
             contentPadding: const EdgeInsets.symmetric(

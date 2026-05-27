@@ -1,7 +1,16 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hackathon/core/state/user_role_state.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -11,6 +20,21 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  final SupabaseClient supabase = Supabase.instance.client;
+
+  // Mengambil Client ID murni dari file .env
+  static final String _webClientId = dotenv.env['WEB_CLIENT'] ?? '';
+  static final String? _iosClientId = dotenv.env['IOS_CLIENT'];
+  static final String? _androidClientId = dotenv.env['ANDROID_CLIENT'];
+
+  // Opsional jika kamu membutuhkan konfigurasi Supabase langsung dari Env di page ini
+  static final String _supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
+  static final String _supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+
+  StreamSubscription<AuthState>? _authSubscription;
+  String? _userId;
+  bool _didNavigate = false;
+
   // Vertical gradient
   final LinearGradient verticalGradient = const LinearGradient(
     begin: Alignment.topCenter,
@@ -24,6 +48,74 @@ class _RegisterPageState extends State<RegisterPage> {
     end: Alignment.centerRight,
     colors: [Color(0xFF578BB3), Color(0xFF194F78)],
   );
+
+  @override
+  void initState() {
+    super.initState();
+    _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
+      if (data.session?.user != null && !_didNavigate) {
+        _didNavigate = true;
+        if (mounted) {
+          context.go(
+            userRoleState.isPsychologist ? '/psychologist/home' : '/home',
+          );
+        }
+      }
+
+      setState(() {
+        _userId = data.session?.user.id;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _nativeGoogleSignIn() async {
+    final GoogleSignIn signIn = GoogleSignIn.instance;
+
+    try {
+      await signIn.initialize(
+        // Only pass iOS clientId on iOS. Android uses serverClientId.
+        clientId: Platform.isIOS ? _iosClientId : null,
+        serverClientId: _webClientId,
+      );
+
+      final googleAccount = await signIn.authenticate();
+      if (googleAccount == null) {
+        return;
+      }
+
+      final googleAuthentication = googleAccount.authentication;
+      final idToken = googleAuthentication.idToken;
+
+      if (idToken == null) {
+        throw 'No ID Token found.';
+      }
+
+      await supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+      );
+    } on GoogleSignInException catch (error) {
+      if (error.code == GoogleSignInExceptionCode.canceled) {
+        return;
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      await _nativeGoogleSignIn();
+      return;
+    }
+
+    await supabase.auth.signInWithOAuth(OAuthProvider.google);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +211,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(27),
                           child: InkWell(
-                            onTap: () => context.go('/input-data'),
+                            onTap: _handleGoogleSignIn,
                             borderRadius: BorderRadius.circular(27),
 
                             child: Padding(
@@ -149,6 +241,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    
                     // Divider,
                   ],
                 ),
