@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { AnalysisModule } from './modules/analysis/analysis.module';
 import { AiPartnerModule } from './modules/ai-partner/ai-partner.module';
 import { HumanPartnerModule } from './modules/human-partner/human-partner.module';
+import { PsychologistModule } from './modules/psychologist/psychologist.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
 
 @Module({
@@ -14,6 +15,7 @@ import { PrismaModule } from './modules/prisma/prisma.module';
     AnalysisModule,
     AiPartnerModule,
     HumanPartnerModule,
+    PsychologistModule,
   ],
   controllers: [AppController],
   providers: [AppService],

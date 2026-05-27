@@ -40,6 +40,131 @@ model ChatMessage {
     session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
+enum Gender {
+    MALE
+    FEMALE
+}
+
+enum VerificationStatus {
+    PENDING
+    VERIFIED
+    REJECTED
+}
+
+enum VerificationDocType {
+    KTP
+    FACE_WITH_KTP
+    STR_LICENSE
+}
+
+enum BookingStatus {
+    PENDING_PAYMENT
+    PAID
+    CONFIRMED
+    CANCELLED
+}
+
+enum PaymentStatus {
+    UNPAID
+    PAID
+    FAILED
+}
+
+model Psychologist {
+    id              String   @id @default(uuid())
+    fullName        String
+    email           String?  @unique
+    phoneNumber     String
+    gender          Gender
+    location        String
+    clinicName      String
+    specialization  String
+    clientsHandled  Int
+    yearsExperience Int
+    nik             String   @unique
+    strNumber       String   @unique
+    bio             String?
+    tags            String[]
+    rating          Float    @default(0)
+    reviewCount     Int      @default(0)
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    education          PsychologistEducation[]
+    reviews            PsychologistReview[]
+    schedules          PsychologistSchedule[]
+    documents          PsychologistVerificationDoc[]
+    bookings           PsychologistBooking[]
+    emailVerifications PsychologistEmailVerification[]
+}
+
+model PsychologistEducation {
+    id             String @id @default(uuid())
+    psychologistId String
+    level          String
+    institution    String
+    year           Int?
+
+    psychologist Psychologist @relation(fields: [psychologistId], references: [id], onDelete: Cascade)
+}
+
+model PsychologistReview {
+    id             String   @id @default(uuid())
+    psychologistId String
+    userId         String
+    rating         Int
+    comment        String?
+    createdAt      DateTime @default(now())
+
+    psychologist Psychologist @relation(fields: [psychologistId], references: [id], onDelete: Cascade)
+}
+
+model PsychologistSchedule {
+    id             String  @id @default(uuid())
+    psychologistId String
+    dayOfWeek      Int
+    startTime      String
+    endTime        String
+    isAvailable    Boolean @default(true)
+
+    psychologist Psychologist @relation(fields: [psychologistId], references: [id], onDelete: Cascade)
+}
+
+model PsychologistVerificationDoc {
+    id             String              @id @default(uuid())
+    psychologistId String
+    type           VerificationDocType
+    url            String
+    status         VerificationStatus  @default(PENDING)
+    createdAt      DateTime            @default(now())
+
+    psychologist Psychologist @relation(fields: [psychologistId], references: [id], onDelete: Cascade)
+}
+
+model PsychologistEmailVerification {
+    id             String             @id @default(uuid())
+    psychologistId String
+    email          String
+    token          String             @unique
+    status         VerificationStatus @default(PENDING)
+    expiresAt      DateTime
+    createdAt      DateTime           @default(now())
+
+    psychologist Psychologist @relation(fields: [psychologistId], references: [id], onDelete: Cascade)
+}
+
+model PsychologistBooking {
+    id             String        @id @default(uuid())
+    psychologistId String
+    userId         String
+    scheduledAt    DateTime
+    status         BookingStatus @default(PENDING_PAYMENT)
+    paymentStatus  PaymentStatus @default(UNPAID)
+    createdAt      DateTime      @default(now())
+
+    psychologist Psychologist @relation(fields: [psychologistId], references: [id], onDelete: Cascade)
+}
+
 enum EnergyCategory {
     POSITIVE
     NEGATIVE
