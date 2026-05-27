@@ -1,117 +1,440 @@
-<<<<<<< HEAD
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Hackathon BE API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Dokumentasi ringkas untuk endpoint API di backend ini.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Base URL
 
-## Description
+- Local: http://localhost:3000
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Format umum
 
-## Project setup
+- Content-Type: application/json (kecuali upload file)
+- Semua respons dikembalikan dalam JSON
+- Field dengan tanda * bersifat wajib
 
-```bash
-$ npm install
+## Health
+
+### GET /
+
+Respon teks sederhana untuk memastikan server hidup.
+
+Response
+
+- 200 OK: string
+
+## AI Partner
+
+### POST /ai/chat/session
+
+Buat sesi chat AI.
+
+Body
+
+```json
+{
+  "userId": "string",
+  "title": "string"
+}
 ```
 
-## Compile and run the project
+Parameter
 
-```bash
-# development
-$ npm run start
+- userId: string, optional
+- title: string, optional
 
-# watch mode
-$ npm run start:dev
+Response
 
-# production mode
-$ npm run start:prod
+- 200 OK: objek sesi (sesuai implementasi service)
+
+### GET /ai/chat/session/:id
+
+Ambil detail sesi chat AI.
+
+Path params
+
+- id*: string
+
+Response
+
+- 200 OK: detail sesi
+
+### POST /ai/chat/session/:id/message
+
+Kirim pesan ke sesi chat AI.
+
+Path params
+
+- id*: string
+
+Body
+
+```json
+{
+  "userId": "string",
+  "content": "string"
+}
 ```
 
-## Run tests
+Parameter
 
-```bash
-# unit tests
-$ npm run test
+- userId: string, optional
+- content*: string
 
-# e2e tests
-$ npm run test:e2e
+Response
 
-# test coverage
-$ npm run test:cov
+- 200 OK: hasil dari AI
+
+## Analysis
+
+### POST /analysis/text
+
+Analisis teks.
+
+Body
+
+```json
+{
+  "text": "string",
+  "userId": "string"
+}
 ```
 
-## Deployment
+Parameter
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- text*: string
+- userId: string, optional
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Response
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+- 200 OK: hasil analisis teks
+
+### POST /analysis/face
+
+Analisis wajah dari gambar.
+
+Content-Type
+
+- multipart/form-data
+
+Form-data
+
+- image*: file (field name: image)
+- mimeType: string, optional (jika tidak diisi, memakai mimetype file)
+- userId: string, optional
+
+Response
+
+- 200 OK: hasil analisis wajah
+- 400 Bad Request: jika image tidak dikirim
+
+### GET /analysis/dashboard
+
+Ringkasan dashboard analisis.
+
+Query params
+
+- userId: string, optional
+
+Response
+
+- 200 OK: data dashboard
+
+## Human Partner
+
+### POST /partner/queue/join
+
+Masuk antrean partner manusia.
+
+Body
+
+```json
+{
+  "userId": "string"
+}
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Parameter
 
-## Resources
+- userId*: string
 
-Check out a few resources that may come in handy when working with NestJS:
+Response
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+- 200 OK: status antrean
 
-## Support
+### POST /partner/queue/leave
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Keluar dari antrean partner manusia.
 
-## Stay in touch
+Body
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```json
+{
+  "userId": "string"
+}
+```
 
-## License
+Parameter
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
-=======
-# hackathon
+- userId*: string
 
-A new Flutter project.
+Response
 
-## Getting Started
+- 200 OK: status antrean
 
-This project is a starting point for a Flutter application.
+### GET /partner/match/:id
 
-A few resources to get you started if this is your first Flutter project:
+Ambil detail match berdasarkan id.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Path params
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
->>>>>>> origin/main
+- id*: string
+
+Response
+
+- 200 OK: detail match
+
+### POST /partner/match/:id/favorite
+
+Tandai partner sebagai favorit.
+
+Path params
+
+- id*: string
+
+Body
+
+```json
+{
+  "userId": "string",
+  "targetUserId": "string"
+}
+```
+
+Parameter
+
+- userId*: string
+- targetUserId*: string
+
+Response
+
+- 200 OK: status favorit
+
+### POST /partner/match/:id/block
+
+Blokir partner.
+
+Path params
+
+- id*: string
+
+Body
+
+```json
+{
+  "userId": "string",
+  "targetUserId": "string",
+  "reason": "string"
+}
+```
+
+Parameter
+
+- userId*: string
+- targetUserId*: string
+- reason: string, optional
+
+Response
+
+- 200 OK: status blokir
+
+### POST /partner/match/:id/report
+
+Laporkan partner.
+
+Path params
+
+- id*: string
+
+Body
+
+```json
+{
+  "userId": "string",
+  "targetUserId": "string",
+  "reason": "string"
+}
+```
+
+Parameter
+
+- userId*: string
+- targetUserId*: string
+- reason: string, optional (default: unspecified)
+
+Response
+
+- 200 OK: status laporan
+
+### GET /partner/favorites/:userId
+
+Daftar partner favorit.
+
+Path params
+
+- userId*: string
+
+Response
+
+- 200 OK: daftar favorit
+
+## Psychologist
+
+### POST /psychologist/search
+
+Cari psikolog.
+
+Body
+
+```json
+{
+  "userId": "string",
+  "criteria": "string",
+  "limit": 10
+}
+```
+
+Parameter
+
+- userId: string, optional
+- criteria: string, optional
+- limit: number, optional
+
+Response
+
+- 200 OK: daftar psikolog
+
+### GET /psychologist/:id
+
+Detail psikolog.
+
+Path params
+
+- id*: string
+
+Response
+
+- 200 OK: detail psikolog
+
+### POST /psychologist/booking
+
+Buat booking sesi psikolog.
+
+Body
+
+```json
+{
+  "userId": "string",
+  "psychologistId": "string",
+  "fullName": "string",
+  "method": "CHAT",
+  "price": 0,
+  "notes": "string",
+  "scheduledAt": "2026-05-28T08:30:00.000Z"
+}
+```
+
+Parameter
+
+- userId*: string
+- psychologistId*: string
+- fullName*: string
+- method*: CHAT | VOICE | VIDEO
+- price*: number
+- notes: string, optional
+- scheduledAt*: string (ISO date)
+
+Response
+
+- 200 OK: detail booking
+
+### POST /psychologist/booking/:id/pay
+
+Bayar booking.
+
+Path params
+
+- id*: string (booking id)
+
+Body
+
+```json
+{
+  "userId": "string"
+}
+```
+
+Parameter
+
+- userId*: string
+
+Response
+
+- 200 OK: status pembayaran
+
+### POST /psychologist/review
+
+Tambah review psikolog.
+
+Body
+
+```json
+{
+  "userId": "string",
+  "psychologistId": "string",
+  "rating": 5,
+  "comment": "string"
+}
+```
+
+Parameter
+
+- userId*: string
+- psychologistId*: string
+- rating*: number
+- comment: string, optional
+
+Response
+
+- 200 OK: review berhasil
+
+### POST /psychologist/verification/request
+
+Minta verifikasi email psikolog.
+
+Body
+
+```json
+{
+  "psychologistId": "string"
+}
+```
+
+Parameter
+
+- psychologistId*: string
+
+Response
+
+- 200 OK: status permintaan
+
+### GET /psychologist/verification/confirm/:token
+
+Konfirmasi verifikasi email.
+
+Path params
+
+- token*: string
+
+Response
+
+- 200 OK: status verifikasi

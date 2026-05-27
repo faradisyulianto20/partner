@@ -2,7 +2,7 @@ import { BadRequestException, Body, Controller, Get, Post, Query, UploadedFile, 
 import { AnalysisService } from './analysis.service';
 import { CreateAnalysisDto } from './dto/create-analysis.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import 'multer';
+import { memoryStorage } from 'multer';
 
 @Controller('analysis')
 export class AnalysisController {
@@ -14,7 +14,11 @@ export class AnalysisController {
     }
 
     @Post('face')
-    @UseInterceptors(FileInterceptor('image'))
+    @UseInterceptors(
+        FileInterceptor('image', {
+            storage: memoryStorage(),
+        }),
+    )
     analyzeFace(
         @UploadedFile() file?: Express.Multer.File,
         @Body() body?: { mimeType?: string; userId?: string },

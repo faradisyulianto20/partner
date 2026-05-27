@@ -5,6 +5,9 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:hackathon/core/shared_widgets/waveform.dart';
+import 'package:hackathon/core/models/analysis_models.dart';
+import 'package:hackathon/core/services/analysis_service.dart';
+import 'package:hackathon/core/services/api_client.dart';
 
 class VoiceInput extends StatefulWidget {
   const VoiceInput({super.key});
@@ -14,13 +17,18 @@ class VoiceInput extends StatefulWidget {
 }
 
 class _VoiceInputState extends State<VoiceInput> with TickerProviderStateMixin {
+  static const String _baseUrl = 'http://192.168.137.1:3000';
+
   final SpeechToText _speechToText = SpeechToText();
+  late final ApiClient _apiClient = ApiClient(baseUrl: _baseUrl);
+  late final AnalysisService _analysisService = AnalysisService(_apiClient);
 
   bool _speechEnabled = false;
   bool _isRecording = false;
   bool _isPaused = false;
   String _transcriptText = '';
   bool _textConfirmed = false;
+  bool _isSubmitting = false;
   int _dotCount = 0;
   int _seconds = 0;
 
@@ -130,6 +138,7 @@ class _VoiceInputState extends State<VoiceInput> with TickerProviderStateMixin {
     _dotTimer?.cancel();
     _waveController.dispose();
     _speechToText.stop();
+    _apiClient.close();
     super.dispose();
   }
 
@@ -260,8 +269,49 @@ class _VoiceInputState extends State<VoiceInput> with TickerProviderStateMixin {
     _dotTimer?.cancel();
     await _speechToText.stop();
 
-    if (!mounted) return;
-    context.go('/home/emotion-description');
+    await _submitAnalysisFromTranscript();
+  }
+
+  Future<void> _submitAnalysisFromTranscript() async {
+    if (_isSubmitting) {
+      return;
+    }
+
+    final text = _transcriptText.trim();
+    if (text.isEmpty) {
+      _showSnackBar('Belum ada suara yang terdeteksi.');
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final response = await _analysisService.analyzeText(
+        AnalysisTextRequest(text: text),
+      );
+
+      if (!response.isSuccess) {
+        _showSnackBar('Gagal menganalisis perasaan. Coba lagi ya.');
+        return;
+      }
+
+      final result = response.data.result;
+
+      if (!mounted) return;
+      context.go('/home/analysis-result', extra: result);
+    } catch (_) {
+      if (!mounted) return;
+      _showSnackBar('Terjadi kesalahan. Silakan coba lagi.');
+    } finally {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   String get _formattedTime {
@@ -278,6 +328,7 @@ class _VoiceInputState extends State<VoiceInput> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final bool actionsDisabled = (_isRecording && !_isPaused) || _isSubmitting;
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6F8),
       body: Column(
@@ -290,10 +341,10 @@ class _VoiceInputState extends State<VoiceInput> with TickerProviderStateMixin {
               child: Row(
                 children: [
                   IconButton(
-                    onPressed: _isRecording ? null : _stopAndClear,
+                    onPressed: actionsDisabled ? null : _stopAndClear,
                     icon: Icon(
                       Icons.arrow_back_ios,
-                      color: _isRecording
+                      color: actionsDisabled
                           ? Colors.grey[400]
                           : const Color(0xFF1B517A),
                     ),
@@ -382,10 +433,14 @@ class _VoiceInputState extends State<VoiceInput> with TickerProviderStateMixin {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     _CircleButton(
-                      onTap: _stopAndClear,
-                      backgroundColor: const Color(0xFFFFE5E5),
+                      onTap: actionsDisabled ? null : _stopAndClear,
+                      backgroundColor: actionsDisabled
+                          ? const Color(0xFFF1F1F1)
+                          : const Color(0xFFFFE5E5),
                       icon: Icons.close,
-                      iconColor: const Color(0xFFE57373),
+                      iconColor: actionsDisabled
+                          ? const Color(0xFFBDBDBD)
+                          : const Color(0xFFE57373),
                       size: 60,
                     ),
 
@@ -399,10 +454,24 @@ class _VoiceInputState extends State<VoiceInput> with TickerProviderStateMixin {
                     ),
 
                     _CircleButton(
-                      onTap: _confirm,
-                      backgroundColor: const Color(0xFFDFF5E3),
+                      onTap: actionsDisabled ? null : _confirm,
+                      backgroundColor: actionsDisabled
+                          ? const Color(0xFFF1F1F1)
+                          : const Color(0xFFDFF5E3),
                       icon: Icons.check,
-                      iconColor: const Color(0xFF66BB6A),
+                      iconColor: actionsDisabled
+                          ? const Color(0xFFBDBDBD)
+                          : const Color(0xFF66BB6A),
+                      iconWidget: _isSubmitting
+                          ? const SizedBox(
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF66BB6A),
+                              ),
+                            )
+                          : null,
                       size: 60,
                     ),
                   ],
@@ -440,6 +509,7 @@ class _CircleButton extends StatelessWidget {
   final dynamic backgroundColor;
   final IconData icon;
   final Color iconColor;
+  final Widget? iconWidget;
   final double size;
 
   const _CircleButton({
@@ -447,6 +517,7 @@ class _CircleButton extends StatelessWidget {
     required this.backgroundColor,
     required this.icon,
     required this.iconColor,
+    this.iconWidget,
     required this.size,
   });
 
@@ -469,9 +540,17 @@ class _CircleButton extends StatelessWidget {
                   gradient: backgroundColor as LinearGradient,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: iconColor, size: size * 0.45),
+                child: Center(
+                  child:
+                      iconWidget ??
+                      Icon(icon, color: iconColor, size: size * 0.45),
+                ),
               )
-            : Icon(icon, color: iconColor, size: size * 0.45),
+            : Center(
+                child:
+                    iconWidget ??
+                    Icon(icon, color: iconColor, size: size * 0.45),
+              ),
       ),
     );
   }

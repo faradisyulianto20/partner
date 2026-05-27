@@ -184,7 +184,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 flex: 4,
                 child: Container(
                   width: double.infinity,
-                  decoration: BoxDecoration(gradient: verticalGradient),
+                  decoration: BoxDecoration(gradient: horizontalGradient),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

@@ -6,22 +6,28 @@ import 'package:hackathon/features/client/home/widgets/recommendation_dialog.dar
 class HomeToday extends StatelessWidget {
   final String? emotion;
   final String? message;
-  final String iconType;
+  final String iconAsset;
   final List<Map<String, String>> recommendations;
 
   const HomeToday({
     super.key,
     this.emotion,
     this.message,
-    this.iconType = 'happy',
+    this.iconAsset = 'assets/images/emoji/happy_white.svg',
     this.recommendations = const [],
   });
 
   void _showRecommendationDialog(BuildContext context) {
-    showDialog(context: context, builder: (context) => RecomendationDialog());
+    showDialog(
+      context: context,
+      builder: (context) => RecomendationDialog(
+        message: message,
+        recommendations: recommendations,
+      ),
+    );
   }
 
-  bool get isChecked => emotion != null;
+  bool get isChecked => emotion != null && emotion!.trim().isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -43,13 +49,7 @@ class HomeToday extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Center(
-              child: SvgPicture.asset(
-                iconType == 'sad'
-                    ? 'assets/images/emoji/sad_white.svg'
-                    : 'assets/images/emoji/happy_white.svg',
-                width: 42,
-                height: 42,
-              ),
+              child: SvgPicture.asset(iconAsset, width: 42, height: 42),
             ),
           ),
           const SizedBox(height: 16),

@@ -1,27 +1,61 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hackathon/core/state/user_role_state.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class Header extends StatelessWidget {
   final String userName;
   final String greeting;
   final VoidCallback? onProfileTap;
+  final VoidCallback? onNotificationTap;
 
   const Header({
     super.key,
     this.userName = 'User',
     this.greeting = 'Selamat Pagi',
     this.onProfileTap,
+    this.onNotificationTap
   });
+
+  String _buildGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour >= 4 && hour < 11) {
+      return 'Selamat Pagi';
+    }
+    if (hour >= 11 && hour < 15) {
+      return 'Selamat Siang';
+    }
+    if (hour >= 15 && hour < 18) {
+      return 'Selamat Sore';
+    }
+    return 'Selamat Malam';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final user = Supabase.instance.client.auth.currentUser;
+    final displayName = user?.userMetadata?['full_name'] ?? user?.email;
+    final resolvedUserName = (displayName != null && displayName.isNotEmpty)
+        ? displayName
+        : userName;
+    final avatarUrl =
+        user?.userMetadata?['avatar_url'] ??
+        user?.userMetadata?['picture'] ??
+        '';
+    final resolvedGreeting = _buildGreeting();
+    final VoidCallback resolvedProfileTap =
+        onProfileTap ??
+        () {
+          final destination = userRoleState.isPsychologist
+              ? '/psychologist/profile'
+              : '/profile';
+          context.push(destination);
+        };
     final horizontalGradient = LinearGradient(
       begin: Alignment.centerLeft,
       end: Alignment.centerRight,
-      colors: const [
-        Color(0xFF578BB3),
-        Color(0xFF194F78),
-      ],
+      colors: const [Color(0xFF578BB3), Color(0xFF194F78)],
     );
 
     return Container(
@@ -41,7 +75,7 @@ class Header extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      greeting + ', ' + userName,
+                      resolvedGreeting + ', ' + resolvedUserName,
                       style: GoogleFonts.nunito(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
@@ -50,18 +84,20 @@ class Header extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                    'Bagaimana perasaanmu hari ini?',
-                    style: GoogleFonts.nunito(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      'Bagaimana perasaanmu hari ini?',
+                      style: GoogleFonts.nunito(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
                   ],
                 ),
               ),
               GestureDetector(
-                onTap: onProfileTap,
+                onTap: onNotificationTap ?? () {
+                  // Handle notification tap
+                },
                 child: Container(
                   width: 50,
                   height: 50,
@@ -82,7 +118,7 @@ class Header extends StatelessWidget {
               ),
               SizedBox(width: 12),
               GestureDetector(
-                onTap: onProfileTap,
+                onTap: resolvedProfileTap,
                 child: Container(
                   width: 50,
                   height: 50,
@@ -94,11 +130,22 @@ class Header extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(
-                    Icons.person,
-                    color: Colors.white,
-                    size: 28,
-                  ),
+                  child: avatarUrl.isNotEmpty
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            avatarUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.person,
+                                color: Colors.white,
+                                size: 28,
+                              );
+                            },
+                          ),
+                        )
+                      : const Icon(Icons.person, color: Colors.white, size: 28),
                 ),
               ),
             ],

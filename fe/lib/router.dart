@@ -8,6 +8,7 @@ import 'package:hackathon/features/client/home/pages/voice_input.dart';
 import 'package:hackathon/features/client/home/pages/analysis_result.dart';
 import 'package:hackathon/features/client/home/pages/home_page.dart';
 import 'package:hackathon/features/client/home/widgets/cta.dart';
+import 'package:hackathon/core/models/analysis_models.dart';
 
 // Partner Route
 import 'package:hackathon/features/client/partner/pages/partner_page.dart';
@@ -48,19 +49,22 @@ import 'package:hackathon/features/psikolog/profile/income.dart';
 import 'package:hackathon/features/psikolog/profile/schedule.dart';
 import 'package:hackathon/features/psikolog/profile/profile_service.dart';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 bool firstInstall = true;
-bool token = false;
+
+bool get _isLoggedIn => Supabase.instance.client.auth.currentSession != null;
 
 String get _initialLocation {
   if (firstInstall) return '/onboarding/welcome';
-  if (!token) return '/login';
+  if (!_isLoggedIn) return '/login';
   return '/home';
 }
 
 final GoRouter router = GoRouter(
   initialLocation: _initialLocation,
   redirect: (context, state) {
-    if (firstInstall || !token) return null;
+    if (firstInstall || !_isLoggedIn) return null;
 
     final isPsychologist = userRoleState.isPsychologist;
     final loggingInOrOnboarding =
@@ -157,9 +161,18 @@ final GoRouter router = GoRouter(
       path: '/journal/add',
       builder: (context, state) => const JournalAdd(),
     ),
-    GoRoute(path: '/psychologist/profile/schedule', builder: (context, state) => const Schedule()),
-    GoRoute(path: '/psychologist/profile/profile-service', builder: (context, state) => const ProfileService()),
-    GoRoute(path: '/psychologist/profile/income', builder: (context, state) => const Income()),
+    GoRoute(
+      path: '/psychologist/profile/schedule',
+      builder: (context, state) => const Schedule(),
+    ),
+    GoRoute(
+      path: '/psychologist/profile/profile-service',
+      builder: (context, state) => const ProfileService(),
+    ),
+    GoRoute(
+      path: '/psychologist/profile/income',
+      builder: (context, state) => const Income(),
+    ),
     clientShellRoute,
     psychologistShellRoute,
   ],
@@ -190,7 +203,12 @@ final clientShellRoute = StatefulShellRoute.indexedStack(
             ),
             GoRoute(
               path: 'analysis-result',
-              builder: (context, state) => const AnalysisResult(),
+              builder: (context, state) {
+                final result = state.extra;
+                return AnalysisResult(
+                  result: result is AnalysisResultData ? result : null,
+                );
+              },
             ),
           ],
         ),

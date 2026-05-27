@@ -117,13 +117,13 @@ class _LoginPageState extends State<LoginPage> {
       print('══════════════════════════════════════');
 
       if (user != null && !_didNavigate) {
-        if (user.userMetadata?['is_registered'] != true) {
-          setState(() {
-            _isLoading = false;
-          });
-          _blockIfUnregistered();
-          return;
-        }
+        // if (user.userMetadata?['is_registered'] != true) {
+        //   setState(() {
+        //     _isLoading = false;
+        //   });
+        //   _blockIfUnregistered();
+        //   return;
+        // }
         setState(() {
           _didNavigate = true; // Kunci segera di dalam setState
           _isLoading = false;
@@ -149,10 +149,10 @@ class _LoginPageState extends State<LoginPage> {
 
     if (user == null || _didNavigate || !mounted) return;
 
-    if (user.userMetadata?['is_registered'] != true) {
-      await _blockIfUnregistered();
-      return;
-    }
+    // if (user.userMetadata?['is_registered'] != true) {
+    //   await _blockIfUnregistered();
+    //   return;
+    // }
 
     setState(() {
       _didNavigate = true;
