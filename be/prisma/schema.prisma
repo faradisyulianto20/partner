@@ -70,6 +70,17 @@ enum PaymentStatus {
     FAILED
 }
 
+enum PsychologistMessageRole {
+    USER
+    PSYCHOLOGIST
+}
+
+enum ConsultationMethod {
+    CHAT
+    VOICE
+    VIDEO
+}
+
 model Psychologist {
     id              String   @id @default(uuid())
     fullName        String
@@ -154,15 +165,31 @@ model PsychologistEmailVerification {
 }
 
 model PsychologistBooking {
-    id             String        @id @default(uuid())
+    id             String             @id @default(uuid())
     psychologistId String
     userId         String
+    fullName       String             @default("Unknown")
+    notes          String?
+    method         ConsultationMethod @default(CHAT)
+    price          Int                @default(0)
     scheduledAt    DateTime
-    status         BookingStatus @default(PENDING_PAYMENT)
-    paymentStatus  PaymentStatus @default(UNPAID)
-    createdAt      DateTime      @default(now())
+    status         BookingStatus      @default(PENDING_PAYMENT)
+    paymentStatus  PaymentStatus      @default(UNPAID)
+    createdAt      DateTime           @default(now())
 
-    psychologist Psychologist @relation(fields: [psychologistId], references: [id], onDelete: Cascade)
+    psychologist Psychologist          @relation(fields: [psychologistId], references: [id], onDelete: Cascade)
+    messages     PsychologistMessage[]
+}
+
+model PsychologistMessage {
+    id         String                  @id @default(uuid())
+    bookingId  String
+    senderRole PsychologistMessageRole
+    senderId   String
+    content    String
+    createdAt  DateTime                @default(now())
+
+    booking PsychologistBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 }
 
 enum EnergyCategory {

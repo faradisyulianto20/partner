@@ -25,6 +25,10 @@ export class PsychologistController {
         return this.psychologistService.createBooking(
             body.userId,
             body.psychologistId,
+            body.fullName,
+            body.method,
+            body.price,
+            body.notes,
             body.scheduledAt,
         );
     }

@@ -80,10 +80,27 @@ export class PsychologistService {
         });
     }
 
-    async createBooking(userId: string, psychologistId: string, scheduledAt: string) {
+    async createBooking(
+        userId: string,
+        psychologistId: string,
+        fullName: string,
+        method: 'CHAT' | 'VOICE' | 'VIDEO',
+        price: number,
+        notes: string | undefined,
+        scheduledAt: string,
+    ) {
         const safeUserId = userId?.trim();
         if (!safeUserId) {
             throw new BadRequestException('userId is required');
+        }
+        if (!fullName?.trim()) {
+            throw new BadRequestException('fullName is required');
+        }
+        if (!['CHAT', 'VOICE', 'VIDEO'].includes(method)) {
+            throw new BadRequestException('method must be CHAT, VOICE, or VIDEO');
+        }
+        if (!Number.isFinite(price) || price <= 0) {
+            throw new BadRequestException('price must be a positive number');
         }
 
         const date = new Date(scheduledAt);
@@ -95,6 +112,10 @@ export class PsychologistService {
             data: {
                 userId: safeUserId,
                 psychologistId,
+                fullName: fullName.trim(),
+                method,
+                price: Math.round(price),
+                notes: notes?.trim() || null,
                 scheduledAt: date,
             },
         });
