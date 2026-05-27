@@ -49,23 +49,74 @@ class _RegisterPageState extends State<RegisterPage> {
     colors: [Color(0xFF578BB3), Color(0xFF194F78)],
   );
 
+  final LinearGradient psychologistHorizontalGradient = const LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [Color(0xFF1B517A), Color(0xFF0C2B53)],
+  );
+
   @override
   void initState() {
     super.initState();
     _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
       if (data.session?.user != null && !_didNavigate) {
         _didNavigate = true;
-        if (mounted) {
-          context.go(
-            userRoleState.isPsychologist ? '/psychologist/home' : '/home',
-          );
-        }
+        final user = data.session!.user;
+        _markUserRegistered(user, userRoleState.isPsychologist ? 'psychologist' : 'user').whenComplete(() {
+          _navigateAfterRegister();
+        });
       }
 
       setState(() {
         _userId = data.session?.user.id;
       });
     });
+  }
+
+  Future<void> _markUserRegistered(User user, String role) async {
+    // 1. Ambil metadata lama bawaan Google agar tidak terhapus
+    final currentMetadata = user.userMetadata ?? {};
+
+    try {
+      // 2. Duplikat data lama dan tambahkan parameter kustom baru
+      final updatedData = Map<String, dynamic>.from(currentMetadata);
+      updatedData['is_registered'] = true;
+      updatedData['role'] =
+          role; // 👈 Menyuntikkan role ('user' atau 'psychologist')
+
+      if (kDebugMode) {
+        print('Sedang memperbarui metadata ke server dengan role: $role...');
+      }
+
+      // 3. Update ke server Supabase
+      final response = await supabase.auth.updateUser(
+        UserAttributes(data: updatedData),
+      );
+
+      if (kDebugMode) {
+        print('✅ Sukses! Metadata saat ini: ${response.user?.userMetadata}');
+      }
+
+      // 4. Paksa refresh session lokal agar UI Flutter langsung mendeteksi perubahan
+      await supabase.auth.refreshSession();
+    } catch (e) {
+      if (kDebugMode) {
+        print('🔴 Gagal memperbarui parameter role & metadata: $e');
+      }
+    }
+  }
+
+  Future<void> _navigateAfterRegister() async {
+    try {
+      await userRoleState.fetchRole();
+    } catch (e) {
+      if (kDebugMode) {
+        print('fetchRole error: $e');
+      }
+    }
+
+    if (!mounted) return;
+    context.go('/input-data');
   }
 
   @override
@@ -119,6 +170,9 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final LinearGradient activeHorizontalGradient = userRoleState.isPsychologist
+        ? psychologistHorizontalGradient
+        : horizontalGradient;
     return Scaffold(
       backgroundColor: const Color(0xFF194F78),
       body: Stack(
@@ -179,7 +233,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       style: GoogleFonts.nunito(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color: Colors.black87,
+                        color: const Color(0xFF294669),
                       ),
                       textAlign: TextAlign.left,
                     ),
@@ -205,7 +259,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             width: 1,
                           ),
                           borderRadius: BorderRadius.circular(30),
-                          gradient: horizontalGradient,
+                          gradient: activeHorizontalGradient,
                         ),
                         child: Material(
                           color: Colors.white,
@@ -229,7 +283,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                     'Lanjut dengan Google',
                                     style: GoogleFonts.nunito(
                                       fontSize: 15,
-                                      color: Colors.black87,
+                                      color: const Color(0xFF294669),
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -241,7 +295,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Divider,
                   ],
                 ),
