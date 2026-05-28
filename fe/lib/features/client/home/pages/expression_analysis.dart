@@ -1,9 +1,10 @@
+import 'package:hackathon/core/constants.dart';
 import 'dart:io';
 import 'dart:math';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-// import 'package:hackathon/core/models/analysis_models.dart';
+import 'package:hackathon/core/models/analysis_models.dart';
 import 'package:hackathon/core/services/analysis_service.dart';
 import 'package:hackathon/core/services/api_client.dart';
 import 'dart:async';
@@ -17,15 +18,14 @@ class ExpressionAnalysis extends StatefulWidget {
 }
 
 class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
-  static const String _baseUrl = 'http://127.0.0.1:3000';
-
   List<CameraDescription> cameras = [];
   CameraController? cameraController;
   int currentState = 0;
   bool _hasSubmitted = false;
   bool _isCapturing = false;
+  AnalysisResultData? _analysisResult;
 
-  late final ApiClient _apiClient = ApiClient(baseUrl: _baseUrl);
+  late final ApiClient _apiClient = ApiClient(baseUrl: AppConstants.baseUrl);
   late final AnalysisService _analysisService = AnalysisService(_apiClient);
 
   final List<Map<String, String>> stateData = [
@@ -148,16 +148,22 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
 
       setState(() => _hasSubmitted = true);
 
-      // 2. Proses Pengiriman POST API
+      // 2. Proses Pengiriman POST API (base64 JSON)
       debugPrint(
-        '🌐 [DEBUG-FACE] Mengirim HTTP POST ke endpoint face analysis di: $_baseUrl',
+        '🌐 [DEBUG-FACE] Mengirim HTTP POST ke endpoint face analysis di: ${AppConstants.baseUrl}',
       );
-      final response = await _analysisService.analyzeFace(image: imageFile);
+      // Timeout 90 detik karena Gemini Vision butuh waktu untuk analisis gambar
+      final response = await _analysisService
+          .analyzeFace(image: imageFile)
+          .timeout(
+            const Duration(seconds: 90),
+            onTimeout: () => throw TimeoutException('Request timeout 90 detik'),
+          );
 
       // 3. Log Response dari Server
       debugPrint('📥 [DEBUG-FACE] Response diterima dari Server!');
       debugPrint(
-        '📊 [DEBUG-FACE] Status Success dari Service: ${response.isSuccess}',
+        '📊 [DEBUG-FACE] Status Code: ${response.statusCode}, isSuccess: ${response.isSuccess}',
       );
       debugPrint(
         '📦 [DEBUG-FACE] Raw Data Response (Type: ${response.data.runtimeType}): ${response.data}',
@@ -180,31 +186,52 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
 
       if (!response.isSuccess) {
         debugPrint(
-          '❌ [DEBUG-FACE] API mengembalikan status GAGAL (isSuccess = false).',
+          '❌ [DEBUG-FACE] API mengembalikan status GAGAL: HTTP ${response.statusCode}.',
         );
-        _showSnackBar('Gagal menganalisis. Silakan coba lagi.');
+        final errorMsg = response.statusCode == 401
+            ? 'Sesi kamu sudah habis. Silakan login ulang.'
+            : response.statusCode == 404
+            ? 'Endpoint tidak ditemukan. Pastikan server backend berjalan.'
+            : 'Gagal menganalisis (HTTP ${response.statusCode}). Coba lagi.'
+        ;
+        _showSnackBar(errorMsg);
 
         setState(() {
           _hasSubmitted = false;
           _isCapturing = false;
           currentState = 0;
         });
-
-        debugPrint(
-          '🔄 [DEBUG-FACE] Menjadwalkan deteksi ulang dalam 2 detik...',
-        );
-        await Future.delayed(const Duration(seconds: 2));
-        if (mounted) _captureAndSubmit();
         return;
       }
 
-      // 4. Analisis Berhasil
+      // 4. Analisis Berhasil — parse result
       debugPrint(
-        '🎉 [DEBUG-FACE] Analisis Wajah Sukses Total! Mengubah state ke-4.',
+        '🎉 [DEBUG-FACE] Analisis Wajah Sukses! Mem-parse result data...',
       );
+      // Response BE langsung berupa { id, emotionLabel, summary, recommendations, confidence, createdAt }
+      // AnalysisResultData.tryFromJson sudah handle unwrapping `.data` jika ada
+      final rawData = response.data.data;
+      final resultData = AnalysisResultData.tryFromJson(rawData);
+
+      if (resultData == null) {
+        debugPrint(
+          '⚠️ [DEBUG-FACE] tryFromJson menghasilkan null. rawData: $rawData',
+        );
+      }
+
       setState(() {
+        _analysisResult = resultData;
         currentState = 4;
         _isCapturing = false;
+      });
+    } on TimeoutException catch (e) {
+      debugPrint('⏰ [DEBUG-FACE] Request timeout: $e');
+      if (!mounted) return;
+      _showSnackBar('Analisis memakan waktu terlalu lama. Silakan coba lagi.');
+      setState(() {
+        _hasSubmitted = false;
+        _isCapturing = false;
+        currentState = 0;
       });
     } catch (e, stackTrace) {
       debugPrint('🔥 [DEBUG-FACE] CRASH TERJADI PADA ALUR CAPTURE/SUBMIT!');
@@ -212,19 +239,15 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
       debugPrint('📚 [DEBUG-FACE] StackTrace: $stackTrace');
 
       if (!mounted) return;
-      _showSnackBar('Terjadi kesalahan: $e');
+      _showSnackBar(
+        'Terjadi kesalahan. Pastikan koneksi internet aktif dan coba lagi.',
+      );
 
       setState(() {
         _hasSubmitted = false;
         _isCapturing = false;
         currentState = 0;
       });
-
-      debugPrint(
-        '🔄 [DEBUG-FACE] Mencoba melakukan alur capture ulang setelah crash (2 detik)...',
-      );
-      await Future.delayed(const Duration(seconds: 2));
-      if (mounted) _captureAndSubmit();
     }
   }
 
@@ -257,7 +280,13 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
         children: [
           CustomAppBar(
             title: 'Deteksi Ekspresi Wajah',
-            onBack: () => context.pop(),
+            onBack: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/home');
+              }
+            },
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -399,7 +428,10 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () => context.go('/home/analysis-result'),
+                          onPressed: () => context.go(
+                            '/home/analysis-result',
+                            extra: _analysisResult,
+                          ),
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             backgroundColor: const Color(0xFFF4F6F8),
