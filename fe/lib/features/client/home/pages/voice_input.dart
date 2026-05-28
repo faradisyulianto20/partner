@@ -251,7 +251,7 @@ class _VoiceInputState extends State<VoiceInput> with TickerProviderStateMixin {
       _dotCount = 0;
     });
 
-    context.go('/home/emotion-description');
+    context.go('/analysis/text');
   }
 
   Future<void> _confirm() async {
@@ -261,7 +261,7 @@ class _VoiceInputState extends State<VoiceInput> with TickerProviderStateMixin {
     await _speechToText.stop();
 
     if (!mounted) return;
-    context.go('/home/emotion-description');
+    context.go('/analysis/text');
   }
 
   String get _formattedTime {

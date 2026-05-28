@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:hackathon/core/shared_widgets/custom_app_bar.dart';
 
 class ExpressionAnalysis extends StatefulWidget {
@@ -14,6 +17,14 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
   List<CameraDescription> cameras = [];
   CameraController? cameraController;
   int currentState = 0; // 0-4 for 5 states
+  final FaceDetector _faceDetector = FaceDetector(
+    options: FaceDetectorOptions(
+      performanceMode: FaceDetectorMode.fast,
+      enableTracking: true,
+    ),
+  );
+  bool _isProcessing = false;
+  bool _isFaceDetected = false;
 
   // State data
   final List<Map<String, String>> stateData = [
@@ -53,7 +64,9 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
 
   @override
   void dispose() {
+    cameraController?.stopImageStream();
     cameraController?.dispose();
+    _faceDetector.close();
     super.dispose();
   }
 
@@ -68,9 +81,71 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
         );
       });
       cameraController!.initialize().then((_) {
-        if (mounted) setState(() {});
+        if (!mounted) return;
+        setState(() {});
+        _startImageStream();
       });
     }
+  }
+
+  Future<void> _startImageStream() async {
+    final controller = cameraController;
+    if (controller == null || controller.value.isStreamingImages) {
+      return;
+    }
+
+    await controller.startImageStream((image) async {
+      if (_isProcessing) return;
+      _isProcessing = true;
+
+      final inputImage = _inputImageFromCameraImage(image, controller);
+      if (inputImage == null) {
+        _isProcessing = false;
+        return;
+      }
+
+      try {
+        final faces = await _faceDetector.processImage(inputImage);
+        if (!mounted) return;
+        setState(() {
+          _isFaceDetected = faces.isNotEmpty;
+        });
+      } finally {
+        _isProcessing = false;
+      }
+    });
+  }
+
+  InputImage? _inputImageFromCameraImage(
+    CameraImage image,
+    CameraController controller,
+  ) {
+    final rotation = InputImageRotationValue.fromRawValue(
+      controller.description.sensorOrientation,
+    );
+    final format = InputImageFormatValue.fromRawValue(image.format.raw);
+    if (rotation == null || format == null) {
+      return null;
+    }
+
+    final bytes = _concatenatePlanes(image.planes);
+    final size = Size(image.width.toDouble(), image.height.toDouble());
+    final metadata = InputImageMetadata(
+      size: size,
+      rotation: rotation,
+      format: format,
+      bytesPerRow: image.planes.first.bytesPerRow,
+    );
+
+    return InputImage.fromBytes(bytes: bytes, metadata: metadata);
+  }
+
+  Uint8List _concatenatePlanes(List<Plane> planes) {
+    final allBytes = WriteBuffer();
+    for (final plane in planes) {
+      allBytes.putUint8List(plane.bytes);
+    }
+    return allBytes.done().buffer.asUint8List();
   }
 
   void _simulateStateProgression() {
@@ -119,12 +194,39 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
                               CameraPreview(cameraController!),
                               // Face detection overlay - oval seperti referensi
                               Container(
-                                height: 180, // <-- lebih tinggi
-                                width: 180, // <-- lebih sempit
+                                height: 180,
+                                width: 180,
                                 decoration: BoxDecoration(
                                   border: Border.all(
-                                    color: Colors.white.withOpacity(0.5),
+                                    color: _isFaceDetected
+                                        ? const Color(0xFF2E7D32)
+                                        : Colors.white.withOpacity(0.5),
                                     width: 2,
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 16,
+                                child: AnimatedOpacity(
+                                  duration: const Duration(milliseconds: 200),
+                                  opacity: _isFaceDetected ? 1 : 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.5),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: const Text(
+                                      'Ekspresi Berhasil Dideteksi',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
