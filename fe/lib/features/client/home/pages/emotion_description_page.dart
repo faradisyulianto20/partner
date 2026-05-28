@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hackathon/core/models/analysis_models.dart';
+import 'package:hackathon/core/services/analysis_service.dart';
+import 'package:hackathon/core/services/api_client.dart';
 
 class EmotionDescriptionPage extends StatefulWidget {
   const EmotionDescriptionPage({super.key});
@@ -11,10 +14,10 @@ class EmotionDescriptionPage extends StatefulWidget {
 class _EmotionDescriptionPageState extends State<EmotionDescriptionPage> {
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: SafeArea(
         child: Column(
-          children: [
+          children: const [
             Header(),
             Label(),
             Expanded(child: EmotionDescription()),
@@ -76,7 +79,7 @@ class Label extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.07),
+              color: Colors.black.withValues(alpha: 0.07),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -130,14 +133,20 @@ class EmotionDescription extends StatefulWidget {
 }
 
 class _EmotionDescriptionState extends State<EmotionDescription> {
+  static const String _baseUrl = 'http://127.0.0.1:3000';
+
   final TextEditingController _controller = TextEditingController();
+  late final ApiClient _apiClient = ApiClient(baseUrl: _baseUrl);
+  late final AnalysisService _analysisService = AnalysisService(_apiClient);
+  bool _isSubmitting = false;
+
   final List<String> emotionTags = [
     'Aku merasa lelah',
     'Aku sedang overthinking',
     'Hari ini terasa berat',
-    'Aku merasa usil',
-    'Aku sedang penasaran',
-    'Aku merasa lega',
+    'Aku merasa lebih tenang',
+    'Aku butuh didengarkan',
+    'Aku sangat sedih',
   ];
 
   void _onTagTapped(String tag) {
@@ -150,6 +159,48 @@ class _EmotionDescriptionState extends State<EmotionDescription> {
     _controller.selection = TextSelection.fromPosition(
       TextPosition(offset: _controller.text.length),
     );
+  }
+
+  Future<void> _submitAnalysis() async {
+    if (_isSubmitting) {
+      return;
+    }
+
+    final text = _controller.text.trim();
+    if (text.isEmpty) {
+      _showSnackBar('Tuliskan perasaanmu terlebih dahulu.');
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final response = await _analysisService.analyzeText(
+        AnalysisTextRequest(text: text),
+      );
+
+      if (!response.isSuccess) {
+        _showSnackBar('Gagal menganalisis perasaan. Coba lagi ya.');
+        return;
+      }
+
+      final result = response.data.result;
+
+      if (!mounted) return;
+      context.go('/home/analysis-result', extra: result);
+    } catch (_) {
+      if (!mounted) return;
+      _showSnackBar('Terjadi kesalahan. Silakan coba lagi.');
+    } finally {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -254,23 +305,32 @@ class _EmotionDescriptionState extends State<EmotionDescription> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: MaterialButton(
-                    onPressed: () => context.push('/home/analysis-result'),
+                    onPressed: _submitAnalysis,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.search, color: Colors.white, size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          'Analisis Perasaanku',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.search, color: Colors.white, size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'Analisis Perasaanku',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
                   ),
                 ),
               ),
@@ -313,6 +373,7 @@ class _EmotionDescriptionState extends State<EmotionDescription> {
   @override
   void dispose() {
     _controller.dispose();
+    _apiClient.close();
     super.dispose();
   }
 }

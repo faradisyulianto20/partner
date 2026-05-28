@@ -8,11 +8,13 @@ import 'package:hackathon/features/client/home/pages/voice_input.dart';
 import 'package:hackathon/features/client/home/pages/analysis_result.dart';
 import 'package:hackathon/features/client/home/pages/home_page.dart';
 import 'package:hackathon/features/client/home/widgets/cta.dart';
+import 'package:hackathon/core/models/analysis_models.dart';
 
 // Partner Route
 import 'package:hackathon/features/client/partner/pages/partner_page.dart';
 // AI Partner
 import 'package:hackathon/features/client/partner/pages/ai/ai_partner_chat.dart';
+import 'package:hackathon/features/client/partner/widgets/chat_content.dart';
 import 'package:hackathon/features/client/partner/pages/ai/ai_partner_voice.dart';
 // Human Partner
 import 'package:hackathon/features/client/partner/pages/human/human_partner.dart';
@@ -48,19 +50,22 @@ import 'package:hackathon/features/psikolog/profile/income.dart';
 import 'package:hackathon/features/psikolog/profile/schedule.dart';
 import 'package:hackathon/features/psikolog/profile/profile_service.dart';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 bool firstInstall = true;
-bool token = false;
+
+bool get _isLoggedIn => Supabase.instance.client.auth.currentSession != null;
 
 String get _initialLocation {
   if (firstInstall) return '/onboarding/welcome';
-  if (!token) return '/login';
+  if (!_isLoggedIn) return '/login';
   return '/home';
 }
 
 final GoRouter router = GoRouter(
   initialLocation: _initialLocation,
   redirect: (context, state) {
-    if (firstInstall || !token) return null;
+    if (firstInstall || !_isLoggedIn) return null;
 
     final isPsychologist = userRoleState.isPsychologist;
     final loggingInOrOnboarding =
@@ -119,7 +124,19 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/partner/ai-partner/chat',
-      builder: (context, state) => AIPartnerChat(),
+      builder: (context, state) {
+        final extra = state.extra;
+        String? sessionId;
+        List<ChatMessage>? messages;
+        if (extra is Map) {
+          sessionId = extra['sessionId']?.toString();
+          final rawMessages = extra['messages'];
+          if (rawMessages is List<ChatMessage>) {
+            messages = rawMessages;
+          }
+        }
+        return AIPartnerChat(sessionId: sessionId, initialMessages: messages);
+      },
     ),
     GoRoute(
       path: '/partner/ai-partner/voice',
@@ -146,8 +163,11 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const EndCall(),
     ),
     GoRoute(
-      path: '/partner/professional-partner/detail',
-      builder: (context, state) => const DetailDoctor(),
+      path: '/partner/professional-partner/detail/:id',
+      builder: (context, state) {
+        final psychologistId = state.pathParameters['id'] ?? '';
+        return DetailDoctor(psychologistId: psychologistId);
+      },
     ),
     GoRoute(
       path: '/partner/professional-partner/booking',
@@ -157,9 +177,18 @@ final GoRouter router = GoRouter(
       path: '/journal/add',
       builder: (context, state) => const JournalAdd(),
     ),
-    GoRoute(path: '/psychologist/profile/schedule', builder: (context, state) => const Schedule()),
-    GoRoute(path: '/psychologist/profile/profile-service', builder: (context, state) => const ProfileService()),
-    GoRoute(path: '/psychologist/profile/income', builder: (context, state) => const Income()),
+    GoRoute(
+      path: '/psychologist/profile/schedule',
+      builder: (context, state) => const Schedule(),
+    ),
+    GoRoute(
+      path: '/psychologist/profile/profile-service',
+      builder: (context, state) => const ProfileService(),
+    ),
+    GoRoute(
+      path: '/psychologist/profile/income',
+      builder: (context, state) => const Income(),
+    ),
     clientShellRoute,
     psychologistShellRoute,
   ],
@@ -190,7 +219,12 @@ final clientShellRoute = StatefulShellRoute.indexedStack(
             ),
             GoRoute(
               path: 'analysis-result',
-              builder: (context, state) => const AnalysisResult(),
+              builder: (context, state) {
+                final result = state.extra;
+                return AnalysisResult(
+                  result: result is AnalysisResultData ? result : null,
+                );
+              },
             ),
           ],
         ),

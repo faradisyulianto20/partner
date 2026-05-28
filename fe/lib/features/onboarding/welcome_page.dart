@@ -112,7 +112,7 @@ class _WelcomePageState extends State<WelcomePage> {
                             child: InkWell(
                               onTap: () {
                                 userRoleState.isPsychologist = false;
-                                context.go('/login');
+                                context.push('/login');
                               },
                               borderRadius: BorderRadius.circular(30),
                               child: Padding(
@@ -123,7 +123,7 @@ class _WelcomePageState extends State<WelcomePage> {
                                   child: Text(
                                     'Sebagai user',
                                     style: GoogleFonts.nunito(
-                                      fontSize: 15,
+                                      fontSize: 14,
                                       color: Colors.white,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -141,7 +141,7 @@ class _WelcomePageState extends State<WelcomePage> {
                         child: OutlinedButton(
                           onPressed: () {
                             userRoleState.isPsychologist = true;
-                            context.go('/login');
+                            context.push('/login');
                           },
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
@@ -152,7 +152,7 @@ class _WelcomePageState extends State<WelcomePage> {
                           child: Text(
                             'Sebagai Psikolog',
                             style: GoogleFonts.nunito(
-                              fontSize: 12,
+                              fontSize: 14,
                               color: const Color(0xFF294669),
                               fontWeight: FontWeight.w700,
                             ),

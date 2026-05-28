@@ -71,9 +71,8 @@ class AIPartner extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    context.go('/partner/ai-partner/chat');
-                  },
+                  onPressed:
+                      onChat ?? () => context.go('/partner/ai-partner/chat'),
                   icon: const Icon(Icons.chat_bubble_outline, size: 16),
                   label: const Text('Chat'),
                   style: OutlinedButton.styleFrom(

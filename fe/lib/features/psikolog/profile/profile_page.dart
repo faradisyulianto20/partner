@@ -257,6 +257,7 @@ class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
         ),
         child: Row(
           children: [
+            const SizedBox(width: 4),
             Container(
               width: 34,
               height: 34,

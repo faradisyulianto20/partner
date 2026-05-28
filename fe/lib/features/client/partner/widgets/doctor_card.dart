@@ -11,7 +11,7 @@ class DoctorCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        context.push('/partner/professional-partner/detail', extra: doctor);
+        context.push('/partner/professional-partner/detail/${doctor.id}');
       },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8),

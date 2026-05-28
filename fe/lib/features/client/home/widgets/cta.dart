@@ -43,7 +43,8 @@ class _HomeCTAState extends State<HomeCTA> {
             Stack(
               clipBehavior: Clip.none,
               children: [
-                Expanded(
+                SizedBox(
+                  width: double.infinity,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -59,7 +60,6 @@ class _HomeCTAState extends State<HomeCTA> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
-                      // Subtitle
                       Align(
                         alignment: Alignment.centerLeft,
                         child: FractionallySizedBox(
@@ -101,7 +101,7 @@ class _HomeCTAState extends State<HomeCTA> {
               children: [
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => context.push('/home/expression-analysis'),
+                    onTap: () => context.push('/analysis/face'),
                     child: Container(
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
@@ -137,7 +137,7 @@ class _HomeCTAState extends State<HomeCTA> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => context.push('/home/emotion-description'),
+                    onPressed: () => context.push('/analysis/text'),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(
                         color: Color(0xFF1B517A),

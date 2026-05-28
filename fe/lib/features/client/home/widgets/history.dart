@@ -2,23 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class HomeHistory extends StatefulWidget {
-  const HomeHistory({super.key});
+class HistoryDay {
+  final String dayLabel;
+  final String? emotionLabel;
+  final String iconAsset;
 
-  @override
-  State<HomeHistory> createState() => _HomeHistoryState();
+  const HistoryDay({
+    required this.dayLabel,
+    required this.emotionLabel,
+    required this.iconAsset,
+  });
 }
 
-class _HomeHistoryState extends State<HomeHistory> {
-  final List<Map<String, String>> weekData = [
-    {'day': 'Jum', 'emotion': 'OVT', 'icon': 'sad'},
-    {'day': 'Sab', 'emotion': 'Damai', 'icon': 'happy'},
-    {'day': 'Min', 'emotion': 'Tenang', 'icon': 'happy'},
-    {'day': 'Sen', 'emotion': 'Kesepian', 'icon': 'sad'},
-    {'day': 'Sel', 'emotion': 'Sedih', 'icon': 'sad'},
-    {'day': 'Rab', 'emotion': 'Insecure', 'icon': 'sad'},
-    {'day': 'Kam', 'emotion': 'Bahagia', 'icon': 'happy'},
-  ];
+class HomeHistory extends StatelessWidget {
+  const HomeHistory({super.key, this.days = const []});
+
+  final List<HistoryDay> days;
+
+  static const String _happyIcon = 'assets/images/emoji/happy_blue.svg';
+  static const String _sadIcon = 'assets/images/emoji/sad_blue.svg';
 
   @override
   Widget build(BuildContext context) {
@@ -55,24 +57,34 @@ class _HomeHistoryState extends State<HomeHistory> {
             ],
           ),
           const SizedBox(height: 20),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: List.generate(
-                weekData.length,
-                (index) => Padding(
-                  padding: EdgeInsets.only(
-                    right: index < weekData.length - 1 ? 6 : 0,
-                  ),
-                  child: _buildEmotionDay(
-                    day: weekData[index]['day']!,
-                    emotion: weekData[index]['emotion']!,
-                    iconType: weekData[index]['icon']!,
+          if (days.isEmpty)
+            Text(
+              'Belum ada data riwayat.',
+              style: GoogleFonts.nunito(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.black54,
+              ),
+            )
+          else
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: List.generate(
+                  days.length,
+                  (index) => Padding(
+                    padding: EdgeInsets.only(
+                      right: index < days.length - 1 ? 6 : 0,
+                    ),
+                    child: _buildEmotionDay(
+                      day: days[index].dayLabel,
+                      emotion: days[index].emotionLabel,
+                      iconAsset: days[index].iconAsset,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -80,15 +92,17 @@ class _HomeHistoryState extends State<HomeHistory> {
 
   Widget _buildEmotionDay({
     required String day,
-    required String emotion,
-    required String iconType,
+    required String? emotion,
+    required String iconAsset,
   }) {
+    final resolvedEmotion = (emotion == null || emotion.trim().isEmpty)
+        ? '-'
+        : emotion;
+    final resolvedIcon = _resolveIcon(emotion, iconAsset);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
       decoration: BoxDecoration(
-        color: iconType == 'happy'
-            ? const Color(0xFFF4F9FF)
-            : const Color(0xFFFDF5EB),
+        color: const Color(0xFFF4F9FF),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Color(0xFFE9E9E9), width: 1),
       ),
@@ -103,18 +117,12 @@ class _HomeHistoryState extends State<HomeHistory> {
             ),
           ),
           const SizedBox(height: 12),
-          SvgPicture.asset(
-            iconType == 'happy'
-                ? 'assets/images/emoji/happy.svg'
-                : 'assets/images/emoji/sad.svg',
-            width: 16,
-            height: 16,
-          ),
+          SvgPicture.asset(resolvedIcon, width: 16, height: 16),
           const SizedBox(height: 12),
           SizedBox(
             width: 31,
             child: Text(
-              emotion,
+              resolvedEmotion,
               style: GoogleFonts.nunito(
                 fontSize: 7,
                 fontWeight: FontWeight.w600,
@@ -128,5 +136,37 @@ class _HomeHistoryState extends State<HomeHistory> {
         ],
       ),
     );
+  }
+
+  String _resolveIcon(String? emotion, String fallback) {
+    if (fallback == _happyIcon || fallback == _sadIcon) {
+      return fallback;
+    }
+
+    if (emotion == null || emotion.trim().isEmpty) {
+      return _happyIcon;
+    }
+
+    final normalized = emotion.toLowerCase();
+    final positiveKeywords = ['bahagia', 'senang', 'damai', 'tenang', 'rileks'];
+    final negativeKeywords = [
+      'sedih',
+      'kesedihan',
+      'cemas',
+      'ovt',
+      'overthinking',
+      'gelisah',
+      'murung',
+      'down',
+    ];
+
+    if (negativeKeywords.any((word) => normalized.contains(word))) {
+      return _sadIcon;
+    }
+    if (positiveKeywords.any((word) => normalized.contains(word))) {
+      return _happyIcon;
+    }
+
+    return _happyIcon;
   }
 }

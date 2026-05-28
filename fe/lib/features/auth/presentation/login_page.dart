@@ -45,6 +45,12 @@ class _LoginPageState extends State<LoginPage> {
     colors: [Color(0xFF578BB3), Color(0xFF194F78)],
   );
 
+  final LinearGradient psychologistHorizontalGradient = const LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [Color(0xFF1B517A), Color(0xFF0C2B53)],
+  );
+
   @override
   void initState() {
     super.initState();
@@ -76,17 +82,23 @@ class _LoginPageState extends State<LoginPage> {
       print('╔══════════════════════════════════════╗');
       print('║        AUTH STATE CHANGE EVENT        ║');
       print('╚══════════════════════════════════════╝');
+      print(
+        'Role State: ${userRoleState.isPsychologist ? 'Psychologist' : 'Regular User'}',
+      );
       print('Event      : ${data.event}');
       print('User ID    : ${user?.id ?? 'null'}');
       print('Email      : ${user?.email ?? 'null'}');
       print('Display Name: ${user?.userMetadata?['full_name'] ?? 'null'}');
       print('Avatar URL : ${user?.userMetadata?['avatar_url'] ?? 'null'}');
-      print('Provider   : ${user?.appMetadata?['provider'] ?? 'null'}');
+      print('Provider   : ${user?.appMetadata['provider'] ?? 'null'}');
       print('─────────────────────────────────────');
-      print('🎫 Access Token: $safeAccess');
-      print('🔄 Refresh Token: $safeRefresh');
+      print('Access Token: $safeAccess');
+      print('Refresh Token: $safeRefresh');
       print(
         'Expires At  : ${session?.expiresAt != null ? DateTime.fromMillisecondsSinceEpoch(session!.expiresAt! * 1000) : 'null'}',
+      );
+      print(
+        'Access Token: ${session?.accessToken ?? 'null'}',
       );
       print('Token Type  : ${session?.tokenType ?? 'null'}');
       print('─────────────────────────────────────');
@@ -108,6 +120,13 @@ class _LoginPageState extends State<LoginPage> {
       print('══════════════════════════════════════');
 
       if (user != null && !_didNavigate) {
+        // if (user.userMetadata?['is_registered'] != true) {
+        //   setState(() {
+        //     _isLoading = false;
+        //   });
+        //   _blockIfUnregistered();
+        //   return;
+        // }
         setState(() {
           _didNavigate = true; // Kunci segera di dalam setState
           _isLoading = false;
@@ -132,6 +151,11 @@ class _LoginPageState extends State<LoginPage> {
     final user = session?.user;
 
     if (user == null || _didNavigate || !mounted) return;
+
+    // if (user.userMetadata?['is_registered'] != true) {
+    //   await _blockIfUnregistered();
+    //   return;
+    // }
 
     setState(() {
       _didNavigate = true;
@@ -168,6 +192,16 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
+
+  // Use later
+  // Future<void> _blockIfUnregistered() async {
+  //   await supabase.auth.signOut();
+  //   if (!mounted) return;
+  //   _showToast(
+  //     'Akun belum terdaftar. Silakan daftar terlebih dahulu.',
+  //     isError: true,
+  //   );
+  // }
 
   Future<void> _navigateAfterLogin() async {
     try {
@@ -286,6 +320,9 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final LinearGradient activeHorizontalGradient = userRoleState.isPsychologist
+        ? psychologistHorizontalGradient
+        : horizontalGradient;
     // ... widget tree tetap sama, hanya tambahkan loading indicator
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -298,7 +335,7 @@ class _LoginPageState extends State<LoginPage> {
                 flex: 4,
                 child: Container(
                   width: double.infinity,
-                  decoration: BoxDecoration(gradient: verticalGradient),
+                  decoration: BoxDecoration(gradient: activeHorizontalGradient),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -347,7 +384,7 @@ class _LoginPageState extends State<LoginPage> {
                         style: GoogleFonts.nunito(
                           fontSize: 24,
                           fontWeight: FontWeight.w800,
-                          color: Colors.black87,
+                          color: const Color(0xFF294669),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -371,7 +408,7 @@ class _LoginPageState extends State<LoginPage> {
                               width: 1,
                             ),
                             borderRadius: BorderRadius.circular(30),
-                            gradient: horizontalGradient,
+                            gradient: activeHorizontalGradient,
                           ),
                           child: Material(
                             color: Colors.white,
@@ -407,7 +444,7 @@ class _LoginPageState extends State<LoginPage> {
                                             'Masuk dengan Google',
                                             style: GoogleFonts.nunito(
                                               fontSize: 12,
-                                              color: Colors.black87,
+                                              color: const Color(0xFF294669),
                                               fontWeight: FontWeight.w700,
                                             ),
                                           ),
@@ -455,13 +492,13 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 16),
                       Container(
                         decoration: BoxDecoration(
-                          gradient: horizontalGradient,
+                          gradient: activeHorizontalGradient,
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
-                            onTap: () => context.go('/register'),
+                            onTap: () => context.push('/register'),
                             borderRadius: BorderRadius.circular(30),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 14),

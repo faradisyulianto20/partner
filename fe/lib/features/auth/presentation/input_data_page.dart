@@ -40,13 +40,16 @@ class _InputDataPageState extends State<InputDataPage> {
   @override
   Widget build(BuildContext context) {
     final bool showPending = widget.isPsychologist && _stepIndex == 3;
+    final LinearGradient activeHorizontalGradient = widget.isPsychologist
+        ? AppGradients.horizontalPsychologist
+        : AppGradients.horizontal;
 
     if (showPending) {
       return Scaffold(
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          decoration: const BoxDecoration(gradient: AppGradients.horizontal),
+          decoration: BoxDecoration(gradient: activeHorizontalGradient),
           child: SafeArea(
             child: VerificationPendingStep(onBackToLogin: _backToLogin),
           ),
@@ -55,7 +58,7 @@ class _InputDataPageState extends State<InputDataPage> {
     }
 
     return Container(
-      decoration: const BoxDecoration(gradient: AppGradients.horizontal),
+      decoration: BoxDecoration(gradient: activeHorizontalGradient),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Column(
