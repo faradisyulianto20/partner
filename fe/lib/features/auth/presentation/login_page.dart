@@ -10,6 +10,11 @@ import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/state/user_role_state.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hackathon/core/services/api_client.dart';
+import 'package:hackathon/core/services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'dart:developer' as developer;
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -97,6 +102,7 @@ class _LoginPageState extends State<LoginPage> {
       print(
         'Expires At  : ${session?.expiresAt != null ? DateTime.fromMillisecondsSinceEpoch(session!.expiresAt! * 1000) : 'null'}',
       );
+      developer.log('Access Token: ${session?.accessToken ?? 'null'}');
       print('Access Token: ${session?.accessToken ?? 'null'}');
       print('Token Type  : ${session?.tokenType ?? 'null'}');
       print('─────────────────────────────────────');
@@ -118,15 +124,8 @@ class _LoginPageState extends State<LoginPage> {
       print('══════════════════════════════════════');
 
       if (user != null && !_didNavigate) {
-        // if (user.userMetadata?['is_registered'] != true) {
-        //   setState(() {
-        //     _isLoading = false;
-        //   });
-        //   _blockIfUnregistered();
-        //   return;
-        // }
         setState(() {
-          _didNavigate = true; // Kunci segera di dalam setState
+          _didNavigate = true;
           _isLoading = false;
         });
 
@@ -134,6 +133,17 @@ class _LoginPageState extends State<LoginPage> {
           'Login berhasil! Selamat datang, ${user.userMetadata?['full_name'] ?? user.email}',
           isError: false,
         );
+        
+        // Selalu panggil /auth/login untuk mendapatkan custom JWT dari backend
+       _exchangeForCustomToken();
+        
+        // Jika ada providerToken, kirim juga ke backend
+        if (session?.providerToken != null) {
+          _sendProviderTokenToBackend(
+            session!.providerToken!,
+            refreshToken: session.providerRefreshToken,
+          );
+        }
 
         _navigateAfterLogin();
       }
@@ -142,6 +152,50 @@ class _LoginPageState extends State<LoginPage> {
         _isLoading = false;
       });
     });
+  }
+
+  /// Menukarkan Supabase access token dengan custom JWT dari backend NestJS.
+  /// Ini adalah langkah utama agar semua request selanjutnya menggunakan token buatan backend.
+  Future<void> _exchangeForCustomToken() async {
+    try {
+      final baseUrl = dotenv.env['API_URL'] ?? 'http://10.72.12.108:3000';
+      final apiClient = ApiClient(baseUrl: baseUrl);
+      final authService = AuthService(apiClient);
+      
+      // Panggil POST /auth/login dengan Supabase token (otomatis di-attach oleh ApiClient)
+      final response = await apiClient.post<Map<String, dynamic>>(
+        '/auth/login',
+        parser: (json) => json as Map<String, dynamic>,
+      );
+
+      if (response.isSuccess && response.data != null) {
+        final accessToken = response.data!['accessToken'];
+        if (accessToken != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('custom_access_token', accessToken);
+          apiClient.authToken = accessToken;
+          
+          print('====================================');
+          print('CUSTOM BEARER TOKEN (for Postman):');
+          print(accessToken);
+          print('====================================');
+        }
+      }
+    } catch (e) {
+      print('Failed to exchange for custom token: $e');
+    }
+  }
+
+  Future<void> _sendProviderTokenToBackend(String providerToken, {String? refreshToken}) async {
+    try {
+      final baseUrl = dotenv.env['API_URL'] ?? 'http://10.72.12.108:3000';
+      final apiClient = ApiClient(baseUrl: baseUrl);
+      final authService = AuthService(apiClient);
+      await authService.saveProviderToken(providerToken, providerRefreshToken: refreshToken);
+      print('Provider token successfully sent to backend');
+    } catch (e) {
+      print('Failed to send provider token to backend: $e');
+    }
   }
 
   Future<void> _redirectIfAlreadyLoggedIn() async {
@@ -278,6 +332,7 @@ class _LoginPageState extends State<LoginPage> {
       print('Supabase signInWithIdToken success!');
       print('Supabase User ID: ${response.user?.id}');
       print('Supabase Email  : ${response.user?.email}');
+      
     } on GoogleSignInException catch (error) {
       print('GoogleSignInException: ${error.code} - ${error.description}');
       if (error.code == GoogleSignInExceptionCode.canceled) {

@@ -1,8 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hackathon/core/models/psychologist_models.dart';
+import 'package:hackathon/core/services/api_client.dart';
+import 'package:hackathon/core/services/psychologist_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class Booking extends StatefulWidget {
-  const Booking({super.key});
+  final String psychologistId;
+  final String psychologistName;
+  final int price;
+
+  const Booking({
+    super.key,
+    required this.psychologistId,
+    required this.psychologistName,
+    required this.price,
+  });
 
   @override
   State<Booking> createState() => _BookingState();
@@ -10,6 +24,7 @@ class Booking extends StatefulWidget {
 
 class _BookingState extends State<Booking> {
   final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _notesController = TextEditingController();
   final List<String> _times = [
     '09:00',
     '10:00',
@@ -21,7 +36,12 @@ class _BookingState extends State<Booking> {
     '17:00',
   ];
   String? _selectedTime;
-  String _selectedMethod = 'Chat';
+  PsychologistBookingMethod _selectedMethod = PsychologistBookingMethod.chat;
+  bool _isLoading = false;
+
+  late final PsychologistService _psychologistService = PsychologistService(
+    ApiClient(baseUrl: dotenv.env['API_URL'] ?? 'http://10.72.12.108:3000'),
+  );
 
   Future<void> _pickDate(BuildContext context) async {
     final now = DateTime.now();
@@ -100,9 +120,94 @@ class _BookingState extends State<Booking> {
     );
   }
 
+  void _showErrorDialog(String message) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _handleBooking() async {
+    if (_dateController.text.isEmpty) {
+      _showErrorDialog('Silakan pilih tanggal');
+      return;
+    }
+    if (_selectedTime == null) {
+      _showErrorDialog('Silakan pilih waktu');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) {
+        _showErrorDialog('User ID tidak ditemukan. Silakan login kembali.');
+        return;
+      }
+
+      // Combine date and time
+      final dateParts = _dateController.text.split('/');
+      final bookingDateTime = DateTime(
+        int.parse(dateParts[2]),
+        int.parse(dateParts[1]),
+        int.parse(dateParts[0]),
+        int.parse(_selectedTime!.split(':')[0]),
+        int.parse(_selectedTime!.split(':')[1]),
+      );
+
+      final response = await _psychologistService.createBooking(
+        PsychologistBookingRequest(
+          userId: userId,
+          psychologistId: widget.psychologistId,
+          fullName:
+              Supabase
+                  .instance
+                  .client
+                  .auth
+                  .currentUser
+                  ?.userMetadata?['full_name']
+                  ?.toString() ??
+              'Unknown',
+          method: _selectedMethod,
+          price: widget.price,
+          scheduledAt: bookingDateTime.toIso8601String(),
+          notes: _notesController.text.isEmpty ? null : _notesController.text,
+        ),
+      );
+
+      if (!mounted) return;
+
+      if (response.isSuccess) {
+        _showSuccessDialog();
+      } else {
+        _showErrorDialog('Gagal membuat booking. Silakan coba lagi.');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showErrorDialog('Error: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   @override
   void dispose() {
     _dateController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -228,8 +333,8 @@ class _BookingState extends State<Booking> {
                     child: _MethodOption(
                       icon: Icons.chat_bubble_outline_rounded,
                       label: 'Chat',
-                      isSelected: _selectedMethod == 'Chat',
-                      onTap: () => setState(() => _selectedMethod = 'Chat'),
+                      isSelected: _selectedMethod == PsychologistBookingMethod.chat,
+                      onTap: () => setState(() => _selectedMethod = PsychologistBookingMethod.chat),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -237,8 +342,8 @@ class _BookingState extends State<Booking> {
                     child: _MethodOption(
                       icon: Icons.graphic_eq_rounded,
                       label: 'Voice',
-                      isSelected: _selectedMethod == 'Voice',
-                      onTap: () => setState(() => _selectedMethod = 'Voice'),
+                      isSelected: _selectedMethod == PsychologistBookingMethod.voice,
+                      onTap: () => setState(() => _selectedMethod = PsychologistBookingMethod.voice),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -246,16 +351,51 @@ class _BookingState extends State<Booking> {
                     child: _MethodOption(
                       icon: Icons.videocam_outlined,
                       label: 'Video',
-                      isSelected: _selectedMethod == 'Video',
-                      onTap: () => setState(() => _selectedMethod = 'Video'),
+                      isSelected: _selectedMethod == PsychologistBookingMethod.video,
+                      onTap: () => setState(() => _selectedMethod = PsychologistBookingMethod.video),
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: 18),
+              const Text(
+                'Catatan Tambahan',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1F4C7A),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _notesController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Tuliskan catatan atau keluhan Anda...',
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFBFD0E6)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFBFD0E6)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFF1F4C7A)),
+                  ),
+                ),
+              ),
               const SizedBox(height: 24),
               Row(
-                children: const [
-                  Text(
+                children: [
+                  const Text(
                     'Total',
                     style: TextStyle(
                       fontSize: 14,
@@ -263,10 +403,10 @@ class _BookingState extends State<Booking> {
                       color: Color(0xFF1F4C7A),
                     ),
                   ),
-                  Spacer(),
+                  const Spacer(),
                   Text(
-                    'Rp.100.000',
-                    style: TextStyle(
+                    'Rp ${widget.price.toString()}',
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
                       color: Color(0xFF1F4C7A),
@@ -278,7 +418,7 @@ class _BookingState extends State<Booking> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _showSuccessDialog,
+                  onPressed: _isLoading ? null : _handleBooking,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1F4C7A),
                     foregroundColor: Colors.white,
@@ -288,10 +428,19 @@ class _BookingState extends State<Booking> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    'Konfirmasi Booking',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Konfirmasi Booking',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
                 ),
               ),
             ],

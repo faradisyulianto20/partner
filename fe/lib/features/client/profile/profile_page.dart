@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hackathon/core/services/api_client.dart';
+import 'package:hackathon/core/services/profile_service.dart';
+import 'package:hackathon/core/models/profile_models.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -14,6 +17,10 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   final SupabaseClient supabase = Supabase.instance.client;
+  late final ProfileService _profileService = ProfileService(
+    ApiClient(baseUrl: 'http://10.72.12.108:3000'),
+  );
+
   final TextEditingController _nameController = TextEditingController(
     text: 'Alex Ferguson',
   );
@@ -32,7 +39,10 @@ class _ProfilePageState extends State<ProfilePage> {
   );
   File? _profileImage;
   String? _profileImageUrl;
-  String _selectedGender = 'Laki-laki';
+  String _selectedGender = 'MALE';
+  bool _isLoading = true;
+  bool _isSaving = false;
+  String? _errorMessage;
 
   @override
   void initState() {

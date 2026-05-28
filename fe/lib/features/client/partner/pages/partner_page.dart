@@ -19,7 +19,7 @@ class PartnerPage extends StatefulWidget {
 }
 
 class _PartnerPageState extends State<PartnerPage> {
-  static const String _baseUrl = 'http://127.0.0.1:3000';
+  static const String _baseUrl = 'http://10.72.12.108:3000';
 
   late final ApiClient _apiClient = ApiClient(baseUrl: _baseUrl);
   late final AiPartnerService _aiPartnerService = AiPartnerService(_apiClient);

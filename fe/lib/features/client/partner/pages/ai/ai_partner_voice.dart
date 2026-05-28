@@ -24,7 +24,7 @@ class AIPartnerVoice extends StatefulWidget {
 
 class _AIPartnerVoiceState extends State<AIPartnerVoice>
     with TickerProviderStateMixin {
-  static const String _baseUrl = 'http://127.0.0.1:3000';
+  static const String _baseUrl = 'http://10.72.12.108:3000';
 
   late AnimationController _waveController;
   final AudioRecorder _recorder = AudioRecorder();

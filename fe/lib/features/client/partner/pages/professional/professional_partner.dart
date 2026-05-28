@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hackathon/core/models/psychologist_models.dart';
 import 'package:hackathon/core/services/api_client.dart';
@@ -17,7 +18,7 @@ class ProfessionalPartnerPage extends StatefulWidget {
 class _ProfessionalPartnerState extends State<ProfessionalPartnerPage> {
   final TextEditingController _searchController = TextEditingController();
   late final PsychologistService _service = PsychologistService(
-    ApiClient(baseUrl: 'http://127.0.0.1:3000'),
+    ApiClient(baseUrl: dotenv.env['API_URL'] ?? 'http://10.72.12.108:3000'),
   );
 
   List<PsychologistListItem> _allItems = [];

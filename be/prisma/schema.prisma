@@ -218,12 +218,14 @@ model PsychologistBooking {
 }
 
 model User {
-    id          String   @id
-    email       String?
-    displayName String?
-    role        UserRole
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
+    id                   String   @id
+    email                String?
+    displayName          String?
+    role                 UserRole
+    providerToken        String?
+    providerRefreshToken String?
+    createdAt            DateTime @default(now())
+    updatedAt            DateTime @updatedAt
 
     clientProfile ClientProfile?
     psychologist  Psychologist?

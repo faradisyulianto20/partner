@@ -101,7 +101,7 @@ class _HomeCTAState extends State<HomeCTA> {
               children: [
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => context.push('/analysis/face'),
+                    onTap: () => context.push('/expression/analysis'),
                     child: Container(
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
@@ -137,7 +137,7 @@ class _HomeCTAState extends State<HomeCTA> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => context.push('/analysis/text'),
+                    onPressed: () => context.push('/home/emotion-description'),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(
                         color: Color(0xFF1B517A),

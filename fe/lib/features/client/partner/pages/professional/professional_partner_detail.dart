@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/models/psychologist_models.dart';
 import 'package:hackathon/core/services/api_client.dart';
@@ -22,7 +23,7 @@ class _DetailDoctorState extends State<DetailDoctor> {
   void initState() {
     super.initState();
     _psychologistService = PsychologistService(
-      ApiClient(baseUrl: 'http://10.0.2.2:3000'),
+      ApiClient(baseUrl: dotenv.env['API_URL'] ?? 'http://10.72.12.108:3000'),
     );
     _fetchPsychologistDetail();
   }

@@ -2,6 +2,8 @@ import 'package:hackathon/core/models/api_response.dart';
 import 'package:hackathon/core/models/auth_models.dart';
 import 'package:hackathon/core/services/api_client.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 class AuthService {
   final ApiClient _client;
 
@@ -68,5 +70,32 @@ class AuthService {
       body: {'token': token, 'newPassword': newPassword},
       parser: (json) => null,
     );
+  }
+
+  Future<ApiResponse<void>> saveProviderToken(String providerToken, {String? providerRefreshToken}) async {
+    final response = await _client.post(
+      '/auth/provider-token',
+      body: {
+        'providerToken': providerToken,
+        if (providerRefreshToken != null) 'providerRefreshToken': providerRefreshToken,
+      },
+      parser: (json) => json as Map<String, dynamic>,
+    );
+
+    if (response.isSuccess && response.data != null) {
+        final data = response.data as Map<String, dynamic>;
+        final accessToken = data['accessToken'];
+        if (accessToken != null) {
+           print('====================================');
+           print('BEARER TOKEN FOR POSTMAN:');
+           print(accessToken);
+           print('====================================');
+           
+           final prefs = await SharedPreferences.getInstance();
+           await prefs.setString('custom_access_token', accessToken);
+           _client.authToken = accessToken;
+        }
+    }
+    return ApiResponse(statusCode: response.statusCode, data: null);
   }
 }

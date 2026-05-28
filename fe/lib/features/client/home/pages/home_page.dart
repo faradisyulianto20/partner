@@ -7,6 +7,7 @@ import 'package:hackathon/features/client/home/widgets/cta.dart';
 import 'package:hackathon/features/client/home/widgets/history.dart';
 import 'package:hackathon/features/client/home/widgets/today.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,7 +17,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  static const String _baseUrl = 'http://127.0.0.1:3000';
+  static const String _baseUrl = 'http://10.72.12.108:3000';
 
   late final ApiClient _apiClient = ApiClient(baseUrl: _baseUrl);
   late final AnalysisService _analysisService = AnalysisService(_apiClient);
@@ -47,7 +48,20 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      final response = await _analysisService.fetchDashboard();
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      print('─────────────────────────────────────');
+      print('User ID     : ${userId ?? 'null'}');
+      print('Auth State  : ${Supabase.instance.client.auth.currentSession != null ? 'Authenticated' : 'Unauthenticated'}');
+      print('Session     : ${Supabase.instance.client.auth.currentSession != null ? 'Exists' : 'None'}');
+      print('User Email  : ${Supabase.instance.client.auth.currentUser?.email ?? 'null'}');
+      print('─────────────────────────────────────');
+      if (userId == null) {
+        setState(() {
+          _errorMessage = 'Sesi tidak ditemukan. Silakan login ulang.';
+        });
+        return;
+      }
+      final response = await _analysisService.fetchDashboard(userId: userId);
       if (!response.isSuccess) {
         setState(() {
           _errorMessage = 'Gagal memuat data dashboard.';
@@ -81,18 +95,21 @@ class _HomePageState extends State<HomePage> {
       final today = map?['today'];
       String? todayEmotion;
       String? todaySummary;
-      String? todayRecommendations;
+      List<Map<String, String>> todayRecommendations = const [];
       if (today is Map) {
         todayEmotion = today['emotionLabel']?.toString();
         todaySummary = today['summary']?.toString();
-        todayRecommendations = today['recommendations']?.toString();
+        final rawRec = today['recommendations'];
+        if (rawRec is Map) {
+          todayRecommendations = _buildRecommendationsFromMap(rawRec);
+        }
       }
 
       setState(() {
         _historyDays = days;
         _todayEmotion = todayEmotion;
         _todaySummary = todaySummary;
-        _todayRecommendations = _buildRecommendations(todayRecommendations);
+        _todayRecommendations = todayRecommendations;
       });
     } catch (_) {
       setState(() {
@@ -104,30 +121,31 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  List<Map<String, String>> _buildRecommendations(String? raw) {
-    if (raw == null || raw.trim().isEmpty) {
-      return const [];
+  List<Map<String, String>> _buildRecommendationsFromMap(Map raw) {
+    final items = <Map<String, String>>[];
+
+    final narrative = raw['narrative']?.toString();
+    if (narrative != null && narrative.trim().isNotEmpty) {
+      items.add({
+        'title': raw['title']?.toString() ?? 'Rekomendasi',
+        'description': narrative,
+      });
     }
 
-    final parts = raw
-        .split(RegExp(r'\n+'))
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .toList();
-
-    if (parts.length <= 1) {
-      return [
-        {'title': 'Rekomendasi', 'description': raw.trim()},
-      ];
+    final rawItems = raw['items'];
+    if (rawItems is List) {
+      for (final item in rawItems) {
+        if (item is Map) {
+          final title = item['title']?.toString();
+          final desc = item['description']?.toString();
+          if (title != null && desc != null) {
+            items.add({'title': title, 'description': desc});
+          }
+        }
+      }
     }
 
-    return List.generate(
-      parts.length,
-      (index) => {
-        'title': 'Rekomendasi ${index + 1}',
-        'description': parts[index],
-      },
-    );
+    return items;
   }
 
   String _iconForEmotionLabel(String? label) {

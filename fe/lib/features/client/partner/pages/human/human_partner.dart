@@ -17,7 +17,7 @@ class HumanPartnerPage extends StatefulWidget {
 }
 
 class _HumanPartnerPageState extends State<HumanPartnerPage> {
-  static const String _baseUrl = 'http://127.0.0.1:3000';
+  static const String _baseUrl = 'http://10.72.12.108:3000';
   static const _primary = Color(0xFF1B517A);
   static const _secondary = Color(0xFF2F6FB4);
   static const _titleStyle = TextStyle(

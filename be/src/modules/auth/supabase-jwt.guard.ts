@@ -68,3 +68,4 @@ export class SupabaseJwtGuard implements CanActivate {
         return { jwksUrl, issuer, audience };
     }
 }
+

@@ -171,7 +171,21 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/partner/professional-partner/booking',
-      builder: (context, state) => const Booking(),
+      builder: (context, state) {
+        final extra = state.extra;
+        // if (extra is PsychologistDetailResponse) {
+        //   return Booking(
+        //     psychologistId: extra.id,
+        //     psychologistName: extra.fullName,
+        //     price: extra.price,
+        //   );
+        // }
+        return const Booking(
+          psychologistId: '',
+          psychologistName: 'Unknown',
+          price: 0,
+        );
+      },
     ),
     GoRoute(
       path: '/journal/add',

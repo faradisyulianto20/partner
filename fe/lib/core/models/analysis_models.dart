@@ -108,6 +108,6 @@ class AnalysisDashboardResponse {
   const AnalysisDashboardResponse({required this.data});
 
   factory AnalysisDashboardResponse.fromJson(Object? json) {
-    return AnalysisDashboardResponse(data: json);
+    return AnalysisDashboardResponse(data: _resolvePayload(json));
   }
 }

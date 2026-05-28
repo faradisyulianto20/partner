@@ -133,7 +133,7 @@ class EmotionDescription extends StatefulWidget {
 }
 
 class _EmotionDescriptionState extends State<EmotionDescription> {
-  static const String _baseUrl = 'http://127.0.0.1:3000';
+  static const String _baseUrl = 'http://10.72.12.108:3000';
 
   final TextEditingController _controller = TextEditingController();
   late final ApiClient _apiClient = ApiClient(baseUrl: _baseUrl);

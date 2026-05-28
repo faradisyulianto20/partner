@@ -17,7 +17,7 @@ class ExpressionAnalysis extends StatefulWidget {
 }
 
 class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
-  static const String _baseUrl = 'http://127.0.0.1:3000';
+  static const String _baseUrl = 'http://10.72.12.108:3000';
 
   List<CameraDescription> cameras = [];
   CameraController? cameraController;
