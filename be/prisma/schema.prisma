@@ -20,6 +20,32 @@ model Analysis {
     rawJson         Json?
 }
 
+enum JournalMoodCategory {
+    POSITIVE
+    CALM
+    ANXIOUS
+    SAD
+    ANGRY
+    BURNOUT
+    NEUTRAL
+}
+
+model Journal {
+    id             String              @id @default(uuid())
+    userId         String
+    title          String
+    content        String
+    moodLabel      String
+    moodCategory   JournalMoodCategory
+    moodConfidence Float?
+    summary        String
+    rawJson        Json?
+    createdAt      DateTime            @default(now())
+    updatedAt      DateTime            @updatedAt
+
+    @@index([userId, createdAt])
+}
+
 model ChatSession {
     id        String        @id @default(uuid())
     userId    String

@@ -139,6 +139,104 @@ Response
 
 - 200 OK: data dashboard
 
+## Journal
+
+Semua endpoint journal membutuhkan `Authorization: Bearer <access_token>` dari Supabase.
+
+### POST /journal
+
+Buat jurnal baru dan AI akan mengategorikan mood berdasarkan isi jurnal.
+
+Body
+
+```json
+{
+  "title": "string",
+  "content": "string"
+}
+```
+
+Parameter
+
+- title*: string
+- content*: string
+
+Response
+
+- 200 OK: jurnal tersimpan dengan hasil analisis mood
+
+Contoh response
+
+```json
+{
+  "id": "string",
+  "userId": "string",
+  "title": "string",
+  "content": "string",
+  "moodLabel": "Cemas Ringan",
+  "moodCategory": "ANXIOUS",
+  "moodConfidence": 0.82,
+  "summary": "Ringkasan mood dari isi jurnal",
+  "createdAt": "2026-05-28T12:00:00.000Z",
+  "updatedAt": "2026-05-28T12:00:00.000Z"
+}
+```
+
+### GET /journal
+
+Ambil daftar jurnal milik user login.
+
+Query params
+
+- limit: number, optional
+- offset: number, optional
+
+Response
+
+- 200 OK: daftar jurnal + total
+
+### GET /journal/:id
+
+Ambil detail jurnal.
+
+Path params
+
+- id*: string
+
+Response
+
+- 200 OK: detail jurnal
+
+### PUT /journal/:id
+
+Update jurnal dan AI akan klasifikasi mood ulang.
+
+Body
+
+```json
+{
+  "title": "string",
+  "content": "string"
+}
+```
+
+Parameter
+
+- title: string, optional
+- content: string, optional
+
+Response
+
+- 200 OK: jurnal terupdate
+
+### DELETE /journal/:id
+
+Hapus jurnal.
+
+Response
+
+- 200 OK: `{"status":"deleted"}`
+
 ## Human Partner
 
 ### POST /partner/queue/join

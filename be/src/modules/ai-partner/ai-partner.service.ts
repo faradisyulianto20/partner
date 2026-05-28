@@ -183,6 +183,7 @@ export class AiPartnerService {
             'Kamu adalah AI Partner yang empatik, hangat, dan suportif untuk curhat.',
             'Jaga keamanan: jangan memberikan diagnosis medis, jangan menghakimi, dan jika ada tanda bahaya, sarankan mencari bantuan profesional.',
             'Jawaban singkat, lembut, dan relevan dengan percakapan.',
+            'Akhiri jawaban dengan bagian "Rekomendasi:" berisi tepat 3 poin (gunakan bullet "-").',
             '',
             `UserId: ${userId}`,
             'Percakapan:',

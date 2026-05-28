@@ -6,7 +6,15 @@ import { PrismaService } from '../prisma/prisma.service';
 export type AnalysisResult = {
     emotionLabel: string;
     summary: string;
-    recommendations: string;
+    recommendations: {
+        title: string;
+        narrative: string;
+        items: Array<{
+            key: 'AI_PARTNER' | 'HUMAN_PARTNER' | 'PROFESSIONAL_PARTNER';
+            title: string;
+            description: string;
+        }>;
+    };
     confidence?: number;
 };
 
@@ -216,16 +224,15 @@ export class AnalysisService {
 
         const recommendationsValue =
             parsed.recommendations ?? parsed.recommendation ?? parsed.rekomendasi;
-        const recommendationsText = Array.isArray(recommendationsValue)
-            ? recommendationsValue.map((item: unknown) => String(item)).join(' ')
-            : String(recommendationsValue ?? '').trim();
-        const safeRecommendations = recommendationsText ||
+        const recommendationsText = this.extractRecommendationText(recommendationsValue);
+        const safeRecommendationsText = recommendationsText ||
             'Luangkan waktu sebentar untuk menarik napas perlahan dan memberi diri ruang beristirahat.';
+        const supportRecommendations = this.buildSupportRecommendations(safeRecommendationsText);
 
         const result: AnalysisResult = {
             emotionLabel: String(parsed.emotionLabel ?? '').trim(),
             summary: String(parsed.summary ?? '').trim(),
-            recommendations: safeRecommendations,
+            recommendations: supportRecommendations,
             confidence: typeof parsed.confidence === 'number' ? parsed.confidence : undefined,
         };
 
@@ -237,13 +244,80 @@ export class AnalysisService {
     }
 
     private normalizeRecommendation(value: unknown) {
+        if (value && typeof value === 'object') {
+            const maybe = value as {
+                title?: unknown;
+                narrative?: unknown;
+                items?: unknown;
+            };
+
+            if (Array.isArray(maybe.items)) {
+                return {
+                    title: typeof maybe.title === 'string' ? maybe.title : 'Rekomendasi Dukungan Untukmu',
+                    narrative:
+                        typeof maybe.narrative === 'string'
+                            ? maybe.narrative
+                            : 'Kamu bisa mencoba dukungan bertahap sesuai kebutuhanmu.',
+                    items: maybe.items,
+                };
+            }
+        }
+
+        const narrative = this.extractRecommendationText(value);
+        if (!narrative) {
+            return null;
+        }
+
+        return this.buildSupportRecommendations(narrative);
+    }
+
+    private extractRecommendationText(value: unknown) {
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+            const maybe = value as { narrative?: unknown; text?: unknown };
+            if (typeof maybe.narrative === 'string' && maybe.narrative.trim()) {
+                return maybe.narrative.trim();
+            }
+            if (typeof maybe.text === 'string' && maybe.text.trim()) {
+                return maybe.text.trim();
+            }
+        }
+
         if (Array.isArray(value)) {
-            return value.map((item) => String(item)).join(' ');
+            return value.map((item: unknown) => String(item)).join(' ').trim();
         }
+
         if (typeof value === 'string') {
-            return value;
+            return value.trim();
         }
-        return null;
+
+        return '';
+    }
+
+    private buildSupportRecommendations(narrative: string) {
+        return {
+            title: 'Rekomendasi Dukungan Untukmu',
+            narrative,
+            items: [
+                {
+                    key: 'AI_PARTNER' as const,
+                    title: 'AI Partner',
+                    description:
+                        'AI Partner dapat membantu menemanimu berbicara, menenangkan pikiran, dan memberikan refleksi emosional secara perlahan.',
+                },
+                {
+                    key: 'HUMAN_PARTNER' as const,
+                    title: 'Human Partner',
+                    description:
+                        'Jika kamu ingin merasa lebih dipahami secara emosional, kamu juga bisa mencoba berbicara dengan Human Partner secara anonim.',
+                },
+                {
+                    key: 'PROFESSIONAL_PARTNER' as const,
+                    title: 'Professional Partner',
+                    description:
+                        'Apabila emosi mulai terasa berat atau berlangsung cukup lama, berbicara dengan psikolog dapat membantu memahami kondisimu dengan lebih baik.',
+                },
+            ],
+        };
     }
 
     private toDateKey(date: Date) {
