@@ -9,6 +9,25 @@ import { PsychologistDocumentsDto } from './dto/psychologist-documents.dto';
 export class ProfileService {
     constructor(private readonly prisma: PrismaService) { }
 
+    async getCurrentProfile(userId: string) {
+        if (!userId?.trim()) {
+            return null;
+        }
+
+        return this.prisma.user.findUnique({
+            where: { id: userId.trim() },
+            include: {
+                clientProfile: true,
+                psychologist: {
+                    include: {
+                        education: true,
+                        documents: true,
+                    },
+                },
+            },
+        });
+    }
+
     private async upsertUser(data: {
         id: string;
         email?: string;
@@ -144,5 +163,33 @@ export class ProfileService {
                 }),
             ),
         );
+    }
+
+    async getClientProfile(userId: string) {
+        if (!userId?.trim()) return null;
+
+        return this.prisma.clientProfile.findUnique({
+            where: { userId: userId.trim() },
+            include: {
+                user: {
+                    select: { id: true, email: true, displayName: true, role: true },
+                },
+            },
+        });
+    }
+
+    async getPsychologistProfile(userId: string) {
+        if (!userId?.trim()) return null;
+
+        return this.prisma.psychologist.findUnique({
+            where: { userId: userId.trim() },
+            include: {
+                education: true,
+                documents: true,
+                user: {
+                    select: { id: true, email: true, displayName: true, role: true },
+                },
+            },
+        });
     }
 }

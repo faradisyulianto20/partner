@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { ClientProfileDto } from './dto/client-profile.dto';
 import { PsychologistProfileDto } from './dto/psychologist-profile.dto';
@@ -10,6 +10,24 @@ import type { CurrentUserPayload } from '../auth/current-user.decorator';
 @Controller('profile')
 export class ProfileController {
     constructor(private readonly profileService: ProfileService) { }
+
+    @Get('me')
+    @UseGuards(SupabaseJwtGuard)
+    getMe(@CurrentUser() user: CurrentUserPayload) {
+        return this.profileService.getCurrentProfile(user?.sub ?? '');
+    }
+
+    @Get('me/client')
+    @UseGuards(SupabaseJwtGuard)
+    getClientProfile(@CurrentUser() user: CurrentUserPayload) {
+        return this.profileService.getClientProfile(user?.sub ?? '');
+    }
+
+    @Get('me/psychologist')
+    @UseGuards(SupabaseJwtGuard)
+    getPsychologistProfile(@CurrentUser() user: CurrentUserPayload) {
+        return this.profileService.getPsychologistProfile(user?.sub ?? '');
+    }
 
     @Post('client')
     @UseGuards(SupabaseJwtGuard)
