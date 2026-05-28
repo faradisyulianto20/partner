@@ -1,4 +1,4 @@
-import 'dart:math';
+// import 'dart:math';
 
 import 'package:flutter/material.dart';
 
@@ -15,39 +15,20 @@ class ChatMessage {
 }
 
 class ChatContent extends StatelessWidget {
-  const ChatContent({super.key, this.messages});
+  const ChatContent({super.key, this.messages, this.controller});
 
   final List<ChatMessage>? messages;
-
-  static const List<ChatMessage> _defaultMessages = [
-    ChatMessage(
-      isSender: false,
-      message:
-          'Halo, aku siap mendengarkanmu. Tidak perlu menahan semuanya sendiri. Apa yang sedang memenuhi pikiranmu hari ini?',
-      time: '02:15',
-    ),
-    ChatMessage(
-      isSender: true,
-      message:
-          'Aku sangat lelah hari ini, aku capek banget dari kemarin aku tidur subuh terus ngerjain proyek GDGOC sini',
-      time: '02:16',
-    ),
-    ChatMessage(
-      isSender: false,
-      message:
-          'Turut berduka ya.. Saranku sih gausah dikerjain yaa biar kamu bisa tidur cukup',
-      time: '02:16',
-    ),
-  ];
+  final ScrollController? controller;
 
   @override
   Widget build(BuildContext context) {
-    final items = messages ?? _defaultMessages;
+    final items = messages ?? [];
 
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24),
         child: ListView.separated(
+          controller: controller,
           padding: const EdgeInsets.only(top: 16, bottom: 8),
           itemBuilder: (context, index) {
             final item = items[index];

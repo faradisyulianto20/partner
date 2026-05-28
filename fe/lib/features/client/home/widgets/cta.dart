@@ -43,7 +43,8 @@ class _HomeCTAState extends State<HomeCTA> {
             Stack(
               clipBehavior: Clip.none,
               children: [
-                Expanded(
+                SizedBox(
+                  width: double.infinity,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -59,7 +60,6 @@ class _HomeCTAState extends State<HomeCTA> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
-                      // Subtitle
                       Align(
                         alignment: Alignment.centerLeft,
                         child: FractionallySizedBox(

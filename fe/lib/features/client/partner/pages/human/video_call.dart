@@ -28,14 +28,14 @@ class _VideoCallPageState extends State<VideoCallPage> {
   }
 
   Future<void> _initCamera() async {
-    List<CameraDescription> _cameras = await availableCameras();
-    if (_cameras.isNotEmpty) {
-      final front = _cameras.firstWhere(
+    List<CameraDescription> _=cameras = await availableCameras();
+    if (cameras.isNotEmpty) {
+      final front = cameras.firstWhere(
         (c) => c.lensDirection == CameraLensDirection.front,
-        orElse: () => _cameras.first,
+        orElse: () => cameras.first,
       );
       setState(() {
-        cameras = _cameras;
+        cameras = cameras;
         cameraController = CameraController(front, ResolutionPreset.high);
       });
       cameraController!.initialize().then((_) {

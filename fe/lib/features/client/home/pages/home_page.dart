@@ -16,7 +16,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  static const String _baseUrl = 'http://192.168.137.1:3000';
+  static const String _baseUrl = 'http://127.0.0.1:3000';
 
   late final ApiClient _apiClient = ApiClient(baseUrl: _baseUrl);
   late final AnalysisService _analysisService = AnalysisService(_apiClient);

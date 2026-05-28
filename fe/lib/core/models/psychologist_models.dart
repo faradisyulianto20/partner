@@ -22,36 +22,66 @@ class PsychologistSearchRequest {
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-    if (userId != null) {
-      json['userId'] = userId;
-    }
-    if (criteria != null) {
-      json['criteria'] = criteria;
-    }
-    if (limit != null) {
-      json['limit'] = limit;
-    }
+    if (userId != null) json['userId'] = userId;
+    if (criteria != null) json['criteria'] = criteria;
+    if (limit != null) json['limit'] = limit;
     return json;
   }
 }
 
-class PsychologistSearchResponse {
-  final Object? data;
+class PsychologistListItem {
+  final String id;
+  final String fullName;
+  final String specialization;
+  final String location;
+  final String clinicName;
+  final double rating;
+  final int reviewCount;
 
-  const PsychologistSearchResponse({required this.data});
+  const PsychologistListItem({
+    required this.id,
+    required this.fullName,
+    required this.specialization,
+    required this.location,
+    required this.clinicName,
+    required this.rating,
+    required this.reviewCount,
+  });
 
-  factory PsychologistSearchResponse.fromJson(Object? json) {
-    return PsychologistSearchResponse(data: json);
+  factory PsychologistListItem.fromJson(Map<String, dynamic> json) {
+    return PsychologistListItem(
+      id: json['id'] as String,
+      fullName: json['fullName'] as String,
+      specialization: json['specialization'] as String,
+      location: json['location'] as String,
+      clinicName: json['clinicName'] as String,
+      rating: (json['rating'] as num).toDouble(),
+      reviewCount: json['reviewCount'] as int,
+    );
   }
 }
 
-class PsychologistDetailResponse {
-  final Object? data;
+class PsychologistSearchResponse {
+  final List<PsychologistListItem> items;
 
-  const PsychologistDetailResponse({required this.data});
+  const PsychologistSearchResponse({required this.items});
 
-  factory PsychologistDetailResponse.fromJson(Object? json) {
-    return PsychologistDetailResponse(data: json);
+  factory PsychologistSearchResponse.fromJson(dynamic json) {
+    if (json is List) {
+      return PsychologistSearchResponse(
+        items: json
+            .map(
+              (e) => PsychologistListItem.fromJson(e as Map<String, dynamic>),
+            )
+            .toList(),
+      );
+    }
+    final list = json['data'] as List? ?? json['items'] as List? ?? [];
+    return PsychologistSearchResponse(
+      items: list
+          .map((e) => PsychologistListItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
   }
 }
 
@@ -83,9 +113,7 @@ class PsychologistBookingRequest {
       'price': price,
       'scheduledAt': scheduledAt,
     };
-    if (notes != null) {
-      json['notes'] = notes;
-    }
+    if (notes != null) json['notes'] = notes;
     return json;
   }
 }
@@ -105,9 +133,7 @@ class PsychologistPayRequest {
 
   const PsychologistPayRequest({required this.userId});
 
-  Map<String, dynamic> toJson() {
-    return {'userId': userId};
-  }
+  Map<String, dynamic> toJson() => {'userId': userId};
 }
 
 class PsychologistPayResponse {
@@ -139,9 +165,7 @@ class PsychologistReviewRequest {
       'psychologistId': psychologistId,
       'rating': rating,
     };
-    if (comment != null) {
-      json['comment'] = comment;
-    }
+    if (comment != null) json['comment'] = comment;
     return json;
   }
 }
@@ -161,9 +185,7 @@ class PsychologistVerificationRequest {
 
   const PsychologistVerificationRequest({required this.psychologistId});
 
-  Map<String, dynamic> toJson() {
-    return {'psychologistId': psychologistId};
-  }
+  Map<String, dynamic> toJson() => {'psychologistId': psychologistId};
 }
 
 class PsychologistVerificationResponse {
@@ -173,5 +195,160 @@ class PsychologistVerificationResponse {
 
   factory PsychologistVerificationResponse.fromJson(Object? json) {
     return PsychologistVerificationResponse(data: json);
+  }
+}
+
+class PsychologistDetailResponse {
+  final String id;
+  final String fullName;
+  final String email;
+  final String phoneNumber;
+  final String gender;
+  final String location;
+  final String clinicName;
+  final String specialization;
+  final int clientsHandled;
+  final int yearsExperience;
+  final String nik;
+  final String strNumber;
+  final String bio;
+  final List<String> tags;
+  final double rating;
+  final int reviewCount;
+  // FIX #8: Tambah field price. Jika API belum mengembalikan field ini,
+  // gunakan nilai default 0 agar tidak crash.
+  final int price;
+  final List<PsychologistEducation> education;
+  final List<PsychologistReview> reviews;
+  final List<PsychologistSchedule> schedules;
+
+  const PsychologistDetailResponse({
+    required this.id,
+    required this.fullName,
+    required this.email,
+    required this.phoneNumber,
+    required this.gender,
+    required this.location,
+    required this.clinicName,
+    required this.specialization,
+    required this.clientsHandled,
+    required this.yearsExperience,
+    required this.nik,
+    required this.strNumber,
+    required this.bio,
+    required this.tags,
+    required this.rating,
+    required this.reviewCount,
+    this.price = 0, // default 0 sampai API mengembalikan field ini
+    required this.education,
+    required this.reviews,
+    required this.schedules,
+  });
+
+  factory PsychologistDetailResponse.fromJson(Map<String, dynamic> json) {
+    return PsychologistDetailResponse(
+      id: json['id'] as String,
+      fullName: json['fullName'] as String,
+      email: json['email'] as String,
+      phoneNumber: json['phoneNumber'] as String,
+      gender: json['gender'] as String,
+      location: json['location'] as String,
+      clinicName: json['clinicName'] as String,
+      specialization: json['specialization'] as String,
+      clientsHandled: json['clientsHandled'] as int,
+      yearsExperience: json['yearsExperience'] as int,
+      nik: json['nik'] as String? ?? '',
+      strNumber: json['strNumber'] as String? ?? '',
+      bio: json['bio'] as String,
+      tags: List<String>.from(json['tags'] as List),
+      rating: (json['rating'] as num).toDouble(),
+      reviewCount: json['reviewCount'] as int,
+      // FIX #8: parse price dengan fallback 0 jika belum ada di response
+      price: (json['price'] as num?)?.toInt() ?? 0,
+      education: (json['education'] as List)
+          .map((e) => PsychologistEducation.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      reviews: (json['reviews'] as List)
+          .map((e) => PsychologistReview.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      schedules: (json['schedules'] as List)
+          .map((e) => PsychologistSchedule.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+class PsychologistEducation {
+  final String id;
+  final String level;
+  final String institution;
+  final int year;
+
+  const PsychologistEducation({
+    required this.id,
+    required this.level,
+    required this.institution,
+    required this.year,
+  });
+
+  factory PsychologistEducation.fromJson(Map<String, dynamic> json) {
+    return PsychologistEducation(
+      id: json['id'] as String,
+      level: json['level'] as String,
+      institution: json['institution'] as String,
+      year: json['year'] as int,
+    );
+  }
+}
+
+class PsychologistReview {
+  final String id;
+  final String userId;
+  final double rating;
+  final String comment;
+  final String createdAt;
+
+  const PsychologistReview({
+    required this.id,
+    required this.userId,
+    required this.rating,
+    required this.comment,
+    required this.createdAt,
+  });
+
+  factory PsychologistReview.fromJson(Map<String, dynamic> json) {
+    return PsychologistReview(
+      id: json['id'] as String,
+      userId: json['userId'] as String,
+      rating: (json['rating'] as num).toDouble(),
+      comment: json['comment'] as String? ?? '',
+      createdAt: json['createdAt'] as String,
+    );
+  }
+}
+
+class PsychologistSchedule {
+  final String id;
+  final int dayOfWeek;
+  final String startTime;
+  final String endTime;
+  final bool isAvailable;
+
+  const PsychologistSchedule({
+    required this.id,
+    required this.dayOfWeek,
+    required this.startTime,
+    required this.endTime,
+    required this.isAvailable,
+  });
+
+  factory PsychologistSchedule.fromJson(Map<String, dynamic> json) {
+    return PsychologistSchedule(
+      id: json['id'] as String,
+      dayOfWeek: json['dayOfWeek'] as int,
+      startTime: json['startTime'] as String,
+      endTime: json['endTime'] as String,
+      isAvailable: json['isAvailable'] as bool,
+    );
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hackathon/core/theme/app_gradients.dart';
+// import 'package:hackathon/core/theme/app_gradients.dart';
 
 class VerificationPendingStep extends StatefulWidget {
   final VoidCallback onBackToLogin;

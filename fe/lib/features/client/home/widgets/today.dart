@@ -9,6 +9,9 @@ class HomeToday extends StatelessWidget {
   final String iconAsset;
   final List<Map<String, String>> recommendations;
 
+  static const String _happyIcon = 'assets/images/emoji/happy_white.svg';
+  static const String _sadIcon = 'assets/images/emoji/sad_white.svg';
+
   const HomeToday({
     super.key,
     this.emotion,
@@ -31,6 +34,7 @@ class HomeToday extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedIcon = _resolveIcon(emotion, iconAsset);
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -49,7 +53,7 @@ class HomeToday extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Center(
-              child: SvgPicture.asset(iconAsset, width: 42, height: 42),
+              child: SvgPicture.asset(resolvedIcon, width: 42, height: 42),
             ),
           ),
           const SizedBox(height: 16),
@@ -128,5 +132,39 @@ class HomeToday extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _resolveIcon(String? emotion, String fallback) {
+    if (fallback == _happyIcon || fallback == _sadIcon) {
+      return fallback;
+    }
+
+    if (emotion == null || emotion.trim().isEmpty) {
+      return _happyIcon;
+    }
+
+    final normalized = emotion.toLowerCase();
+    final positiveKeywords = ['bahagia', 'senang', 'damai', 'tenang', 'rileks'];
+    final negativeKeywords = [
+      'sedih',
+      'kesedihan',
+      'cemas',
+      'ovt',
+      'kelelahan',
+      'gelisah',
+      'overthinking',
+      'gelisah',
+      'murung',
+      'down',
+    ];
+
+    if (negativeKeywords.any((word) => normalized.contains(word))) {
+      return _sadIcon;
+    }
+    if (positiveKeywords.any((word) => normalized.contains(word))) {
+      return _happyIcon;
+    }
+
+    return _happyIcon;
   }
 }

@@ -12,7 +12,7 @@ class Chat extends StatelessWidget {
   }
 
   void _handleVideo(BuildContext context) {
-    context.go('/partner/human-partner/vidoe-call');
+    context.go('/partner/human-partner/video-call');
   }
 
   Future<void> _handleEndChat(BuildContext context) async {

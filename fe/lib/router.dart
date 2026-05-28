@@ -14,6 +14,7 @@ import 'package:hackathon/core/models/analysis_models.dart';
 import 'package:hackathon/features/client/partner/pages/partner_page.dart';
 // AI Partner
 import 'package:hackathon/features/client/partner/pages/ai/ai_partner_chat.dart';
+import 'package:hackathon/features/client/partner/widgets/chat_content.dart';
 import 'package:hackathon/features/client/partner/pages/ai/ai_partner_voice.dart';
 // Human Partner
 import 'package:hackathon/features/client/partner/pages/human/human_partner.dart';
@@ -123,7 +124,19 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/partner/ai-partner/chat',
-      builder: (context, state) => AIPartnerChat(),
+      builder: (context, state) {
+        final extra = state.extra;
+        String? sessionId;
+        List<ChatMessage>? messages;
+        if (extra is Map) {
+          sessionId = extra['sessionId']?.toString();
+          final rawMessages = extra['messages'];
+          if (rawMessages is List<ChatMessage>) {
+            messages = rawMessages;
+          }
+        }
+        return AIPartnerChat(sessionId: sessionId, initialMessages: messages);
+      },
     ),
     GoRoute(
       path: '/partner/ai-partner/voice',
@@ -150,8 +163,11 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const EndCall(),
     ),
     GoRoute(
-      path: '/partner/professional-partner/detail',
-      builder: (context, state) => const DetailDoctor(),
+      path: '/partner/professional-partner/detail/:id',
+      builder: (context, state) {
+        final psychologistId = state.pathParameters['id'] ?? '';
+        return DetailDoctor(psychologistId: psychologistId);
+      },
     ),
     GoRoute(
       path: '/partner/professional-partner/booking',

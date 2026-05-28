@@ -201,7 +201,7 @@ class _IncomeState extends State<Income> {
         itemCount: _items.length,
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        separatorBuilder: (_, __) => Divider(height: 1, color: _softBlue),
+        separatorBuilder: (_, _) => Divider(height: 1, color: _softBlue),
         itemBuilder: (context, index) => _buildHistoryItem(_items[index]),
       ),
     );

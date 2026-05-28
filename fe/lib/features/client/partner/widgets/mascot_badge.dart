@@ -143,7 +143,7 @@ class _RipplePainter extends CustomPainter {
       final opacity = (1.0 - progress) * 0.6;
 
       final paint = Paint()
-        ..color = color.withOpacity(opacity)
+        ..color = color.withValues(alpha: opacity)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5;
 

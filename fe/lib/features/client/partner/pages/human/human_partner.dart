@@ -3,7 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hackathon/core/models/human_partner_models.dart';
+import 'package:hackathon/core/services/api_client.dart';
+import 'package:hackathon/core/services/human_partner_service.dart';
 import 'package:hackathon/core/theme/app_gradients.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HumanPartnerPage extends StatefulWidget {
   const HumanPartnerPage({super.key});
@@ -13,6 +17,7 @@ class HumanPartnerPage extends StatefulWidget {
 }
 
 class _HumanPartnerPageState extends State<HumanPartnerPage> {
+  static const String _baseUrl = 'http://127.0.0.1:3000';
   static const _primary = Color(0xFF1B517A);
   static const _secondary = Color(0xFF2F6FB4);
   static const _titleStyle = TextStyle(
@@ -21,37 +26,147 @@ class _HumanPartnerPageState extends State<HumanPartnerPage> {
     color: _primary,
   );
 
+  late final ApiClient _apiClient = ApiClient(baseUrl: _baseUrl);
+  late final HumanPartnerService _humanPartnerService = HumanPartnerService(
+    _apiClient,
+  );
+
   _PartnerState _state = _PartnerState.searching;
-  Timer? _searchTimer;
+  Timer? _pollingTimer;
+  bool _isJoining = false;
+  String? _matchId;
+  String? _partnerUserId;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _startSearchingTimer();
+    _joinQueue();
   }
 
   @override
   void dispose() {
-    _searchTimer?.cancel();
+    _pollingTimer?.cancel();
+    _apiClient.close();
     super.dispose();
   }
 
-  void _startSearchingTimer() {
-    _searchTimer?.cancel();
-    _searchTimer = Timer(const Duration(seconds: 5), () {
+  Future<void> _joinQueue() async {
+    if (_isJoining) return;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null || userId.isEmpty) {
+      _showSnackBar('User belum login.');
+      return;
+    }
+
+    setState(() {
+      _isJoining = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final response = await _humanPartnerService
+          .joinQueue(HumanPartnerQueueRequest(userId: userId))
+          .timeout(const Duration(seconds: 12));
+      if (!response.isSuccess) {
+        setState(() => _errorMessage = 'Gagal bergabung ke antrean.');
+        return;
+      }
+
+      final data = response.data.data;
+      final map = data is Map ? Map<String, dynamic>.from(data) : null;
+      final status = map?['status']?.toString();
+
+      if (status == 'matched') {
+        _pollingTimer?.cancel();
+        setState(() {
+          _state = _PartnerState.found;
+          _matchId = map?['matchId']?.toString();
+          _partnerUserId = map?['partnerUserId']?.toString();
+        });
+      } else {
+        setState(() => _state = _PartnerState.searching);
+        _startPolling();
+      }
+    } catch (_) {
+      setState(() => _errorMessage = 'Terjadi kesalahan saat mencari partner.');
+      _startPolling();
+    } finally {
       if (!mounted) return;
-      setState(() => _state = _PartnerState.found);
+      setState(() => _isJoining = false);
+    }
+  }
+
+  void _startPolling() {
+    _pollingTimer?.cancel();
+    // Polling sederhana setiap 4 detik sampai matched.
+    _pollingTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted) return;
+      _joinQueue();
     });
   }
 
-  void _resetToSearching() {
-    setState(() => _state = _PartnerState.searching);
-    _startSearchingTimer();
+  Future<void> _leaveQueue() async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null || userId.isEmpty) {
+      return;
+    }
+
+    try {
+      await _humanPartnerService.leaveQueue(
+        HumanPartnerQueueRequest(userId: userId),
+      );
+    } catch (_) {
+      // Ignore leave failures for now.
+    }
+  }
+
+  Future<void> _resetToSearching() async {
+    _pollingTimer?.cancel();
+    setState(() {
+      _state = _PartnerState.searching;
+      _matchId = null;
+      _partnerUserId = null;
+    });
+    await _joinQueue();
   }
 
   void _acceptPartner() {
-    _searchTimer?.cancel();
+    _pollingTimer?.cancel();
     setState(() => _state = _PartnerState.method);
+  }
+
+  Future<void> _cancelSearch() async {
+    _pollingTimer?.cancel();
+    await _leaveQueue();
+    if (!mounted) return;
+    context.pop();
+  }
+
+  Future<void> _openChat(String route) async {
+    final matchId = _matchId;
+    if (matchId == null || matchId.isEmpty) {
+      _showSnackBar('Match belum tersedia.');
+      return;
+    }
+
+    final response = await _humanPartnerService.getMatch(matchId);
+    if (!response.isSuccess) {
+      _showSnackBar('Gagal memuat detail match.');
+      return;
+    }
+
+    if (!mounted) return;
+    context.push(
+      route,
+      extra: {'matchId': matchId, 'match': response.data.data},
+    );
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -88,13 +203,20 @@ class _HumanPartnerPageState extends State<HumanPartnerPage> {
           duration: const Duration(milliseconds: 300),
           child: switch (_state) {
             _PartnerState.searching => _SearchingState(
-              onCancel: () => context.pop(),
+              onCancel: _cancelSearch,
+              errorMessage: _errorMessage,
             ),
             _PartnerState.found => _FoundState(
               onReject: _resetToSearching,
               onAccept: _acceptPartner,
+              partnerUserId: _partnerUserId,
             ),
-            _PartnerState.method => _MethodState(),
+            _PartnerState.method => _MethodState(
+              partnerUserId: _partnerUserId,
+              onOpenChat: () => _openChat('/partner/human-partner/chat'),
+              onOpenVoice: () => _openChat('/partner/human-partner/voice-call'),
+              onOpenVideo: () => _openChat('/partner/human-partner/video-call'),
+            ),
           },
         ),
       ),
@@ -106,8 +228,9 @@ enum _PartnerState { searching, found, method }
 
 class _SearchingState extends StatelessWidget {
   final VoidCallback onCancel;
+  final String? errorMessage;
 
-  const _SearchingState({required this.onCancel});
+  const _SearchingState({required this.onCancel, this.errorMessage});
 
   @override
   Widget build(BuildContext context) {
@@ -137,6 +260,19 @@ class _SearchingState extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
+          if (errorMessage != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                errorMessage!,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.redAccent,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
           const _StatusPill(text: 'Memahami kebutuhan emosionalmu...'),
           const SizedBox(height: 10),
           const _StatusPill(text: 'Mencari partner yang tersedia...'),
@@ -185,8 +321,13 @@ class _SearchingState extends StatelessWidget {
 class _FoundState extends StatelessWidget {
   final VoidCallback onReject;
   final VoidCallback onAccept;
+  final String? partnerUserId;
 
-  const _FoundState({required this.onReject, required this.onAccept});
+  const _FoundState({
+    required this.onReject,
+    required this.onAccept,
+    this.partnerUserId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -214,7 +355,7 @@ class _FoundState extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          _PartnerCard(),
+          _PartnerCard(partnerUserId: partnerUserId),
           const SizedBox(height: 40),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -248,8 +389,21 @@ class _FoundState extends StatelessWidget {
 }
 
 class _MethodState extends StatelessWidget {
+  final String? partnerUserId;
+  final VoidCallback onOpenChat;
+  final VoidCallback onOpenVoice;
+  final VoidCallback onOpenVideo;
+
+  const _MethodState({
+    this.partnerUserId,
+    required this.onOpenChat,
+    required this.onOpenVoice,
+    required this.onOpenVideo,
+  });
+
   @override
   Widget build(BuildContext context) {
+    final partnerName = partnerUserId ?? 'partner';
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       child: Column(
@@ -258,8 +412,8 @@ class _MethodState extends StatelessWidget {
           const SizedBox(height: 64),
           const _MascotBadge(size: 124, isActive: false),
           const SizedBox(height: 16),
-          const Text(
-            'Mulai percakapan dengan Mulyono',
+          Text(
+            'Mulai percakapan dengan $partnerName',
             style: _HumanPartnerPageState._titleStyle,
             textAlign: TextAlign.center,
           ),
@@ -279,21 +433,21 @@ class _MethodState extends StatelessWidget {
             title: 'Chat',
             subtitle: 'Percakapan Teks',
             icon: Icons.chat_bubble_outline_rounded,
-            route: '/partner/human-partner/chat',
+            onTap: onOpenChat,
           ),
           const SizedBox(height: 12),
           _MethodTile(
             title: 'Voice Call',
             subtitle: 'Panggilan Suara',
             icon: Icons.mic_none_rounded,
-            route: '/partner/human-partner/voice-call',
+            onTap: onOpenVoice,
           ),
           const SizedBox(height: 12),
           _MethodTile(
             title: 'Video Call',
             subtitle: 'Panggilan Video',
             icon: Icons.videocam_outlined,
-            route: '/partner/human-partner/video-call',
+            onTap: onOpenVideo,
           ),
         ],
       ),
@@ -497,8 +651,13 @@ class _StatusPill extends StatelessWidget {
 }
 
 class _PartnerCard extends StatelessWidget {
+  final String? partnerUserId;
+
+  const _PartnerCard({this.partnerUserId});
+
   @override
   Widget build(BuildContext context) {
+    final partnerName = partnerUserId ?? 'Partner';
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 48),
@@ -518,9 +677,9 @@ class _PartnerCard extends StatelessWidget {
         children: [
           const _MascotBadge(size: 148, isActive: false),
           const SizedBox(height: 12),
-          const Text(
-            'Mulyono',
-            style: TextStyle(
+          Text(
+            partnerName,
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w800,
               color: _HumanPartnerPageState._primary,
@@ -599,23 +758,19 @@ class _MethodTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final IconData icon;
-  final String route;
+  final VoidCallback onTap;
 
   const _MethodTile({
     required this.title,
     required this.subtitle,
     required this.icon,
-    required this.route,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        context.push(
-          route,
-        ); // Tambahkan aksi Anda di sini, misalnya pindah halaman atau merubah state
-      },
+      onTap: onTap,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),

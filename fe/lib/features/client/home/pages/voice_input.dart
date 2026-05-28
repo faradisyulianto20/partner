@@ -17,7 +17,7 @@ class VoiceInput extends StatefulWidget {
 }
 
 class _VoiceInputState extends State<VoiceInput> with TickerProviderStateMixin {
-  static const String _baseUrl = 'http://192.168.137.1:3000';
+  static const String _baseUrl = 'http://127.0.0.1:3000';
 
   final SpeechToText _speechToText = SpeechToText();
   late final ApiClient _apiClient = ApiClient(baseUrl: _baseUrl);

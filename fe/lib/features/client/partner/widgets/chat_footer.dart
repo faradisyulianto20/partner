@@ -5,9 +5,15 @@ class ChatFooter extends StatelessWidget {
   const ChatFooter({
     super.key,
     this.hintText = 'Ceritakan bagaimana perasaanmu...',
+    this.controller,
+    this.onSend,
+    this.isSending = false,
   });
 
   final String hintText;
+  final TextEditingController? controller;
+  final VoidCallback? onSend;
+  final bool isSending;
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +27,7 @@ class ChatFooter extends StatelessWidget {
         children: [
           Expanded(
             child: TextField(
+              controller: controller,
               decoration: InputDecoration(
                 prefixIcon: IconButton(
                   onPressed: () {},
@@ -49,8 +56,17 @@ class ChatFooter extends StatelessWidget {
               borderRadius: BorderRadius.circular(32),
             ),
             child: IconButton(
-              icon: const Icon(Icons.send_rounded, color: Colors.white),
-              onPressed: () {},
+              icon: isSending
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.send_rounded, color: Colors.white),
+              onPressed: isSending ? null : onSend,
             ),
           ),
         ],

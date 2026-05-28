@@ -7,20 +7,30 @@ class PsychologistService {
 
   PsychologistService(this._client);
 
-  Future<ApiResponse<PsychologistSearchResponse>> search(
+  Future<ApiResponse<List<PsychologistListItem>>> search(
     PsychologistSearchRequest request,
   ) {
     return _client.post(
       '/psychologist/search',
       body: request.toJson(),
-      parser: (json) => PsychologistSearchResponse.fromJson(json),
+      parser: (json) {
+        if (json is List) {
+          return json
+              .map(
+                (e) => PsychologistListItem.fromJson(e as Map<String, dynamic>),
+              )
+              .toList();
+        }
+        return [];
+      },
     );
   }
 
   Future<ApiResponse<PsychologistDetailResponse>> getDetail(String id) {
     return _client.get(
       '/psychologist/$id',
-      parser: (json) => PsychologistDetailResponse.fromJson(json),
+      parser: (json) =>
+          PsychologistDetailResponse.fromJson(json as Map<String, dynamic>),
     );
   }
 

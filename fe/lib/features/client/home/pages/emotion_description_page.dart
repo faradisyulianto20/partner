@@ -79,7 +79,7 @@ class Label extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.07),
+              color: Colors.black.withValues(alpha: 0.07),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -133,7 +133,7 @@ class EmotionDescription extends StatefulWidget {
 }
 
 class _EmotionDescriptionState extends State<EmotionDescription> {
-  static const String _baseUrl = 'http://192.168.137.1:3000';
+  static const String _baseUrl = 'http://127.0.0.1:3000';
 
   final TextEditingController _controller = TextEditingController();
   late final ApiClient _apiClient = ApiClient(baseUrl: _baseUrl);

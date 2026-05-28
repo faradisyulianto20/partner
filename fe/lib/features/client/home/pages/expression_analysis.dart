@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hackathon/core/models/analysis_models.dart';
+// import 'package:hackathon/core/models/analysis_models.dart';
 import 'package:hackathon/core/services/analysis_service.dart';
 import 'package:hackathon/core/services/api_client.dart';
 import 'dart:async';
@@ -17,7 +17,7 @@ class ExpressionAnalysis extends StatefulWidget {
 }
 
 class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
-  static const String _baseUrl = 'http://192.168.137.1:3000';
+  static const String _baseUrl = 'http://127.0.0.1:3000';
 
   List<CameraDescription> cameras = [];
   CameraController? cameraController;
@@ -162,8 +162,6 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
       debugPrint(
         '📦 [DEBUG-FACE] Raw Data Response (Type: ${response.data.runtimeType}): ${response.data}',
       );
-
-      
 
       // Hapus berkas foto sementara agar tidak penuh
       if (await imageFile.exists()) {

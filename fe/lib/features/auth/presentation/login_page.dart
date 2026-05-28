@@ -90,12 +90,15 @@ class _LoginPageState extends State<LoginPage> {
       print('Email      : ${user?.email ?? 'null'}');
       print('Display Name: ${user?.userMetadata?['full_name'] ?? 'null'}');
       print('Avatar URL : ${user?.userMetadata?['avatar_url'] ?? 'null'}');
-      print('Provider   : ${user?.appMetadata?['provider'] ?? 'null'}');
+      print('Provider   : ${user?.appMetadata['provider'] ?? 'null'}');
       print('─────────────────────────────────────');
       print('Access Token: $safeAccess');
       print('Refresh Token: $safeRefresh');
       print(
         'Expires At  : ${session?.expiresAt != null ? DateTime.fromMillisecondsSinceEpoch(session!.expiresAt! * 1000) : 'null'}',
+      );
+      print(
+        'Access Token: ${session?.accessToken ?? 'null'}',
       );
       print('Token Type  : ${session?.tokenType ?? 'null'}');
       print('─────────────────────────────────────');
@@ -190,14 +193,15 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Future<void> _blockIfUnregistered() async {
-    await supabase.auth.signOut();
-    if (!mounted) return;
-    _showToast(
-      'Akun belum terdaftar. Silakan daftar terlebih dahulu.',
-      isError: true,
-    );
-  }
+  // Use later
+  // Future<void> _blockIfUnregistered() async {
+  //   await supabase.auth.signOut();
+  //   if (!mounted) return;
+  //   _showToast(
+  //     'Akun belum terdaftar. Silakan daftar terlebih dahulu.',
+  //     isError: true,
+  //   );
+  // }
 
   Future<void> _navigateAfterLogin() async {
     try {
