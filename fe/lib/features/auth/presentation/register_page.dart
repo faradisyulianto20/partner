@@ -31,6 +31,8 @@ class _RegisterPageState extends State<RegisterPage> {
   static final String _supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
   static final String _supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
 
+  bool _isButtonTriggered = false;
+
   StreamSubscription<AuthState>? _authSubscription;
   String? _userId;
   bool _didNavigate = false;
@@ -59,14 +61,6 @@ class _RegisterPageState extends State<RegisterPage> {
   void initState() {
     super.initState();
     _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
-      if (data.session?.user != null && !_didNavigate) {
-        _didNavigate = true;
-        final user = data.session!.user;
-        _markUserRegistered(user, userRoleState.isPsychologist ? 'psychologist' : 'user').whenComplete(() {
-          _navigateAfterRegister();
-        });
-      }
-
       setState(() {
         _userId = data.session?.user.id;
       });
@@ -116,7 +110,7 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     if (!mounted) return;
-    context.go('/input-data');
+    context.go('/input-data?isPsychologist=${userRoleState.isPsychologist}');
   }
 
   @override
@@ -160,12 +154,30 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _handleGoogleSignIn() async {
-    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      await _nativeGoogleSignIn();
-      return;
-    }
+    try {
+      // 1. Jalankan proses autentikasi sampai selesai
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+        await _nativeGoogleSignIn();
+      } else {
+        await supabase.auth.signInWithOAuth(OAuthProvider.google);
+        return; // Jika OAuth web, biasanya ada redirect tersendiri tergantung konfigurasi
+      }
 
-    await supabase.auth.signInWithOAuth(OAuthProvider.google);
+      // 2. Ambil user saat ini setelah sukses login
+      final currentUser = supabase.auth.currentUser;
+      if (currentUser != null && !_didNavigate) {
+        _didNavigate = true;
+
+        // 3. Jalankan fungsi update metadata dan pindah halaman
+        final String role = userRoleState.isPsychologist
+            ? 'psychologist'
+            : 'user';
+        await _markUserRegistered(currentUser, role);
+        await _navigateAfterRegister();
+      }
+    } catch (e) {
+      if (kDebugMode) print("Login Error: $e");
+    }
   }
 
   @override

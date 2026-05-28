@@ -34,10 +34,15 @@ class ApiClient {
   Future<ApiResponse<T>> get<T>(
     String path, {
     Map<String, dynamic>? query,
+    Map<String, String>? headers,
     T Function(Object? json)? parser,
   }) async {
     final uri = _buildUri(path, query);
-    final response = await _client.get(uri, headers: _defaultHeaders());
+    final requestHeaders = _defaultHeaders();
+    if (headers != null) {
+      requestHeaders.addAll(headers);
+    }
+    final response = await _client.get(uri, headers: requestHeaders);
     final parsed = _decodeBody(response.body);
     final data = parser != null ? parser(parsed) : parsed as T;
     return ApiResponse(statusCode: response.statusCode, data: data);

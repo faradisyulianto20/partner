@@ -438,3 +438,115 @@ Path params
 Response
 
 - 200 OK: status verifikasi
+
+## Auth
+
+Semua endpoint yang menggunakan `SupabaseJwtGuard` membutuhkan header:
+
+- `Authorization: Bearer <token>`
+
+Token harus JWT Supabase yang valid. Jika token tidak valid atau tidak ada, backend akan merespon `401 Unauthorized`.
+
+`CurrentUser` mengambil payload JWT dari request dan menyediakan `userId` (`sub`), `email`, dan metadata user.
+
+## Profile
+
+### POST /profile/client
+
+Buat atau update profil client.
+
+Auth: diperlukan
+
+Body
+
+```json
+{
+  "userId": "string",
+  "email": "string",
+  "displayName": "string",
+  "username": "string",
+  "birthDate": "YYYY-MM-DD",
+  "gender": "MALE" | "FEMALE",
+  "photoUrl": "string"
+}
+```
+
+Response
+
+- 200 OK: objek profil client yang dibuat atau diupdate
+
+Contoh response:
+
+```json
+{
+  "userId": "uuid",
+  "username": "johndoe",
+  "birthDate": "1990-01-01T00:00:00.000Z",
+  "gender": "MALE",
+  "photoUrl": "https://example.com/photo.jpg"
+}
+```
+
+### POST /profile/psychologist
+
+Buat atau update profil psikolog.
+
+Auth: diperlukan
+
+Body
+
+```json
+{
+  "userId": "string",
+  "email": "string",
+  "fullName": "string",
+  "phoneNumber": "string",
+  "gender": "MALE" | "FEMALE",
+  "location": "string",
+  "clinicName": "string",
+  "specialization": "string",
+  "yearsExperience": 5,
+  "nik": "string",
+  "strNumber": "string",
+  "photoUrl": "string",
+  "education": ["string"],
+  "clientsHandled": 10,
+  "bio": "string",
+  "tags": ["string"]
+}
+```
+
+Response
+
+- 200 OK: objek profil psikolog yang dibuat atau diupdate
+
+### POST /profile/psychologist/documents
+
+Kirim dokumen verifikasi psikolog.
+
+Auth: diperlukan
+
+Body
+
+```json
+{
+  "userId": "string",
+  "ktpUrl": "string",
+  "faceWithKtpUrl": "string",
+  "strLicenseUrl": "string"
+}
+```
+
+Response
+
+- 200 OK: daftar dokumen verifikasi yang dibuat atau diupdate
+
+Contoh response:
+
+```json
+[
+  { "psychologistId": "uuid", "type": "KTP", "url": "https://...", "status": "PENDING" },
+  { "psychologistId": "uuid", "type": "FACE_WITH_KTP", "url": "https://...", "status": "PENDING" },
+  { "psychologistId": "uuid", "type": "STR_LICENSE", "url": "https://...", "status": "PENDING" }
+]
+```

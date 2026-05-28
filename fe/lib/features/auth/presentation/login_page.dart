@@ -97,9 +97,7 @@ class _LoginPageState extends State<LoginPage> {
       print(
         'Expires At  : ${session?.expiresAt != null ? DateTime.fromMillisecondsSinceEpoch(session!.expiresAt! * 1000) : 'null'}',
       );
-      print(
-        'Access Token: ${session?.accessToken ?? 'null'}',
-      );
+      print('Access Token: ${session?.accessToken ?? 'null'}');
       print('Token Type  : ${session?.tokenType ?? 'null'}');
       print('─────────────────────────────────────');
 
