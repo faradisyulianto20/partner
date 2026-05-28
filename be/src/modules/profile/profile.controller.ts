@@ -1,9 +1,9 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { ClientProfileDto } from './dto/client-profile.dto';
 import { PsychologistProfileDto } from './dto/psychologist-profile.dto';
 import { PsychologistDocumentsDto } from './dto/psychologist-documents.dto';
-import { SupabaseJwtGuard } from '../auth/supabase-jwt.guard';
+
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { CurrentUserPayload } from '../auth/current-user.decorator';
 
@@ -12,25 +12,21 @@ export class ProfileController {
     constructor(private readonly profileService: ProfileService) { }
 
     @Get('me')
-    @UseGuards(SupabaseJwtGuard)
     getMe(@CurrentUser() user: CurrentUserPayload) {
         return this.profileService.getCurrentProfile(user?.sub ?? '');
     }
 
     @Get('me/client')
-    @UseGuards(SupabaseJwtGuard)
     getClientProfile(@CurrentUser() user: CurrentUserPayload) {
         return this.profileService.getClientProfile(user?.sub ?? '');
     }
 
     @Get('me/psychologist')
-    @UseGuards(SupabaseJwtGuard)
     getPsychologistProfile(@CurrentUser() user: CurrentUserPayload) {
         return this.profileService.getPsychologistProfile(user?.sub ?? '');
     }
 
     @Post('client')
-    @UseGuards(SupabaseJwtGuard)
     async upsertClientProfile(
         @CurrentUser() user: CurrentUserPayload,
         @Body() dto: ClientProfileDto,
@@ -44,7 +40,6 @@ export class ProfileController {
     }
 
     @Post('psychologist')
-    @UseGuards(SupabaseJwtGuard)
     async upsertPsychologistProfile(
         @CurrentUser() user: CurrentUserPayload,
         @Body() dto: PsychologistProfileDto,
@@ -56,7 +51,6 @@ export class ProfileController {
     }
 
     @Post('psychologist/documents')
-    @UseGuards(SupabaseJwtGuard)
     async submitPsychologistDocuments(
         @CurrentUser() user: CurrentUserPayload,
         @Body() dto: PsychologistDocumentsDto,

@@ -183,3 +183,5 @@ __pycache__/
 # Isolate/exclude generated plugin registrant files
 **/generated_plugin_registrant.*
 >>>>>>> origin/main
+.vercel
+.env*
