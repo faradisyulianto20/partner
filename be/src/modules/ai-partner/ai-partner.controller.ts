@@ -3,8 +3,8 @@ import { AiPartnerService } from './ai-partner.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { CreateSessionDto } from './dto/create-session.dto';
 
-import { CurrentUser } from '../auth/current-user.decorator';
-import type { CurrentUserPayload } from '../auth/current-user.decorator';
+import { CurrentUser } from '../auth/dto/current-user.decorator';
+import type { CurrentUserPayload } from '../auth/dto/current-user.decorator';
 
 @Controller('ai')
 export class AiPartnerController {

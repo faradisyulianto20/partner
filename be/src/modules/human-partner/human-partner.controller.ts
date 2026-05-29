@@ -4,8 +4,8 @@ import { JoinQueueDto } from './dto/join-queue.dto';
 import { LeaveQueueDto } from './dto/leave-queue.dto';
 import { MatchActionDto } from './dto/match-action.dto';
 
-import { CurrentUser } from '../auth/current-user.decorator';
-import type { CurrentUserPayload } from '../auth/current-user.decorator';
+import { CurrentUser } from '../auth/dto/current-user.decorator';
+import type { CurrentUserPayload } from '../auth/dto/current-user.decorator';
 
 @Controller('partner')
 export class HumanPartnerController {

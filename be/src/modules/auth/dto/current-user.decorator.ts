@@ -1,12 +1,14 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { JWTPayload } from 'jose';
+import { UserRole } from '@prisma/client';
 
-export type CurrentUserPayload = JWTPayload & {
-    email?: string;
-    user_metadata?: {
-        full_name?: string;
-        name?: string;
-    };
+// Definisikan sendiri, tidak pakai JWTPayload dari jose
+export type CurrentUserPayload = {
+    sub: string;
+    email?: string | null;
+    displayName?: string | null;
+    role?: UserRole;
+    iat?: number;
+    exp?: number;
 };
 
 export const CurrentUser = createParamDecorator(

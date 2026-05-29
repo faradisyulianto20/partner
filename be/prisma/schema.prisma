@@ -92,6 +92,7 @@ enum BookingStatus {
     PENDING_PAYMENT
     PAID
     CONFIRMED
+    COMPLETED
     CANCELLED
 }
 
@@ -113,26 +114,27 @@ enum ConsultationMethod {
 }
 
 model Psychologist {
-    id              String   @id @default(uuid())
-    userId          String?  @unique
-    fullName        String
-    email           String?  @unique
-    phoneNumber     String
-    gender          Gender
-    location        String
-    clinicName      String
-    specialization  String
-    clientsHandled  Int
-    yearsExperience Int
-    nik             String   @unique
-    strNumber       String   @unique
-    bio             String?
-    tags            String[]
-    photoUrl        String?
-    rating          Float    @default(0)
-    reviewCount     Int      @default(0)
-    createdAt       DateTime @default(now())
-    updatedAt       DateTime @updatedAt
+    id                  String   @id @default(uuid())
+    userId              String?  @unique
+    fullName            String
+    email               String?  @unique
+    phoneNumber         String
+    gender              Gender
+    location            String
+    clinicName          String
+    specialization      String
+    clientsHandled      Int
+    yearsExperience     Int
+    nik                 String   @unique
+    strNumber           String   @unique
+    bio                 String?
+    tags                String[]
+    photoUrl            String?
+    isAcceptingSessions Boolean  @default(true)
+    rating              Float    @default(0)
+    reviewCount         Int      @default(0)
+    createdAt           DateTime @default(now())
+    updatedAt           DateTime @updatedAt
 
     education          PsychologistEducation[]
     reviews            PsychologistReview[]
@@ -218,12 +220,13 @@ model PsychologistBooking {
 }
 
 model User {
-    id          String   @id
-    email       String?
-    displayName String?
-    role        UserRole
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
+    id           String   @id
+    email        String?
+    passwordHash String?
+    displayName  String?
+    role         UserRole
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
 
     clientProfile ClientProfile?
     psychologist  Psychologist?

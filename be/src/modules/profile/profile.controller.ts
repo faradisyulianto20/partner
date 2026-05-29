@@ -1,13 +1,16 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, UseGuards } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { ClientProfileDto } from './dto/client-profile.dto';
 import { PsychologistProfileDto } from './dto/psychologist-profile.dto';
 import { PsychologistDocumentsDto } from './dto/psychologist-documents.dto';
+import { UpdatePsychologistSchedulesDto } from './dto/update-psychologist-schedules.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-import { CurrentUser } from '../auth/current-user.decorator';
-import type { CurrentUserPayload } from '../auth/current-user.decorator';
+import { CurrentUser } from '../auth/dto/current-user.decorator';
+import type { CurrentUserPayload } from '../auth/dto/current-user.decorator';
 
 @Controller('profile')
+@UseGuards(JwtAuthGuard)
 export class ProfileController {
     constructor(private readonly profileService: ProfileService) { }
 
@@ -26,15 +29,23 @@ export class ProfileController {
         return this.profileService.getPsychologistProfile(user?.sub ?? '');
     }
 
+    @Put('me/psychologist/schedules')
+    replacePsychologistSchedules(
+        @CurrentUser() user: CurrentUserPayload,
+        @Body() dto: UpdatePsychologistSchedulesDto,
+    ) {
+        dto.userId = user?.sub ?? dto.userId;
+        return this.profileService.replacePsychologistSchedules(dto.userId ?? '', dto.schedules);
+    }
+
     @Post('client')
     async upsertClientProfile(
         @CurrentUser() user: CurrentUserPayload,
         @Body() dto: ClientProfileDto,
     ) {
-
         dto.userId = user?.sub ?? dto.userId;
-        dto.email ??= user?.email;
-        dto.displayName ??= user?.user_metadata?.full_name ?? user?.user_metadata?.name;
+        dto.email ??= user?.email ?? undefined;
+        dto.displayName ??= user?.displayName ?? undefined; // ← pakai displayName dari token langsung
 
         return this.profileService.upsertClientProfile(dto);
     }
@@ -45,7 +56,7 @@ export class ProfileController {
         @Body() dto: PsychologistProfileDto,
     ) {
         dto.userId = user?.sub ?? dto.userId;
-        dto.email ??= user?.email;
+        dto.email ??= user?.email ?? undefined;
 
         return this.profileService.upsertPsychologistProfile(dto);
     }

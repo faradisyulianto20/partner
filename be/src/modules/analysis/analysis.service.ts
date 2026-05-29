@@ -72,7 +72,11 @@ export class AnalysisService {
 
         const saved = await this.prismaService.analysis.create({
             data: {
-                userId: userId?.trim() || null,
+                userId: (() => {
+                    const id = userId?.trim();
+                    if (!id) throw new BadRequestException('userId is required');
+                    return id;
+                })(),
                 inputText,
                 emotionLabel: result.emotionLabel,
                 summary: result.summary,
@@ -143,7 +147,11 @@ export class AnalysisService {
 
         const saved = await this.prismaService.analysis.create({
             data: {
-                userId: userId?.trim() || null,
+                userId: (() => {
+                    const id = userId?.trim();
+                    if (!id) throw new BadRequestException('userId is required');
+                    return id;
+                })(),
                 inputText: '[face-image]',
                 emotionLabel: result.emotionLabel,
                 summary: result.summary,
@@ -161,6 +169,24 @@ export class AnalysisService {
     }
 
     async getDashboard(userId?: string) {
+        const trimmedUserId = userId?.trim();
+
+        // Jika tidak ada userId, jangan query ke DB, langsung return dashboard kosong
+        if (!trimmedUserId) {
+            return {
+                last7Days: Array.from({ length: 7 }, (_, index) => {
+                    const date = new Date();
+                    date.setDate(date.getDate() - 6 + index);
+                    return {
+                        date: this.toDateKey(date),
+                        dayLabel: this.getDayLabel(date),
+                        emotionLabel: null,
+                    };
+                }),
+                today: null,
+            };
+        }
+
         const now = new Date();
         const startDate = new Date(now);
         startDate.setHours(0, 0, 0, 0);
@@ -171,12 +197,14 @@ export class AnalysisService {
                 createdAt: {
                     gte: startDate,
                 },
-                userId: userId?.trim() || undefined,
+                userId: trimmedUserId, // 🛡️ SEKARANG AMAN: Wajib mencocokkan ID user tersebut
             },
             orderBy: {
                 createdAt: 'desc',
             },
         });
+
+        // ... sisa kode ke bawah tetap sama
 
         const byDay = new Map<string, typeof analyses[number]>();
         for (const item of analyses) {

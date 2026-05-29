@@ -1,12 +1,13 @@
-import { BadRequestException, Body, Controller, Get, Post, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Post, Query, UnauthorizedException, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AnalysisService } from './analysis.service';
 import { CreateAnalysisDto } from './dto/create-analysis.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import 'multer';
+import { CurrentUser } from '../auth/dto/current-user.decorator';
+import type { CurrentUserPayload } from '../auth/dto/current-user.decorator';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-import { CurrentUser } from '../auth/current-user.decorator';
-import type { CurrentUserPayload } from '../auth/current-user.decorator';
-
+@UseGuards(JwtAuthGuard)
 @Controller('analysis')
 export class AnalysisController {
     constructor(private readonly analysisService: AnalysisService) { }
@@ -34,7 +35,11 @@ export class AnalysisController {
     }
 
     @Get('dashboard')
-    getDashboard(@CurrentUser() user: CurrentUserPayload, @Query('userId') userId?: string) {
-        return this.analysisService.getDashboard(user?.sub ?? userId);
+    getDashboard(@CurrentUser() user: CurrentUserPayload) {
+        if (!user?.sub) {
+            throw new UnauthorizedException('Token tidak valid');
+        }
+
+        return this.analysisService.getDashboard(user.sub);
     }
 }
