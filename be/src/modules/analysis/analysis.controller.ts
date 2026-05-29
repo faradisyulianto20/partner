@@ -1,8 +1,17 @@
+<<<<<<< HEAD
 import { BadRequestException, Body, Controller, Get, Post, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { AnalysisService } from './analysis.service';
 import { CreateAnalysisDto } from './dto/create-analysis.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import 'multer';
+=======
+import { BadRequestException, Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { AnalysisService } from './analysis.service';
+import { CreateAnalysisDto } from './dto/create-analysis.dto';
+import { SupabaseJwtGuard } from '../auth/supabase-jwt.guard';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { CurrentUserPayload } from '../auth/current-user.decorator';
+>>>>>>> fix/user-page
 
 @Controller('analysis')
 export class AnalysisController {
@@ -13,20 +22,29 @@ export class AnalysisController {
         return this.analysisService.analyzeText(body.text, body.userId);
     }
 
+    /**
+     * POST /analysis/face
+     * Menerima gambar dalam format base64 via JSON body.
+     * Body: { imageBase64: string, mimeType?: string, userId?: string }
+     *
+     * Pendekatan JSON dipilih karena multipart/form-data tidak reliabel
+     * di lingkungan Vercel serverless.
+     */
     @Post('face')
-    @UseInterceptors(FileInterceptor('image'))
+    @UseGuards(SupabaseJwtGuard)
     analyzeFace(
-        @UploadedFile() file?: Express.Multer.File,
-        @Body() body?: { mimeType?: string; userId?: string },
+        @Body() body: { imageBase64?: string; mimeType?: string; userId?: string },
+        @CurrentUser() user?: CurrentUserPayload,
     ) {
-        if (!file?.buffer) {
-            throw new BadRequestException('image file is required');
+        if (!body?.imageBase64?.trim()) {
+            throw new BadRequestException('imageBase64 is required');
         }
 
-        const mimeType = body?.mimeType ?? file.mimetype;
-        const base64 = file.buffer.toString('base64');
-
-        return this.analysisService.analyzeFace(base64, mimeType, body?.userId);
+        return this.analysisService.analyzeFace(
+            body.imageBase64,
+            body.mimeType ?? 'image/jpeg',
+            user?.sub ?? body?.userId,
+        );
     }
 
     @Get('dashboard')

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:hackathon/core/models/analysis_models.dart';
@@ -19,25 +20,42 @@ class AnalysisService {
     );
   }
 
+  /// Mengirim gambar wajah ke endpoint `/analysis/face` sebagai JSON body
+  /// berisi `imageBase64` (base64 encoded). Pendekatan ini lebih reliabel
+  /// daripada multipart/form-data di Vercel serverless.
   Future<ApiResponse<AnalysisFaceResponse>> analyzeFace({
     required File image,
     String? mimeType,
     String? userId,
-  }) {
-    final fields = <String, String>{};
-    if (mimeType != null) {
-      fields['mimeType'] = mimeType;
-    }
+  }) async {
+    // Baca file dan convert ke base64
+    final bytes = await image.readAsBytes();
+    final base64Image = base64Encode(bytes);
+
+    // Tentukan MIME type dari ekstensi file
+    final resolvedMimeType = mimeType ?? _guessMimeType(image.path);
+
+    final body = <String, dynamic>{
+      'imageBase64': base64Image,
+      'mimeType': resolvedMimeType,
+    };
     if (userId != null) {
-      fields['userId'] = userId;
+      body['userId'] = userId;
     }
 
-    return _client.multipart(
+    return _client.post(
       '/analysis/face',
-      file: image,
-      fields: fields.isEmpty ? null : fields,
+      body: body,
       parser: (json) => AnalysisFaceResponse.fromJson(json),
     );
+  }
+
+  String _guessMimeType(String filePath) {
+    final lower = filePath.toLowerCase();
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    if (lower.endsWith('.gif')) return 'image/gif';
+    return 'image/jpeg'; // default JPEG untuk HEIC/JPG/JPEG
   }
 
   Future<ApiResponse<AnalysisDashboardResponse>> fetchDashboard({
