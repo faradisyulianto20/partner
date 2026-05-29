@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class ProfilePsychologistPage extends StatefulWidget {
   const ProfilePsychologistPage({super.key});
@@ -46,6 +48,60 @@ class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
     ),
   ];
 
+  static const String _psychologistId = '4a63c647-72f7-4cd7-8e45-476b6ffdd8f4';
+  static const String _baseUrl = 'https://partner-seven-phi.vercel.app';
+  Map<String, dynamic>? _psychologistData;
+
+  Future<void> _fetchPsychologistProfile() async {
+    final uri = Uri.parse('$_baseUrl/psychologist/$_psychologistId');
+
+    try {
+      final response = await http.get(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        final completeData = const JsonEncoder.withIndent('  ').convert(data);
+        debugPrint('─────────────────────────────────────');
+        debugPrint('Data         : {$completeData}');
+        debugPrint('─────────────────────────────────────');
+        debugPrint(
+          'Auth State  : ${Supabase.instance.client.auth.currentSession != null ? 'Authenticated' : 'Unauthenticated'}',
+        );
+        debugPrint(
+          'Session     : ${Supabase.instance.client.auth.currentSession != null ? 'Exists' : 'None'}',
+        );
+        debugPrint(
+          'User Email  : ${Supabase.instance.client.auth.currentUser?.email ?? 'null'}',
+        );
+        debugPrint('─────────────────────────────────────');
+        bool _isLoading = true;
+
+        if (!mounted) return;
+        setState(() {
+          // ← tambah ini
+          _psychologistData = data;
+          _isLoading = false;
+        });
+      } else {
+        debugPrint(
+          'Fetch failed: status ${response.statusCode} — ${response.body}',
+        );
+      }
+    } catch (e, stackTrace) {
+      debugPrint('Error fetching psychologist profile: $e');
+      debugPrint(stackTrace.toString());
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPsychologistProfile();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,6 +132,7 @@ class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
   }
 
   Widget _buildProfileHeader() {
+    final String? photoUrl = _psychologistData?['photoUrl'] as String?;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
@@ -100,11 +157,24 @@ class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
 
             children: [
               const SizedBox(height: 124), // Placeholder untuk ukuran avatar
-              CircleAvatar(
-                radius: 44,
-                backgroundImage: const AssetImage('assets/images/doctor1.png'),
-                backgroundColor: Colors.white,
-              ),
+              // Ambil photoUrl dari data
+
+              // Di Stack, ganti CircleAvatar dengan:
+              photoUrl != null
+                  ? CircleAvatar(
+                      radius: 44,
+                      backgroundImage: NetworkImage(photoUrl),
+                      backgroundColor: Colors.white,
+                    )
+                  : CircleAvatar(
+                      radius: 44,
+                      backgroundColor: const Color(0xFF3A6E9E),
+                      child: const Icon(
+                        Icons.person,
+                        size: 44,
+                        color: Colors.white,
+                      ),
+                    ),
 
               Positioned(
                 bottom: 6, // Mengangkat lingkaran hijau ke atas (naik 4 piksel)
@@ -123,7 +193,7 @@ class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Dr. Shinta Pratiwi S.Psi, M.Psi',
+            _psychologistData?['fullName'] ?? 'Nama Lengkap',
             textAlign: TextAlign.center,
             style: GoogleFonts.nunito(
               fontSize: 14,
@@ -133,7 +203,7 @@ class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Psikolog Klinis',
+            _psychologistData?['specialization'] ?? 'Spesialisasi',
             style: GoogleFonts.nunito(
               fontSize: 11,
               fontWeight: FontWeight.w600,

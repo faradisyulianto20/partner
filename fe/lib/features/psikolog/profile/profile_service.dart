@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class ProfileService extends StatefulWidget {
   const ProfileService({super.key});
@@ -11,28 +14,31 @@ class ProfileService extends StatefulWidget {
 class _ProfileServiceState extends State<ProfileService> {
   final Color _softBlue = const Color(0xFF7DA0C4);
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController(
-    text: 'Dr. Shinta Pratiwi S.Psi, M.Psi',
-  );
-  final _aboutController = TextEditingController(
-    text:
-        'Halo, saya senang dapat menemanimu dalam perjalanan memahami emosimu. Saya memiliki pendekatan yang tenang, empatik, dan nyaman untuk membantu menghadapi overthinking, kecemasan ringan, burnout, maupun tekanan emosional sehari-hari.',
-  );
+  final _nameController = TextEditingController();
+  final _aboutController = TextEditingController();
   final _priceController = TextEditingController(text: '100000');
 
-  final List<String> _specialties = const [
-    'Stres',
-    'Keluarga & Hubungan',
-    'Pekerjaan & Karir',
-    'Depresi',
-    'Pengembangan Diri',
-    'Gangguan Kecemasan',
-  ];
+  // Ganti _specialties yang hardcoded dengan getter
+  List<String> get _allSpecialties {
+    final apiTags =
+        (_psychologistData?['tags'] as List<dynamic>?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        [];
+
+    // Gabungkan default + api tags, hilangkan duplikat
+    return {
+      'Stres',
+      'Keluarga & Hubungan',
+      'Pekerjaan & Karir',
+      'Depresi',
+      'Pengembangan Diri',
+      'Gangguan Kecemasan',
+      ...apiTags,
+    }.toList();
+  }
 
   final Set<String> _selectedSpecialties = {
-    'Stres',
-    'Keluarga & Hubungan',
-    'Gangguan Kecemasan',
   };
 
   bool _isSaving = false;
@@ -69,6 +75,69 @@ class _ProfileServiceState extends State<ProfileService> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  static const String _psychologistId = '4a63c647-72f7-4cd7-8e45-476b6ffdd8f4';
+  static const String _baseUrl = 'https://partner-seven-phi.vercel.app';
+  Map<String, dynamic>? _psychologistData;
+
+  Future<void> _fetchPsychologistProfile() async {
+    final uri = Uri.parse('$_baseUrl/psychologist/$_psychologistId');
+
+    try {
+      final response = await http.get(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        final completeData = const JsonEncoder.withIndent('  ').convert(data);
+        debugPrint('─────────────────────────────────────');
+        debugPrint('Data         : {$completeData}');
+        debugPrint('─────────────────────────────────────');
+        debugPrint(
+          'Auth State  : ${Supabase.instance.client.auth.currentSession != null ? 'Authenticated' : 'Unauthenticated'}',
+        );
+        debugPrint(
+          'Session     : ${Supabase.instance.client.auth.currentSession != null ? 'Exists' : 'None'}',
+        );
+        debugPrint(
+          'User Email  : ${Supabase.instance.client.auth.currentUser?.email ?? 'null'}',
+        );
+        debugPrint('─────────────────────────────────────');
+        setState(() {
+          // ← tambah ini
+          _psychologistData = data;
+
+          _nameController.text = data['fullName'] ?? '';
+          _aboutController.text = data['bio'] ?? '';
+
+          // Populate selected specialties dari tags
+          final tags =
+              (data['tags'] as List<dynamic>?)
+                  ?.map((e) => e.toString())
+                  .toSet() ??
+              {};
+          _selectedSpecialties
+            ..clear()
+            ..addAll(tags);
+        });
+      } else {
+        debugPrint(
+          'Fetch failed: status ${response.statusCode} — ${response.body}',
+        );
+      }
+    } catch (e, stackTrace) {
+      debugPrint('Error fetching psychologist profile: $e');
+      debugPrint(stackTrace.toString());
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPsychologistProfile();
   }
 
   @override
@@ -133,9 +202,9 @@ class _ProfileServiceState extends State<ProfileService> {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: _specialties
-                      .map((item) => _buildSpecialtyChip(item))
-                      .toList(),
+                  children: _allSpecialties
+    .map((item) => _buildSpecialtyChip(item))
+    .toList(),
                 ),
                 const SizedBox(height: 16),
                 _buildFieldLabel('Tentang'),
@@ -143,7 +212,7 @@ class _ProfileServiceState extends State<ProfileService> {
                 _buildTextField(
                   controller: _aboutController,
                   hintText: 'Ceritakan tentang pendekatanmu',
-                  
+
                   maxLines: 4,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -284,7 +353,7 @@ class _ProfileServiceState extends State<ProfileService> {
       style: GoogleFonts.nunito(
         fontSize: 12,
         fontWeight: FontWeight.w700,
-         color: Colors.grey,
+        color: Colors.grey,
       ),
       decoration: InputDecoration(
         hintText: hintText,

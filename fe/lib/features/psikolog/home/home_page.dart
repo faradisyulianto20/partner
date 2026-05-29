@@ -4,6 +4,9 @@ import 'package:hackathon/core/shared_widgets/header.dart';
 import 'package:hackathon/core/shared_widgets/psychologist_detail_sheet.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:hackathon/core/theme/app_gradients.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PsychologistHomePage extends StatefulWidget {
   const PsychologistHomePage({super.key});
@@ -57,6 +60,55 @@ class _PsychologistHomePageState extends State<PsychologistHomePage> {
   final Color _primaryColor = const Color(0xFF1B517A);
   final Color _softBlue = const Color(0xFF7DA0C4);
 
+  static const String _psychologistId = '4a63c647-72f7-4cd7-8e45-476b6ffdd8f4';
+  static const String _baseUrl = 'https://partner-seven-phi.vercel.app';
+  Map<String, dynamic>? _psychologistData;
+
+  Future<void> _fetchPsychologistProfile() async {
+    final uri = Uri.parse('$_baseUrl/psychologist/$_psychologistId');
+
+    try {
+      final response = await http.get(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        final completeData = const JsonEncoder.withIndent('  ').convert(data);
+        debugPrint('─────────────────────────────────────');
+        debugPrint('Data         : {$completeData}');
+        debugPrint('─────────────────────────────────────');
+        debugPrint(
+          'Auth State  : ${Supabase.instance.client.auth.currentSession != null ? 'Authenticated' : 'Unauthenticated'}',
+        );
+        debugPrint(
+          'Session     : ${Supabase.instance.client.auth.currentSession != null ? 'Exists' : 'None'}',
+        );
+        debugPrint(
+          'User Email  : ${Supabase.instance.client.auth.currentUser?.email ?? 'null'}',
+        );
+        debugPrint('─────────────────────────────────────');
+        setState(() {                        // ← tambah ini
+          _psychologistData = data;
+        });
+      } else {
+        debugPrint(
+          'Fetch failed: status ${response.statusCode} — ${response.body}',
+        );
+      }
+    } catch (e, stackTrace) {
+      debugPrint('Error fetching psychologist profile: $e');
+      debugPrint(stackTrace.toString());
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPsychologistProfile();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,7 +132,7 @@ class _PsychologistHomePageState extends State<PsychologistHomePage> {
                   child: _buildStatCard(
                     icon: Icons.calendar_today,
                     label: 'Total Sesi Hari Ini',
-                    value: '4 Sesi',
+                    value: _psychologistData?['clientsHandled']?.toString() ?? '0',
                   ),
                 ),
                 const SizedBox(width: 12),
