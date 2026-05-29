@@ -1,17 +1,20 @@
-import { BadRequestException, Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Post, Query, UnauthorizedException, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AnalysisService } from './analysis.service';
 import { CreateAnalysisDto } from './dto/create-analysis.dto';
-import { SupabaseJwtGuard } from '../auth/supabase-jwt.guard';
-import { CurrentUser } from '../auth/current-user.decorator';
-import type { CurrentUserPayload } from '../auth/current-user.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
+import 'multer';
+import { CurrentUser } from '../auth/dto/current-user.decorator';
+import type { CurrentUserPayload } from '../auth/dto/current-user.decorator';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('analysis')
 export class AnalysisController {
     constructor(private readonly analysisService: AnalysisService) { }
 
     @Post('text')
-    analyze(@Body() body: CreateAnalysisDto) {
-        return this.analysisService.analyzeText(body.text, body.userId);
+    analyze(@CurrentUser() user: CurrentUserPayload, @Body() body: CreateAnalysisDto) {
+        return this.analysisService.analyzeText(body.text, user?.sub ?? body.userId);
     }
 
     /**
@@ -23,7 +26,7 @@ export class AnalysisController {
      * di lingkungan Vercel serverless.
      */
     @Post('face')
-    @UseGuards(SupabaseJwtGuard)
+    @UseInterceptors(FileInterceptor('image'))
     analyzeFace(
         @Body() body: { imageBase64?: string; mimeType?: string; userId?: string },
         @CurrentUser() user?: CurrentUserPayload,
@@ -40,7 +43,11 @@ export class AnalysisController {
     }
 
     @Get('dashboard')
-    getDashboard(@Query('userId') userId?: string) {
-        return this.analysisService.getDashboard(userId);
+    getDashboard(@CurrentUser() user: CurrentUserPayload) {
+        if (!user?.sub) {
+            throw new UnauthorizedException('Token tidak valid');
+        }
+
+        return this.analysisService.getDashboard(user.sub);
     }
 }

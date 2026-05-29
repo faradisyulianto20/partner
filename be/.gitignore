@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # compiled output
 /dist
 /node_modules
@@ -183,3 +182,5 @@ __pycache__/
 # Isolate/exclude generated plugin registrant files
 **/generated_plugin_registrant.*
 >>>>>>> origin/main
+.vercel
+.env*

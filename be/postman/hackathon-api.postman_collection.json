@@ -1,0 +1,1170 @@
+{
+    "info": {
+        "_postman_id": "7d9f3c4e-0c39-4fd3-9a47-2e4e1b4d6c01",
+        "name": "Hackathon Backend API",
+        "description": "Postman collection for the Partner backend. Import the collection and optionally the environment file from the same folder.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "auth": {},
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000"
+        },
+        {
+            "key": "token",
+            "value": ""
+        },
+        {
+            "key": "clientToken",
+            "value": ""
+        },
+        {
+            "key": "psychologistToken",
+            "value": ""
+        },
+        {
+            "key": "userId",
+            "value": ""
+        },
+        {
+            "key": "psychologistId",
+            "value": ""
+        },
+        {
+            "key": "bookingId",
+            "value": ""
+        },
+        {
+            "key": "journalId",
+            "value": ""
+        },
+        {
+            "key": "sessionId",
+            "value": ""
+        },
+        {
+            "key": "reviewId",
+            "value": ""
+        },
+        {
+            "key": "analysisId",
+            "value": ""
+        },
+        {
+            "key": "date",
+            "value": "2026-05-29"
+        },
+        {
+            "key": "limit",
+            "value": "20"
+        },
+        {
+            "key": "offset",
+            "value": "0"
+        }
+    ],
+    "item": [
+        {
+            "name": "App",
+            "item": [
+                {
+                    "name": "GET Hello World",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                ""
+                            ]
+                        },
+                        "description": "Health/basic root endpoint."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Auth",
+            "item": [
+                {
+                    "name": "POST Register",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"user@mail.com\",\n  \"password\": \"password123\",\n  \"displayName\": \"Nazwa User\",\n  \"role\": \"CLIENT\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/register",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "register"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST Login",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"user@mail.com\",\n  \"password\": \"password123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "login"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Analysis",
+            "item": [
+                {
+                    "name": "POST Text Analysis",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"text\": \"Saya merasa cemas dan sulit tidur.\",\n  \"userId\": \"{{userId}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/analysis/text",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "analysis",
+                                "text"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST Face Analysis",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "image",
+                                    "type": "file",
+                                    "src": []
+                                },
+                                {
+                                    "key": "mimeType",
+                                    "value": "image/jpeg",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "userId",
+                                    "value": "{{userId}}",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/analysis/face",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "analysis",
+                                "face"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET Dashboard",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/analysis/dashboard?userId={{userId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "analysis",
+                                "dashboard"
+                            ],
+                            "query": [
+                                {
+                                    "key": "userId",
+                                    "value": "{{userId}}"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "AI Partner",
+            "item": [
+                {
+                    "name": "POST Create Chat Session",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Curhat malam ini\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/chat/session",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "chat",
+                                "session"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET Chat Session",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/chat/session/{{sessionId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "chat",
+                                "session",
+                                "{{sessionId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST Chat Message",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"content\": \"Aku sedang capek sekali akhir-akhir ini.\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/ai/chat/session/{{sessionId}}/message",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "ai",
+                                "chat",
+                                "session",
+                                "{{sessionId}}",
+                                "message"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Profile",
+            "item": [
+                {
+                    "name": "GET Me",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/profile/me",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "profile",
+                                "me"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET Me Client",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{clientToken}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/profile/me/client",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "profile",
+                                "me",
+                                "client"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET Me Psychologist",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{psychologistToken}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/profile/me/psychologist",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "profile",
+                                "me",
+                                "psychologist"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT Me Psychologist Schedules",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{psychologistToken}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"schedules\": [\n    {\n      \"dayOfWeek\": 1,\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"isAvailable\": true\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/profile/me/psychologist/schedules",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "profile",
+                                "me",
+                                "psychologist",
+                                "schedules"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST Client Profile",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{clientToken}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"user@mail.com\",\n  \"displayName\": \"Nazwa User\",\n  \"username\": \"nazwa\",\n  \"birthDate\": \"2000-01-01\",\n  \"gender\": \"FEMALE\",\n  \"photoUrl\": \"https://...\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/profile/client",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "profile",
+                                "client"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST Psychologist Profile",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{psychologistToken}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"psych@mail.com\",\n  \"fullName\": \"Dr. Shinta Prawiti\",\n  \"phoneNumber\": \"08123456789\",\n  \"gender\": \"FEMALE\",\n  \"location\": \"Jakarta\",\n  \"clinicName\": \"Partner Clinic\",\n  \"specialization\": \"Psikolog Klinis\",\n  \"yearsExperience\": 5,\n  \"nik\": \"1234567890123456\",\n  \"strNumber\": \"STR-12345\",\n  \"photoUrl\": \"https://...\",\n  \"education\": [\"S1 Psikologi UI\", \"S2 Psikologi Klinis UGM\"],\n  \"clientsHandled\": 120,\n  \"bio\": \"Berpengalaman menangani kecemasan dan burnout.\",\n  \"tags\": [\"Cemas\", \"Burnout\"],\n  \"isAcceptingSessions\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/profile/psychologist",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "profile",
+                                "psychologist"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST Psychologist Documents",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{psychologistToken}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"ktpUrl\": \"https://...\",\n  \"faceWithKtpUrl\": \"https://...\",\n  \"strLicenseUrl\": \"https://...\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/profile/psychologist/documents",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "profile",
+                                "psychologist",
+                                "documents"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Journal",
+            "item": [
+                {
+                    "name": "POST Journal",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{clientToken}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Hari yang berat\",\n  \"content\": \"Saya merasa sangat lelah hari ini.\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/journal",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "journal"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET Journal List",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{clientToken}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/journal?limit={{limit}}&offset={{offset}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "journal"
+                            ],
+                            "query": [
+                                {
+                                    "key": "limit",
+                                    "value": "{{limit}}"
+                                },
+                                {
+                                    "key": "offset",
+                                    "value": "{{offset}}"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET Journal Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{clientToken}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/journal/{{journalId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "journal",
+                                "{{journalId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT Journal",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{clientToken}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Judul baru\",\n  \"content\": \"Isi baru\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/journal/{{journalId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "journal",
+                                "{{journalId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE Journal",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{clientToken}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/journal/{{journalId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "journal",
+                                "{{journalId}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Psychologist",
+            "item": [
+                {
+                    "name": "POST Search",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"criteria\": \"Cocok untuk kecemasan dan burnout\",\n  \"limit\": 10\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/search",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "search"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET Me Dashboard",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{psychologistToken}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/me/dashboard",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "me",
+                                "dashboard"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET Me Sessions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{psychologistToken}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/me/sessions?date={{date}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "me",
+                                "sessions"
+                            ],
+                            "query": [
+                                {
+                                    "key": "date",
+                                    "value": "{{date}}"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PATCH Me Status",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{psychologistToken}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"isAcceptingSessions\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/me/status",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "me",
+                                "status"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT Me Schedules",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{psychologistToken}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"schedules\": [\n    {\n      \"dayOfWeek\": 1,\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"isAvailable\": true\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/me/schedules",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "me",
+                                "schedules"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST Booking",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{clientToken}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"psychologistId\": \"{{psychologistId}}\",\n  \"fullName\": \"Suroto Ahmad\",\n  \"method\": \"VIDEO\",\n  \"price\": 250000,\n  \"notes\": \"Cemas karena pekerjaan\",\n  \"scheduledAt\": \"2026-05-29T07:00:00.000Z\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/booking",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "booking"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST Pay Booking",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{clientToken}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/booking/{{bookingId}}/pay",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "booking",
+                                "{{bookingId}}",
+                                "pay"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST Booking Respond",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{psychologistToken}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"action\": \"ACCEPT\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/booking/{{bookingId}}/respond",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "booking",
+                                "{{bookingId}}",
+                                "respond"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PATCH Booking Complete",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{psychologistToken}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/booking/{{bookingId}}/complete",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "booking",
+                                "{{bookingId}}",
+                                "complete"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET Booking Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/booking/{{bookingId}}/detail",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "booking",
+                                "{{bookingId}}",
+                                "detail"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET Me Clients",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{psychologistToken}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/me/clients?search=&status=ALL",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "me",
+                                "clients"
+                            ],
+                            "query": [
+                                {
+                                    "key": "search",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "ALL"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET Me Income",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{psychologistToken}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/me/income?limit={{limit}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "me",
+                                "income"
+                            ],
+                            "query": [
+                                {
+                                    "key": "limit",
+                                    "value": "{{limit}}"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET Me Reviews",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{psychologistToken}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/me/reviews?limit={{limit}}&page=1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "me",
+                                "reviews"
+                            ],
+                            "query": [
+                                {
+                                    "key": "limit",
+                                    "value": "{{limit}}"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET Public Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/{{psychologistId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "{{psychologistId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST Review",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{clientToken}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"psychologistId\": \"{{psychologistId}}\",\n  \"rating\": 5,\n  \"comment\": \"Sangat membantu dan profesional.\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/review",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "review"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST Verification Request",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"psychologistId\": \"{{psychologistId}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/verification/request",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "verification",
+                                "request"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET Verification Confirm",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/verification/confirm/{{token}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "verification",
+                                "confirm",
+                                "{{token}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

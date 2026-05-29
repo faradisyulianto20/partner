@@ -1,9 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../auth/dto/current-user.decorator';
+import type { CurrentUserPayload } from '../auth/dto/current-user.decorator';
 import { JournalService } from './journal.service';
 import { CreateJournalDto } from './dto/create-journal.dto';
 import { UpdateJournalDto } from './dto/update-journal.dto';
 
 @Controller('journal')
+@UseGuards(JwtAuthGuard)
 export class JournalController {
     constructor(private readonly journalService: JournalService) { }
 

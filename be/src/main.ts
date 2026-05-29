@@ -3,19 +3,12 @@ import { AppModule } from './app.module';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
 
-// Singleton app untuk Vercel serverless (menghindari cold start tiap request)
-let app: any;
-const server = express();
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
 
-async function createNestApp() {
-  if (!app) {
-    app = await NestFactory.create(AppModule, new ExpressAdapter(server), {
-      logger: ['error', 'warn'],
-    });
-    app.enableCors();
-    await app.init();
-  }
-  return app;
+  app.enableCors();
+
+  await app.listen(process.env.PORT ?? 3000);
 }
 
 // Handler Vercel serverless

@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AnalysisModule } from './modules/analysis/analysis.module';
 import { AiPartnerModule } from './modules/ai-partner/ai-partner.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { HumanPartnerModule } from './modules/human-partner/human-partner.module';
 import { JournalModule } from './modules/journal/journal.module';
 import { PsychologistModule } from './modules/psychologist/psychologist.module';
@@ -15,6 +16,7 @@ import { AuthModule } from './modules/auth/auth.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    AuthModule,
     AnalysisModule,
     AiPartnerModule,
     HumanPartnerModule,
