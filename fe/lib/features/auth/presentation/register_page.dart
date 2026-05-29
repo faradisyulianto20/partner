@@ -10,9 +10,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/state/user_role_state.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hackathon/core/constants.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -22,8 +22,6 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final SupabaseClient supabase = Supabase.instance.client;
-
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _displayNameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -38,8 +36,6 @@ class _RegisterPageState extends State<RegisterPage> {
   static final String? _iosClientId = dotenv.env['IOS_CLIENT'];
 
   bool _didNavigate = false;
-
-  StreamSubscription<AuthState>? _authSubscription;
 
   final LinearGradient verticalGradient = const LinearGradient(
     begin: Alignment.topCenter,
@@ -62,14 +58,10 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void initState() {
     super.initState();
-    _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
-      setState(() {});
-    });
   }
 
   @override
   void dispose() {
-    _authSubscription?.cancel();
     _emailController.dispose();
     _displayNameController.dispose();
     _passwordController.dispose();
@@ -134,7 +126,7 @@ class _RegisterPageState extends State<RegisterPage> {
           userRoleState.isPsychologist ? 'PSYCHOLOGIST' : 'CLIENT';
 
       final response = await http.post(
-        Uri.parse('https://partner-seven-phi.vercel.app/auth/register'),
+        Uri.parse('${AppConstants.baseUrl}/auth/register'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': _emailController.text.trim(),

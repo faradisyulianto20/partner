@@ -6,7 +6,7 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:hackathon/core/theme/app_gradients.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hackathon/core/constants.dart';
 
 class PsychologistHomePage extends StatefulWidget {
   const PsychologistHomePage({super.key});
@@ -61,7 +61,7 @@ class _PsychologistHomePageState extends State<PsychologistHomePage> {
   final Color _softBlue = const Color(0xFF7DA0C4);
 
   static const String _psychologistId = '4a63c647-72f7-4cd7-8e45-476b6ffdd8f4';
-  static const String _baseUrl = 'https://partner-seven-phi.vercel.app';
+  static String get _baseUrl => AppConstants.baseUrl;
   Map<String, dynamic>? _psychologistData;
 
   Future<void> _fetchPsychologistProfile() async {
@@ -75,21 +75,7 @@ class _PsychologistHomePageState extends State<PsychologistHomePage> {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
-        final completeData = const JsonEncoder.withIndent('  ').convert(data);
-        debugPrint('─────────────────────────────────────');
-        debugPrint('Data         : {$completeData}');
-        debugPrint('─────────────────────────────────────');
-        debugPrint(
-          'Auth State  : ${Supabase.instance.client.auth.currentSession != null ? 'Authenticated' : 'Unauthenticated'}',
-        );
-        debugPrint(
-          'Session     : ${Supabase.instance.client.auth.currentSession != null ? 'Exists' : 'None'}',
-        );
-        debugPrint(
-          'User Email  : ${Supabase.instance.client.auth.currentUser?.email ?? 'null'}',
-        );
-        debugPrint('─────────────────────────────────────');
-        setState(() {                        // ← tambah ini
+        setState(() {
           _psychologistData = data;
         });
       } else {

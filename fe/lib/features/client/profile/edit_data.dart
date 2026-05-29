@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hackathon/core/services/auth_state.dart';
 
 class EditProfile extends StatefulWidget {
   const EditProfile({super.key});
@@ -13,7 +13,6 @@ class EditProfile extends StatefulWidget {
 }
 
 class _EditProfileState extends State<EditProfile> {
-  final SupabaseClient supabase = Supabase.instance.client;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
@@ -28,49 +27,6 @@ class _EditProfileState extends State<EditProfile> {
   @override
   void initState() {
     super.initState();
-    _hydrateFromOAuth();
-  }
-
-  void _hydrateFromOAuth() {
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
-
-    final metadata = user.userMetadata ?? {};
-    final displayName = (metadata['full_name'] ?? metadata['name'])
-        ?.toString()
-        .trim();
-    if (displayName != null && displayName.isNotEmpty) {
-      _nameController.text = displayName;
-    }
-
-    final username = metadata['username']?.toString();
-    if (username != null && username.isNotEmpty) {
-      _usernameController.text = username;
-    }
-
-    final bio = metadata['bio']?.toString();
-    if (bio != null && bio.isNotEmpty) {
-      _bioController.text = bio;
-    }
-
-    final gender = metadata['gender']?.toString();
-    if (gender == 'Perempuan' || gender == 'Laki-laki') {
-      _selectedGender = gender!;
-    }
-
-    final birthDate = metadata['birth_date']?.toString();
-    if (birthDate != null && birthDate.isNotEmpty) {
-      _birthDateController.text = birthDate;
-    }
-
-    if (user.email != null && user.email!.isNotEmpty) {
-      _emailController.text = user.email!;
-    }
-
-    final avatar = (metadata['avatar_url'] ?? metadata['picture'])?.toString();
-    if (avatar != null && avatar.isNotEmpty) {
-      _profileImageUrl = avatar;
-    }
   }
 
   Future<void> _pickImage() async {
@@ -122,17 +78,6 @@ class _EditProfileState extends State<EditProfile> {
     setState(() => _isSaving = true);
 
     try {
-      await supabase.auth.updateUser(
-        UserAttributes(
-          data: {
-            'full_name': _nameController.text.trim(),
-            'username': _usernameController.text.trim(),
-            'bio': _bioController.text.trim(),
-            'gender': _selectedGender,
-            'birth_date': _birthDateController.text.trim(),
-          },
-        ),
-      );
       if (!mounted) return;
       _showToast('Perubahan profil berhasil disimpan');
       context.pop();

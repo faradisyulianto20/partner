@@ -14,7 +14,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:hackathon/core/constants.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hackathon/core/services/auth_state.dart';
 
 class AIPartnerVoice extends StatefulWidget {
   const AIPartnerVoice({super.key});
@@ -146,7 +146,7 @@ class _AIPartnerVoiceState extends State<AIPartnerVoice>
     );
 
     socket.onConnect((_) {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
+      final userId = authState.userId;
       socket.emit('start', {'userId': userId, 'sampleRate': 16000});
     });
 

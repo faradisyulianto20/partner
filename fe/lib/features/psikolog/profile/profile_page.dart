@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:hackathon/core/constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfilePsychologistPage extends StatefulWidget {
   const ProfilePsychologistPage({super.key});
@@ -14,7 +15,6 @@ class ProfilePsychologistPage extends StatefulWidget {
 }
 
 class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
-  final SupabaseClient supabase = Supabase.instance.client;
   final Color _primaryColor = const Color(0xFF1B517A);
   final Color _softBlue = const Color(0xFF7DA0C4);
   final LinearGradient _headerGradient = const LinearGradient(
@@ -49,7 +49,7 @@ class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
   ];
 
   static const String _psychologistId = '4a63c647-72f7-4cd7-8e45-476b6ffdd8f4';
-  static const String _baseUrl = 'https://partner-seven-phi.vercel.app';
+  static String get _baseUrl => AppConstants.baseUrl;
   Map<String, dynamic>? _psychologistData;
 
   Future<void> _fetchPsychologistProfile() async {
@@ -63,27 +63,10 @@ class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
-        final completeData = const JsonEncoder.withIndent('  ').convert(data);
-        debugPrint('─────────────────────────────────────');
-        debugPrint('Data         : {$completeData}');
-        debugPrint('─────────────────────────────────────');
-        debugPrint(
-          'Auth State  : ${Supabase.instance.client.auth.currentSession != null ? 'Authenticated' : 'Unauthenticated'}',
-        );
-        debugPrint(
-          'Session     : ${Supabase.instance.client.auth.currentSession != null ? 'Exists' : 'None'}',
-        );
-        debugPrint(
-          'User Email  : ${Supabase.instance.client.auth.currentUser?.email ?? 'null'}',
-        );
-        debugPrint('─────────────────────────────────────');
-        bool _isLoading = true;
 
         if (!mounted) return;
         setState(() {
-          // ← tambah ini
           _psychologistData = data;
-          _isLoading = false;
         });
       } else {
         debugPrint(
@@ -213,6 +196,16 @@ class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _handleLogout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('custom_access_token');
+    await prefs.remove('user_id');
+    await prefs.remove('user_role');
+
+    if (!context.mounted) return;
+    context.go('/login');
   }
 
   Widget _buildStatusCard() {
@@ -355,11 +348,7 @@ class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
-        onPressed: () async {
-          await supabase.auth.signOut();
-          if (!mounted) return;
-          context.go('/onboarding/welcome');
-        },
+        onPressed: _handleLogout,
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 14),
           side: const BorderSide(color: Color(0xFFF1A99E), width: 1.2),

@@ -9,6 +9,7 @@ import 'package:hackathon/core/shared_widgets/header.dart';
 import 'package:hackathon/features/client/home/widgets/cta.dart';
 import 'package:hackathon/features/client/home/widgets/history.dart';
 import 'package:hackathon/features/client/home/widgets/today.dart';
+import 'package:hackathon/core/constants.dart';
 
 final RouteObserver<ModalRoute<void>> homeRouteObserver =
     RouteObserver<ModalRoute<void>>();
@@ -75,7 +76,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
 
       // ── HTTP GET ke endpoint dashboard ───────────────────────────
       final uri = Uri.parse(
-        'https://partner-seven-phi.vercel.app/analysis/dashboard'
+        '${AppConstants.baseUrl}/analysis/dashboard'
         '?userId=$userId',
       );
 

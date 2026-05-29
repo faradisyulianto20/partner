@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/models/psychologist_models.dart';
 import 'package:hackathon/core/services/api_client.dart';
 import 'package:hackathon/core/services/psychologist_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hackathon/core/services/auth_state.dart';
 
 class Booking extends StatefulWidget {
   final String psychologistId;
@@ -151,7 +151,7 @@ class _BookingState extends State<Booking> {
     setState(() => _isLoading = true);
 
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
+      final userId = authState.userId;
       if (userId == null) {
         _showErrorDialog('User ID tidak ditemukan. Silakan login kembali.');
         return;
@@ -171,15 +171,7 @@ class _BookingState extends State<Booking> {
         PsychologistBookingRequest(
           userId: userId,
           psychologistId: widget.psychologistId,
-          fullName:
-              Supabase
-                  .instance
-                  .client
-                  .auth
-                  .currentUser
-                  ?.userMetadata?['full_name']
-                  ?.toString() ??
-              'Unknown',
+          fullName: authState.displayName ?? 'Unknown',
           method: _selectedMethod,
           price: widget.price,
           scheduledAt: bookingDateTime.toIso8601String(),

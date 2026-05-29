@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 // Router
 import 'package:hackathon/router.dart';
 
-// Supabase & DotEnv
+// Auth & DotEnv
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hackathon/core/services/auth_state.dart';
 
 
 
@@ -20,10 +20,7 @@ Future<void> main() async {
     print("Gagal memuat DotEnv, pastikan file .env ada di aset pubspec.yaml: $e");
   }
 
-  final String supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
-  final String supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
-
-  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+  await authState.init();
   
   runApp(const MyApp());
 }

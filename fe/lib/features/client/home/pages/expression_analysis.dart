@@ -22,7 +22,9 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
   CameraController? cameraController;
   int currentState = 0;
   bool _hasSubmitted = false;
+  bool _captureSuccess = false;
   bool _isCapturing = false;
+  bool _apiDone = false;
   AnalysisResultData? _analysisResult;
 
   late final ApiClient _apiClient = ApiClient(baseUrl: AppConstants.baseUrl);
@@ -81,8 +83,7 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
         cameras = availableCams;
         cameraController = CameraController(
           availableCams.last,
-          ResolutionPreset
-              .low, // ← gunakan low untuk kurangi tekanan buffer
+          ResolutionPreset.low, // ← gunakan low untuk kurangi tekanan buffer
           enableAudio: false,
           imageFormatGroup: ImageFormatGroup.jpeg,
         );
@@ -151,7 +152,10 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
         throw Exception('File hasil takePicture tidak tercipta.');
       }
 
-      setState(() => _hasSubmitted = true);
+      setState(() {
+        _hasSubmitted = true;
+        _captureSuccess = true;
+      });
 
       // Dispose kamera SEGERA setelah foto diambil
       // Ini mencegah BLASTBufferQueue buffer overflow saat API call berlangsung
@@ -160,7 +164,9 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
         setState(() => cameraController = null);
         try {
           await camController.dispose();
-          debugPrint('📷 [DEBUG-FACE] CameraController disposed setelah capture.');
+          debugPrint(
+            '📷 [DEBUG-FACE] CameraController disposed setelah capture.',
+          );
         } catch (_) {}
       }
 
@@ -208,8 +214,7 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
             ? 'Sesi kamu sudah habis. Silakan login ulang.'
             : response.statusCode == 404
             ? 'Endpoint tidak ditemukan. Pastikan server backend berjalan.'
-            : 'Gagal menganalisis (HTTP ${response.statusCode}). Coba lagi.'
-        ;
+            : 'Gagal menganalisis (HTTP ${response.statusCode}). Coba lagi.';
         _showSnackBar(errorMsg);
 
         setState(() {
@@ -245,6 +250,7 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
 
       setState(() {
         _analysisResult = resultData;
+        _apiDone = true;  
         currentState = 4;
         _isCapturing = false;
       });
@@ -276,17 +282,24 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
   }
 
   void _simulateStateProgression() {
-    // Reset ke 0 dulu setiap kali dipanggil ulang
     if (mounted) setState(() => currentState = 0);
 
     Future.doWhile(() async {
       await Future.delayed(const Duration(seconds: 2));
-      // Hentikan di state 3, state 4 hanya dari hasil API sukses
-      if (mounted && currentState < 3 && !_hasSubmitted) {
+      if (!mounted) return false;
+
+      // Lanjut animasi sampai state 3, tunggu API selesai di state 3
+      if (currentState < 3) {
         setState(() => currentState++);
         return true;
       }
-      return false;
+
+      // Sudah di state 3, tunggu API selesai
+      if (currentState == 3 && !_apiDone) {
+        return true; // terus loop (polling) sampai _apiDone true
+      }
+
+      return false; // stop
     });
   }
 
@@ -330,7 +343,8 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(24),
                           clipBehavior: Clip.antiAlias,
-                          child: Stack(
+                          child: // Ganti bagian Stack children di dalam CameraPreview
+                          Stack(
                             fit: StackFit.expand,
                             alignment: Alignment.center,
                             children: [
@@ -342,14 +356,40 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
                                   child: CameraPreview(cameraController!),
                                 ),
                               ),
-                              // Corner overlay
+
+                              // ── Overlay gelap saat analisis selesai ──
+                              if (currentState == 4)
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.5),
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                ),
+
+                              // Corner overlay (tetap tampil)
                               Center(
                                 child: CustomPaint(
                                   size: const Size(220, 270),
                                   painter: _FaceCornerPainter(),
                                 ),
                               ),
-                              // Loading indicator saat capturing
+
+                              // ── Teks sukses di tengah saat analisis selesai ──
+                              if (currentState == 4)
+                                const Center(
+                                  child: Text(
+                                    'Ekspresi Berhasil\nDideteksi',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w800,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ),
+
+                              // Loading indicator saat capturing (tetap seperti semula)
                               if (_isCapturing)
                                 Positioned(
                                   bottom: 16,
@@ -386,6 +426,36 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
                                   ),
                                 ),
                             ],
+                          ),
+                        ),
+                      )
+                    else if (_captureSuccess && currentState == 4)
+                      SizedBox(
+                        width: double.infinity,
+                        height: 520,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: Container(
+                            color: Colors.black.withOpacity(0.5),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                CustomPaint(
+                                  size: const Size(220, 270),
+                                  painter: _FaceCornerPainter(),
+                                ),
+                                const Text(
+                                  'Ekspresi Berhasil\nDideteksi',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       )

@@ -1,4 +1,5 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class AppConstants {
-  // 1. Production Backend (Vercel)
-  static const String baseUrl = 'https://partner-seven-phi.vercel.app';
+  static String get baseUrl => 'http://localhost:3000';
 }

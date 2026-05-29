@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hackathon/core/services/api_client.dart';
 import 'package:hackathon/core/services/profile_service.dart';
 import 'package:hackathon/core/constants.dart';
@@ -18,7 +17,6 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final SupabaseClient supabase = Supabase.instance.client;
   late final ProfileService _profileService = ProfileService(
     ApiClient(baseUrl: AppConstants.baseUrl),
   );
@@ -49,29 +47,6 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    _hydrateFromOAuth();
-  }
-
-  void _hydrateFromOAuth() {
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
-
-    final metadata = user.userMetadata ?? {};
-    final displayName = (metadata['full_name'] ?? metadata['name'])
-        ?.toString()
-        .trim();
-    if (displayName != null && displayName.isNotEmpty) {
-      _nameController.text = displayName;
-    }
-
-    if (user.email != null && user.email!.isNotEmpty) {
-      _emailController.text = user.email!;
-    }
-
-    final avatar = (metadata['avatar_url'] ?? metadata['picture'])?.toString();
-    if (avatar != null && avatar.isNotEmpty) {
-      _profileImageUrl = avatar;
-    }
   }
 
   Future<void> _pickImage() async {

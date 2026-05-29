@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:hackathon/core/constants.dart';
 
 class ProfileService extends StatefulWidget {
   const ProfileService({super.key});
@@ -78,7 +78,7 @@ class _ProfileServiceState extends State<ProfileService> {
   }
 
   static const String _psychologistId = '4a63c647-72f7-4cd7-8e45-476b6ffdd8f4';
-  static const String _baseUrl = 'https://partner-seven-phi.vercel.app';
+  static String get _baseUrl => AppConstants.baseUrl;
   Map<String, dynamic>? _psychologistData;
 
   Future<void> _fetchPsychologistProfile() async {
@@ -92,22 +92,7 @@ class _ProfileServiceState extends State<ProfileService> {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
-        final completeData = const JsonEncoder.withIndent('  ').convert(data);
-        debugPrint('─────────────────────────────────────');
-        debugPrint('Data         : {$completeData}');
-        debugPrint('─────────────────────────────────────');
-        debugPrint(
-          'Auth State  : ${Supabase.instance.client.auth.currentSession != null ? 'Authenticated' : 'Unauthenticated'}',
-        );
-        debugPrint(
-          'Session     : ${Supabase.instance.client.auth.currentSession != null ? 'Exists' : 'None'}',
-        );
-        debugPrint(
-          'User Email  : ${Supabase.instance.client.auth.currentUser?.email ?? 'null'}',
-        );
-        debugPrint('─────────────────────────────────────');
         setState(() {
-          // ← tambah ini
           _psychologistData = data;
 
           _nameController.text = data['fullName'] ?? '';

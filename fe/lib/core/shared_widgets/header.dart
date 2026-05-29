@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/state/user_role_state.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hackathon/core/services/auth_state.dart';
 
 class Header extends StatelessWidget {
   final String userName;
@@ -34,15 +34,9 @@ class Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = Supabase.instance.client.auth.currentUser;
-    final displayName = user?.userMetadata?['full_name'] ?? user?.email;
-    final resolvedUserName = (displayName != null && displayName.isNotEmpty)
-        ? displayName
-        : userName;
-    final avatarUrl =
-        user?.userMetadata?['avatar_url'] ??
-        user?.userMetadata?['picture'] ??
-        '';
+    final displayName = authState.displayNameOrEmail;
+    final resolvedUserName = (displayName.isNotEmpty) ? displayName : userName;
+    final avatarUrl = '';
     final resolvedGreeting = _buildGreeting();
     final VoidCallback resolvedProfileTap =
         onProfileTap ??

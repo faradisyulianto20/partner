@@ -9,7 +9,7 @@ import 'package:hackathon/features/client/partner/widgets/ai_partner.dart';
 import 'package:hackathon/features/client/partner/widgets/chat_content.dart';
 import 'package:hackathon/features/client/partner/widgets/professional_partner.dart';
 import 'package:hackathon/features/client/partner/widgets/human_partner.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hackathon/core/services/auth_state.dart';
 
 class PartnerPage extends StatefulWidget {
   final void Function(String chatId)? onStartChat;
@@ -37,7 +37,7 @@ class _PartnerPageState extends State<PartnerPage> {
     setState(() => _isStartingChat = true);
 
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
+      final userId = authState.userId;
       final sessionResponse = await _aiPartnerService.createSession(
         AiChatSessionRequest(userId: userId, title: 'AI Partner Chat'),
       );

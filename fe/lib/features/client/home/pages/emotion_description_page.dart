@@ -137,8 +137,8 @@ class EmotionDescription extends StatefulWidget {
 }
 
 class _EmotionDescriptionState extends State<EmotionDescription> {
-  static const String _endpoint =
-      'https://partner-seven-phi.vercel.app/analysis/text';
+  static String get _endpoint =>
+      '${AppConstants.baseUrl}/analysis/text';
 
   final TextEditingController _controller = TextEditingController();
   bool _isSubmitting = false;

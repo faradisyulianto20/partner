@@ -7,7 +7,7 @@ import 'package:hackathon/core/theme/app_gradients.dart';
 import 'package:hackathon/features/client/partner/widgets/chat_content.dart';
 import 'package:hackathon/features/client/partner/widgets/chat_footer.dart';
 import 'package:hackathon/core/constants.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hackathon/core/services/auth_state.dart';
 
 class AIPartnerChat extends StatefulWidget {
   const AIPartnerChat({super.key, this.sessionId, this.initialMessages});
@@ -194,7 +194,7 @@ class _AIPartnerChatState extends State<AIPartnerChat> {
   }
 
   String? _currentUserId() {
-    return Supabase.instance.client.auth.currentUser?.id;
+    return authState.userId;
   }
 
   void _scrollToBottom() {

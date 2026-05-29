@@ -8,7 +8,7 @@ import 'package:hackathon/core/services/api_client.dart';
 import 'package:hackathon/core/services/human_partner_service.dart';
 import 'package:hackathon/core/theme/app_gradients.dart';
 import 'package:hackathon/core/constants.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hackathon/core/services/auth_state.dart';
 
 class HumanPartnerPage extends StatefulWidget {
   const HumanPartnerPage({super.key});
@@ -54,7 +54,7 @@ class _HumanPartnerPageState extends State<HumanPartnerPage> {
 
   Future<void> _joinQueue() async {
     if (_isJoining) return;
-    final userId = Supabase.instance.client.auth.currentUser?.id;
+    final userId = authState.userId;
     if (userId == null || userId.isEmpty) {
       _showSnackBar('User belum login.');
       return;
@@ -108,7 +108,7 @@ class _HumanPartnerPageState extends State<HumanPartnerPage> {
   }
 
   Future<void> _leaveQueue() async {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
+    final userId = authState.userId;
     if (userId == null || userId.isEmpty) {
       return;
     }

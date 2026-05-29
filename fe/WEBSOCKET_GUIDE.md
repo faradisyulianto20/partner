@@ -66,7 +66,6 @@ Setelah socket connect, kirim payload ke server.
 
 ```dart
 socket.onConnect((_) {
-  final userId = Supabase.instance.client.auth.currentUser?.id;
   socket.emit('start', {
     'userId': userId,
     'sampleRate': 16000,
@@ -397,7 +396,7 @@ void _connectSocket() {
 
   socket.onConnect((_) {
     socket.emit('start', {
-      'userId': Supabase.instance.client.auth.currentUser?.id,
+      'userId': userId,
       'sampleRate': 16000,
     });
   });
@@ -426,7 +425,6 @@ void _connectSocket() {
   - namespace socket sesuai
   - transport `websocket` diizinkan
   - event name antara FE dan BE sama
-- Kalau pakai Supabase auth, `userId` sebaiknya diambil dari session aktif.
 
 ## Referensi kode
 

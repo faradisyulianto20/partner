@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart'; // ✅ ganti Supabase
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:hackathon/core/constants.dart';
 
 class HistoryDay {
   final String dayLabel;
@@ -27,8 +28,8 @@ class HomeHistory extends StatefulWidget {
 class _HomeHistoryState extends State<HomeHistory> {
   static const String _happyIcon = 'assets/images/emoji/happy_blue.svg';
   static const String _sadIcon  = 'assets/images/emoji/sad_blue.svg';
-  static const String _baseUrl  =
-      'https://partner-seven-phi.vercel.app';
+  static String get _baseUrl  =>
+      AppConstants.baseUrl;
 
   List<HistoryDay> _days = [];
   bool _isLoading = true;

@@ -1,7 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Singleton yang menyimpan state autentikasi user.
-/// Menggantikan Supabase auth — semua data disimpan di SharedPreferences.
+/// Semua data auth disimpan di SharedPreferences.
 class AuthState {
   static const _keyToken = 'custom_access_token';
   static const _keyUserId = 'user_id';
@@ -86,5 +86,5 @@ class AuthState {
   }
 }
 
-/// Global singleton — gunakan ini di seluruh app sebagai pengganti Supabase.auth
+/// Global singleton
 final AuthState authState = AuthState();

@@ -10,7 +10,6 @@ import { JournalModule } from './modules/journal/journal.module';
 import { PsychologistModule } from './modules/psychologist/psychologist.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
-import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [

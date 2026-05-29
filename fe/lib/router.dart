@@ -51,18 +51,11 @@ import 'package:hackathon/features/psikolog/profile/income.dart';
 import 'package:hackathon/features/psikolog/profile/schedule.dart';
 import 'package:hackathon/features/psikolog/profile/profile_service.dart';
 
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hackathon/core/services/auth_state.dart';
 
 bool firstInstall = true;
 
-bool get _isLoggedIn {
-  // Login via Google/Supabase
-  if (Supabase.instance.client.auth.currentSession != null) return true;
-  // Login via email/password (custom JWT — cek synchronous tidak bisa,
-  // tapi SharedPreferences sudah diload saat app init;
-  // router akan di-refresh oleh context.go dari _loginWithEmailPassword)
-  return false;
-}
+bool get _isLoggedIn => authState.isLoggedIn;
 
 String get _initialLocation {
   if (firstInstall) return '/onboarding/welcome';
@@ -241,7 +234,7 @@ final clientShellRoute = StatefulShellRoute.indexedStack(
               builder: (context, state) => const VoiceInput(),
             ),
             GoRoute(
-              path: '/home/analysis-result',
+              path: '/analysis-result',
               builder: (context, state) =>
                   AnalysisResult(result: state.extra as AnalysisResultData?),
             ),
