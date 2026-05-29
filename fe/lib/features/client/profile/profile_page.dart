@@ -8,6 +8,7 @@ import 'package:hackathon/core/services/api_client.dart';
 import 'package:hackathon/core/services/profile_service.dart';
 import 'package:hackathon/core/constants.dart';
 import 'package:hackathon/core/models/profile_models.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -117,11 +118,14 @@ class _ProfilePageState extends State<ProfilePage> {
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
-  Future<void> _handleLogout() async {
-    await supabase.auth.signOut();
-    if (mounted) {
-      context.go('/onboarding/welcome');
-    }
+  Future<void> _handleLogout()  async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('custom_access_token');
+    await prefs.remove('user_id');
+    await prefs.remove('user_role');
+
+    if (!context.mounted) return;
+    context.go('/login');
   }
 
   @override

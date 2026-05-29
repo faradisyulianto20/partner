@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart'; // ✅ ganti Supabase
 import 'dart:convert';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HistoryDay {
   final String dayLabel;
@@ -26,8 +26,9 @@ class HomeHistory extends StatefulWidget {
 
 class _HomeHistoryState extends State<HomeHistory> {
   static const String _happyIcon = 'assets/images/emoji/happy_blue.svg';
-  static const String _sadIcon = 'assets/images/emoji/sad_blue.svg';
-  static const String _baseUrl = 'https://partner-seven-phi.vercel.app/';
+  static const String _sadIcon  = 'assets/images/emoji/sad_blue.svg';
+  static const String _baseUrl  =
+      'https://partner-seven-phi.vercel.app';
 
   List<HistoryDay> _days = [];
   bool _isLoading = true;
@@ -46,110 +47,75 @@ class _HomeHistoryState extends State<HomeHistory> {
     });
 
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
-      debugPrint('═══════════════════════════════════════════════════════');
-      debugPrint('📊 HISTORY FETCH - /analysis/dashboard');
-      debugPrint('═══════════════════════════════════════════════════════');
-      debugPrint('User ID     : ${userId ?? 'null'}');
-      debugPrint(
-        'Auth State  : ${Supabase.instance.client.auth.currentSession != null ? 'Authenticated' : 'Unauthenticated'}',
-      );
-      debugPrint(
-        'Session     : ${Supabase.instance.client.auth.currentSession != null ? 'Exists' : 'None'}',
-      );
-      debugPrint(
-        'User Email  : ${Supabase.instance.client.auth.currentUser?.email ?? 'null'}',
-      );
-      debugPrint('───────────────────────────────────────────────────────');
+      // ── Ambil userId & token dari SharedPreferences ──────────────
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('user_id') ?? '';
+      final token  = prefs.getString('custom_access_token') ?? '';
 
-      if (userId == null) {
+      debugPrint('📊 HISTORY FETCH');
+      debugPrint('userId : $userId');
+      debugPrint('token  : ${token.isEmpty ? 'KOSONG' : '${token.substring(0, 20)}...'}');
+
+      if (userId.isEmpty) {
         throw Exception('User ID not found. Please login first.');
       }
+      if (token.isEmpty) {
+        throw Exception('Token not found. Please login first.');
+      }
 
-      // Build URL with userId query parameter
-      final uri = Uri.parse('$_baseUrl/analysis/dashboard').replace(
-        queryParameters: {'userId': userId},
-      );
+      // ── HTTP GET ─────────────────────────────────────────────────
+      final uri = Uri.parse('$_baseUrl/analysis/dashboard')
+          .replace(queryParameters: {'userId': userId});
 
       debugPrint('Request URL : $uri');
-      debugPrint('───────────────────────────────────────────────────────');
 
       final response = await http.get(
         uri,
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization':
-              'Bearer ${Supabase.instance.client.auth.currentSession?.accessToken ?? ''}',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token', // ✅ token dari SharedPreferences
         },
       );
 
-      debugPrint('Status Code : ${response.statusCode}');
+      debugPrint('Status : ${response.statusCode}');
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body);
-        final completeData =
-            const JsonEncoder.withIndent('  ').convert(data);
-
-        debugPrint('Response Data:');
-        debugPrint(completeData);
-        debugPrint('───────────────────────────────────────────────────────');
-
-        // Parse last7Days from response
-        final last7Days =
-            (data['last7Days'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ??
-                [];
-
-        debugPrint('✅ Last 7 Days: ${last7Days.length} items');
-        for (int i = 0; i < last7Days.length; i++) {
-          final day = last7Days[i];
-          debugPrint(
-            '  [$i] ${day['dayLabel']} - ${day['emotionLabel'] ?? 'no emotion'}',
-          );
-        }
-
-        // Convert to HistoryDay objects
-        final days = last7Days
-            .map((day) => HistoryDay(
-                  dayLabel: day['dayLabel'] ?? '',
-                  emotionLabel: day['emotionLabel'],
-                  iconAsset: _resolveIcon(day['emotionLabel'],  _happyIcon),
-                ))
-            .toList();
-
-        debugPrint('───────────────────────────────────────────────────────');
-        debugPrint('📋 Today Data:');
-        final today = data['today'] as Map<String, dynamic>?;
-        if (today != null) {
-          debugPrint('  Emotion: ${today['emotionLabel']}');
-          debugPrint('  Summary: ${today['summary']?.substring(0, 50)}...');
-          debugPrint(
-            '  Recommendations: ${(today['recommendations'] as Map?)?['narrative']?.substring(0, 50)}...',
-          );
-        } else {
-          debugPrint('  No data for today');
-        }
-        debugPrint('═══════════════════════════════════════════════════════\n');
-
-        setState(() {
-          _days = days;
-          _isLoading = false;
-        });
-      } else {
+      if (response.statusCode != 200) {
         throw Exception(
-          'Failed to fetch dashboard: ${response.statusCode} - ${response.body}',
+          'Fetch gagal: ${response.statusCode} - ${response.body}',
         );
       }
-    } catch (e, stackTrace) {
-      debugPrint('❌ Error: $e');
-      debugPrint(stackTrace.toString());
-      debugPrint('═══════════════════════════════════════════════════════\n');
 
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
+      // ── Parse JSON ───────────────────────────────────────────────
+      final Map<String, dynamic> data =
+          jsonDecode(response.body) as Map<String, dynamic>;
+
+      final rawDays =
+          (data['last7Days'] as List<dynamic>?)
+              ?.cast<Map<String, dynamic>>() ??
+          [];
+
+      debugPrint('✅ Last 7 Days: ${rawDays.length} items');
+
+      final days = rawDays
+          .map(
+            (day) => HistoryDay(
+              dayLabel:     day['dayLabel']?.toString() ?? '',
+              emotionLabel: day['emotionLabel']?.toString(),
+              iconAsset:    _resolveIcon(day['emotionLabel']?.toString(), _happyIcon),
+            ),
+          )
+          .toList();
+
+      setState(() => _days = days);
+    } catch (e, st) {
+      debugPrint('❌ Error: $e\n$st');
+      setState(() => _errorMessage = e.toString());
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
+
+  // ── UI (tidak berubah dari kode asli) ─────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -192,8 +158,8 @@ class _HomeHistoryState extends State<HomeHistory> {
               child: Row(
                 children: List.generate(
                   7,
-                  (index) => Padding(
-                    padding: EdgeInsets.only(right: index < 6 ? 6 : 0),
+                  (i) => Padding(
+                    padding: EdgeInsets.only(right: i < 6 ? 6 : 0),
                     child: _buildSkeletonDay(),
                   ),
                 ),
@@ -223,14 +189,14 @@ class _HomeHistoryState extends State<HomeHistory> {
               child: Row(
                 children: List.generate(
                   _days.length,
-                  (index) => Padding(
+                  (i) => Padding(
                     padding: EdgeInsets.only(
-                      right: index < _days.length - 1 ? 6 : 0,
+                      right: i < _days.length - 1 ? 6 : 0,
                     ),
                     child: _buildEmotionDay(
-                      day: _days[index].dayLabel,
-                      emotion: _days[index].emotionLabel,
-                      iconAsset: _days[index].iconAsset,
+                      day:       _days[i].dayLabel,
+                      emotion:   _days[i].emotionLabel,
+                      iconAsset: _days[i].iconAsset,
                     ),
                   ),
                 ),
@@ -246,43 +212,35 @@ class _HomeHistoryState extends State<HomeHistory> {
     required String? emotion,
     required String iconAsset,
   }) {
-    final resolvedEmotion = (emotion == null || emotion.trim().isEmpty)
-        ? '-'
-        : emotion;
-    final resolvedIcon = _resolveIcon(emotion, iconAsset);
+    final label = (emotion == null || emotion.trim().isEmpty) ? '-' : emotion;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
       decoration: BoxDecoration(
         color: const Color(0xFFF4F9FF),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Color(0xFFE9E9E9), width: 1),
+        border: Border.all(color: const Color(0xFFE9E9E9), width: 1),
       ),
       child: Column(
         children: [
-          Text(
-            day,
-            style: GoogleFonts.nunito(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: const Color(0xFF1B517A),
-            ),
-          ),
+          Text(day,
+              style: GoogleFonts.nunito(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF1B517A))),
           const SizedBox(height: 12),
-          SvgPicture.asset(resolvedIcon, width: 16, height: 16),
+          SvgPicture.asset(_resolveIcon(emotion, iconAsset),
+              width: 16, height: 16),
           const SizedBox(height: 12),
           SizedBox(
             width: 31,
-            child: Text(
-              resolvedEmotion,
-              style: GoogleFonts.nunito(
-                fontSize: 7,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF1B517A),
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: Text(label,
+                style: GoogleFonts.nunito(
+                    fontSize: 7,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1B517A)),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis),
           ),
         ],
       ),
@@ -298,68 +256,33 @@ class _HomeHistoryState extends State<HomeHistory> {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0xFFE9E9E9), width: 1),
       ),
-      child: Column(
-        children: [
-          Container(
-            width: 20,
-            height: 10,
+      child: Column(children: [
+        Container(
+            width: 20, height: 10,
             decoration: BoxDecoration(
-              color: const Color(0xFFD4DFE8),
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            width: 16,
-            height: 16,
+                color: const Color(0xFFD4DFE8),
+                borderRadius: BorderRadius.circular(4))),
+        const SizedBox(height: 12),
+        Container(
+            width: 16, height: 16,
             decoration: const BoxDecoration(
-              color: Color(0xFFD4DFE8),
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            width: 24,
-            height: 8,
+                color: Color(0xFFD4DFE8), shape: BoxShape.circle)),
+        const SizedBox(height: 12),
+        Container(
+            width: 24, height: 8,
             decoration: BoxDecoration(
-              color: const Color(0xFFD4DFE8),
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-        ],
-      ),
+                color: const Color(0xFFD4DFE8),
+                borderRadius: BorderRadius.circular(4))),
+      ]),
     );
   }
 
   String _resolveIcon(String? emotion, String fallback) {
-    if (fallback == _happyIcon || fallback == _sadIcon) {
-      return fallback;
-    }
-
-    if (emotion == null || emotion.trim().isEmpty) {
-      return _happyIcon;
-    }
-
-    final normalized = emotion.toLowerCase();
-    final positiveKeywords = ['bahagia', 'senang', 'damai', 'tenang', 'rileks'];
-    final negativeKeywords = [
-      'sedih',
-      'kesedihan',
-      'cemas',
-      'ovt',
-      'overthinking',
-      'gelisah',
-      'murung',
-      'down',
-    ];
-
-    if (negativeKeywords.any((word) => normalized.contains(word))) {
-      return _sadIcon;
-    }
-    if (positiveKeywords.any((word) => normalized.contains(word))) {
-      return _happyIcon;
-    }
-
+    if (emotion == null || emotion.trim().isEmpty) return _happyIcon;
+    final n = emotion.toLowerCase();
+    const negative = ['sedih', 'kesedihan', 'cemas', 'ovt',
+                      'overthinking', 'gelisah', 'murung', 'down'];
+    if (negative.any((w) => n.contains(w))) return _sadIcon;
     return _happyIcon;
   }
 }

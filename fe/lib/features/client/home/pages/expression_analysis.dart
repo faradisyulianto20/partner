@@ -233,6 +233,14 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
         debugPrint(
           '⚠️ [DEBUG-FACE] tryFromJson menghasilkan null. rawData: $rawData',
         );
+        if (!mounted) return;
+        _showSnackBar('Gagal memproses hasil analisis. Coba lagi.');
+        setState(() {
+          _hasSubmitted = false;
+          _isCapturing = false;
+          currentState = 0;
+        });
+        return;
       }
 
       setState(() {

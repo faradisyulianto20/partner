@@ -125,7 +125,7 @@ class _WelcomePageState extends State<WelcomePage> {
                                     style: GoogleFonts.nunito(
                                       fontSize: 14,
                                       color: Colors.white,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                 ),

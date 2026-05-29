@@ -28,53 +28,6 @@ class AnalysisTextResponse {
   }
 }
 
-class AnalysisResultData {
-  final String id;
-  final DateTime createdAt;
-  final String emotionLabel;
-  final String summary;
-  final String recommendations;
-  final double confidence;
-
-  const AnalysisResultData({
-    required this.id,
-    required this.createdAt,
-    required this.emotionLabel,
-    required this.summary,
-    required this.recommendations,
-    required this.confidence,
-  });
-
-  static AnalysisResultData? tryFromJson(Object? json) {
-    if (json is! Map) {
-      return null;
-    }
-
-    final map = Map<String, dynamic>.from(json);
-    if (!map.containsKey('id')) {
-      return null;
-    }
-
-    final createdAtRaw = map['createdAt'];
-    DateTime createdAt = DateTime.now();
-    if (createdAtRaw is String) {
-      final parsed = DateTime.tryParse(createdAtRaw);
-      if (parsed != null) {
-        createdAt = parsed.toLocal();
-      }
-    }
-
-    return AnalysisResultData(
-      id: map['id']?.toString() ?? '',
-      createdAt: createdAt,
-      emotionLabel: map['emotionLabel']?.toString() ?? '',
-      summary: map['summary']?.toString() ?? '',
-      recommendations: map['recommendations']?.toString() ?? '',
-      confidence: _toDouble(map['confidence']),
-    );
-  }
-}
-
 Object? _resolvePayload(Object? json) {
   if (json is Map && json['data'] is Map) {
     return json['data'];
@@ -186,5 +139,86 @@ class DayAnalysis {
       dayLabel: json['dayLabel'] as String,
       emotionLabel: json['emotionLabel'] as String?,
     );
+  }
+}
+
+// lib/core/models/analysis_models.dart
+
+class RecommendationItem {
+  final String key;
+  final String title;
+  final String description;
+
+  const RecommendationItem({
+    required this.key,
+    required this.title,
+    required this.description,
+  });
+
+  factory RecommendationItem.fromJson(Map<String, dynamic> json) =>
+      RecommendationItem(
+        key: json['key'] as String,
+        title: json['title'] as String,
+        description: json['description'] as String,
+      );
+}
+
+class RecommendationData {
+  final String title;
+  final String narrative;
+  final List<RecommendationItem> items;
+
+  const RecommendationData({
+    required this.title,
+    required this.narrative,
+    required this.items,
+  });
+
+  factory RecommendationData.fromJson(Map<String, dynamic> json) =>
+      RecommendationData(
+        title: json['title'] as String,
+        narrative: json['narrative'] as String,
+        items: (json['items'] as List)
+            .map((e) => RecommendationItem.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
+}
+
+class AnalysisResultData {
+  final String id;
+  final DateTime createdAt;
+  final String emotionLabel;
+  final String summary;
+  final RecommendationData recommendations;
+  final double confidence;
+
+  const AnalysisResultData({
+    required this.id,
+    required this.createdAt,
+    required this.emotionLabel,
+    required this.summary,
+    required this.recommendations,
+    required this.confidence,
+  });
+
+  factory AnalysisResultData.fromJson(Map<String, dynamic> json) =>
+      AnalysisResultData(
+        id: json['id'] as String,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+        emotionLabel: json['emotionLabel'] as String,
+        summary: json['summary'] as String,
+        recommendations: RecommendationData.fromJson(
+          json['recommendations'] as Map<String, dynamic>,
+        ),
+        confidence: (json['confidence'] as num).toDouble(),
+      );
+
+  static AnalysisResultData? tryFromJson(Object? json) {
+    if (json is! Map) return null;
+    try {
+      return AnalysisResultData.fromJson(Map<String, dynamic>.from(json));
+    } catch (_) {
+      return null;
+    }
   }
 }

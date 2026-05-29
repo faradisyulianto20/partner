@@ -21,39 +21,52 @@ class Recommendation extends StatelessWidget {
     this.human = true,
     this.profesional = true,
     this.title = 'Rekomendasi Dukungan Untukmu',
+    this.apiItems,    
   });
 
   final bool ai;
   final bool human;
   final bool profesional;
   final String title;
+  final List<Map<String, dynamic>>? apiItems;
 
-  List<RecommendationItem> get _defaultItems => [
-    if (ai)
-      const RecommendationItem(
-        title: 'AI Partner',
-        description:
-            'AI Partner dapat membantu menemanimu berbicara, menenangkan pikiran, dan memberikan refleksi emosional secara perlahan.',
-        color: Color(0xFF2F6FB4),
-        icon: Icons.psychology_alt,
-      ),
-    if (human)
-      const RecommendationItem(
-        title: 'Human Partner',
-        description:
-            'Jika kamu ingin merasa lebih dipahami secara emosional, kamu juga bisa mencoba berbicara dengan Human Partner secara anonim.',
-        color: Color(0xFF2EA66B),
-        icon: Icons.group_outlined,
-      ),
-    if (profesional)
-      const RecommendationItem(
-        title: 'Professional Partner',
-        description:
-            'Konsultasi dengan profesional akan membantumu menemukan cara yang lebih tepat untuk menghadapi emosi dan tekanan.',
-        color: Color(0xFF8B5FB4),
-        icon: Icons.medical_services_outlined,
-      ),
-  ];
+  List<RecommendationItem> get _defaultItems {
+    final Map<String, String> apiDesc = {
+      if (apiItems != null)
+        for (final item in apiItems!)
+          (item['key'] as String): (item['description'] as String),
+    };
+
+    return [
+      if (ai)
+        RecommendationItem(
+          title: 'AI Partner',
+          description:
+              apiDesc['AI_PARTNER'] ??
+              'AI Partner dapat membantu menemanimu berbicara, menenangkan pikiran, dan memberikan refleksi emosional secara perlahan.',
+          color: const Color(0xFF3D7AB5),
+          icon: Icons.psychology_alt,
+        ),
+      if (human)
+        RecommendationItem(
+          title: 'Human Partner',
+          description:
+              apiDesc['HUMAN_PARTNER'] ??
+              'Jika kamu ingin merasa lebih dipahami secara emosional, kamu juga bisa mencoba berbicara dengan Human Partner secara anonim.',
+          color: const Color(0xFF2EA66B),
+          icon: Icons.group_outlined,
+        ),
+      if (profesional)
+        RecommendationItem(
+          title: 'Professional Partner',
+          description:
+              apiDesc['PROFESSIONAL_PARTNER'] ??
+              'Konsultasi dengan profesional akan membantumu menemukan cara yang lebih tepat untuk menghadapi emosi dan tekanan.',
+          color: const Color(0xFF8B5FB4),
+          icon: Icons.medical_services_outlined,
+        ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -22,29 +24,29 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final SupabaseClient supabase = Supabase.instance.client;
 
-  // Mengambil Client ID murni dari file .env
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _displayNameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _passwordConfirmController =
+      TextEditingController();
+
+  bool _isLoading = false;
+  bool _showPassword = false;
+  bool _showConfirmPassword = false;
+
   static final String _webClientId = dotenv.env['WEB_CLIENT'] ?? '';
   static final String? _iosClientId = dotenv.env['IOS_CLIENT'];
-  static final String? _androidClientId = dotenv.env['ANDROID_CLIENT'];
 
-  // Opsional jika kamu membutuhkan konfigurasi Supabase langsung dari Env di page ini
-  static final String _supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
-  static final String _supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
-
-  bool _isButtonTriggered = false;
-
-  StreamSubscription<AuthState>? _authSubscription;
-  String? _userId;
   bool _didNavigate = false;
 
-  // Vertical gradient
+  StreamSubscription<AuthState>? _authSubscription;
+
   final LinearGradient verticalGradient = const LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: [Color(0xFF578BB3), Color(0xFF194F78)],
   );
 
-  // Horizontal gradient
   final LinearGradient horizontalGradient = const LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
@@ -61,122 +63,117 @@ class _RegisterPageState extends State<RegisterPage> {
   void initState() {
     super.initState();
     _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
-      setState(() {
-        _userId = data.session?.user.id;
-      });
+      setState(() {});
     });
-  }
-
-  Future<void> _markUserRegistered(User user, String role) async {
-    // 1. Ambil metadata lama bawaan Google agar tidak terhapus
-    final currentMetadata = user.userMetadata ?? {};
-
-    try {
-      // 2. Duplikat data lama dan tambahkan parameter kustom baru
-      final updatedData = Map<String, dynamic>.from(currentMetadata);
-      updatedData['is_registered'] = true;
-      updatedData['role'] =
-          role; // 👈 Menyuntikkan role ('user' atau 'psychologist')
-
-      if (kDebugMode) {
-        print('Sedang memperbarui metadata ke server dengan role: $role...');
-      }
-
-      // 3. Update ke server Supabase
-      final response = await supabase.auth.updateUser(
-        UserAttributes(data: updatedData),
-      );
-
-      if (kDebugMode) {
-        print('✅ Sukses! Metadata saat ini: ${response.user?.userMetadata}');
-      }
-
-      // 4. Paksa refresh session lokal agar UI Flutter langsung mendeteksi perubahan
-      await supabase.auth.refreshSession();
-    } catch (e) {
-      if (kDebugMode) {
-        print('🔴 Gagal memperbarui parameter role & metadata: $e');
-      }
-    }
-  }
-
-  Future<void> _navigateAfterRegister() async {
-    try {
-      await userRoleState.fetchRole();
-    } catch (e) {
-      if (kDebugMode) {
-        print('fetchRole error: $e');
-      }
-    }
-
-    if (!mounted) return;
-    context.go('/input-data?isPsychologist=${userRoleState.isPsychologist}');
   }
 
   @override
   void dispose() {
     _authSubscription?.cancel();
+    _emailController.dispose();
+    _displayNameController.dispose();
+    _passwordController.dispose();
+    _passwordConfirmController.dispose();
     super.dispose();
   }
 
-  Future<void> _nativeGoogleSignIn() async {
-    final GoogleSignIn signIn = GoogleSignIn.instance;
-
-    try {
-      await signIn.initialize(
-        // Only pass iOS clientId on iOS. Android uses serverClientId.
-        clientId: Platform.isIOS ? _iosClientId : null,
-        serverClientId: _webClientId,
-      );
-
-      final googleAccount = await signIn.authenticate();
-      if (googleAccount == null) {
-        return;
-      }
-
-      final googleAuthentication = googleAccount.authentication;
-      final idToken = googleAuthentication.idToken;
-
-      if (idToken == null) {
-        throw 'No ID Token found.';
-      }
-
-      await supabase.auth.signInWithIdToken(
-        provider: OAuthProvider.google,
-        idToken: idToken,
-      );
-    } on GoogleSignInException catch (error) {
-      if (error.code == GoogleSignInExceptionCode.canceled) {
-        return;
-      }
-      rethrow;
-    }
+  InputDecoration _inputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: GoogleFonts.nunito(color: Colors.black38, fontSize: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF578BB3)),
+      ),
+    );
   }
 
-  Future<void> _handleGoogleSignIn() async {
+  Future<void> _registerWithEmail() async {
+    // Validasi manual
+    if (_displayNameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nama tidak boleh kosong')),
+      );
+      return;
+    }
+    if (_emailController.text.trim().isEmpty ||
+        !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(
+          _emailController.text.trim(),
+        )) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email tidak valid')),
+      );
+      return;
+    }
+    if (_passwordController.text.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password minimal 6 karakter')),
+      );
+      return;
+    }
+    if (_passwordController.text != _passwordConfirmController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password tidak cocok')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
     try {
-      // 1. Jalankan proses autentikasi sampai selesai
-      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-        await _nativeGoogleSignIn();
+      final String role =
+          userRoleState.isPsychologist ? 'PSYCHOLOGIST' : 'CLIENT';
+
+      final response = await http.post(
+        Uri.parse('https://partner-seven-phi.vercel.app/auth/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': _emailController.text.trim(),
+          'password': _passwordController.text,
+          'displayName': _displayNameController.text.trim(),
+          'role': role,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Registrasi berhasil!')),
+          );
+          await Future.delayed(const Duration(seconds: 1));
+          if (mounted) {
+            context.go(
+              '/input-data?isPsychologist=${userRoleState.isPsychologist}',
+            );
+          }
+        }
       } else {
-        await supabase.auth.signInWithOAuth(OAuthProvider.google);
-        return; // Jika OAuth web, biasanya ada redirect tersendiri tergantung konfigurasi
-      }
-
-      // 2. Ambil user saat ini setelah sukses login
-      final currentUser = supabase.auth.currentUser;
-      if (currentUser != null && !_didNavigate) {
-        _didNavigate = true;
-
-        // 3. Jalankan fungsi update metadata dan pindah halaman
-        final String role = userRoleState.isPsychologist
-            ? 'psychologist'
-            : 'user';
-        await _markUserRegistered(currentUser, role);
-        await _navigateAfterRegister();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Registrasi gagal: ${response.statusCode}'),
+            ),
+          );
+        }
       }
     } catch (e) {
-      if (kDebugMode) print("Login Error: $e");
+      debugPrint('Registration error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -185,63 +182,60 @@ class _RegisterPageState extends State<RegisterPage> {
     final LinearGradient activeHorizontalGradient = userRoleState.isPsychologist
         ? psychologistHorizontalGradient
         : horizontalGradient;
-    return Scaffold(
-      backgroundColor: const Color(0xFF194F78),
+
+    return 
+    Container(
+    // 1. Bungkus paling luar dengan gradasi penuh semus layar
+    decoration: BoxDecoration(gradient: activeHorizontalGradient),
+    child: Scaffold(
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       body: Stack(
         children: [
-          Column(
-            children: [
-              // Top blue section
-              Expanded(
-                flex: 4,
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(gradient: horizontalGradient),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(height: 92),
-                      SvgPicture.asset(
-                        'assets/images/logo/logo-partner.svg',
-                        width: 163,
-                        height: 200,
-                        colorFilter: const ColorFilter.mode(
-                          Colors.white,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    ],
+          // Top blue section with logo
+          Container(
+            width: double.infinity,
+            height: MediaQuery.of(context).size.height * 0.4,
+            decoration: BoxDecoration(gradient: activeHorizontalGradient),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 92),
+                SvgPicture.asset(
+                  'assets/images/logo/logo-partner.svg',
+                  width: 120,
+                  height: 160,
+                  colorFilter: const ColorFilter.mode(
+                    Colors.white,
+                    BlendMode.srcIn,
                   ),
                 ),
-              ),
-              const Spacer(flex: 3),
-            ],
+              ],
+            ),
           ),
-          // Bottom white section overlays the blue section
+          // Bottom white section with form
           Align(
             alignment: Alignment.bottomCenter,
-            child: FractionallySizedBox(
-              widthFactor: 1,
-              heightFactor: 1.9 / 4,
-              child: Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(42),
-                    topRight: Radius.circular(42),
-                  ),
+            child: Container(
+              width: double.infinity,
+              height: MediaQuery.of(context).size.height * 0.6,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(42),
+                  topRight: Radius.circular(42),
                 ),
+              ),
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 32,
-                  vertical: 50,
+                  vertical: 40,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Mulai Perjalanan Emosionalmu',
+                      'Mulai perjalananmu sebagai pendamping emosional',
                       style: GoogleFonts.nunito(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
@@ -251,64 +245,127 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Temukan dukungan emosional yang nyaman, aman,\ndan memahami dirimu',
+                      'Temani setiap cerita dengan dukungan yang hangat, aman, dan penuh empati',
                       style: GoogleFonts.nunito(
                         fontSize: 13,
                         color: Colors.black54,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                       ),
                       textAlign: TextAlign.left,
                     ),
                     const SizedBox(height: 28),
-                    // Google Signup Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: Container(
-                        padding: const EdgeInsets.all(1),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: const Color(0xFFDDDDDD),
-                            width: 1,
-                          ),
-                          borderRadius: BorderRadius.circular(30),
-                          gradient: activeHorizontalGradient,
-                        ),
-                        child: Material(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(27),
-                          child: InkWell(
-                            onTap: _handleGoogleSignIn,
-                            borderRadius: BorderRadius.circular(27),
 
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SvgPicture.asset(
-                                    'assets/images/google-icon.svg',
-                                    width: 20,
-                                    height: 20,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Lanjut dengan Google',
-                                    style: GoogleFonts.nunito(
-                                      fontSize: 15,
-                                      color: const Color(0xFF294669),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                    // Nama Lengkap
+                    TextField(
+                      controller: _displayNameController,
+                      decoration: _inputDecoration('Nama Lengkap'),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Email
+                    TextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: _inputDecoration('Email'),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Password
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: !_showPassword,
+                      decoration: _inputDecoration('Password').copyWith(
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _showPassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
                           ),
+                          onPressed: () =>
+                              setState(() => _showPassword = !_showPassword),
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
 
-                    // Divider,
+                    // Konfirmasi Password
+                    TextField(
+                      controller: _passwordConfirmController,
+                      obscureText: !_showConfirmPassword,
+                      decoration:
+                          _inputDecoration('Konfirmasi Password').copyWith(
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _showConfirmPassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
+                          onPressed: () => setState(
+                            () => _showConfirmPassword = !_showConfirmPassword,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Register Button
+                    ElevatedButton(
+                      onPressed: _isLoading ? null : _registerWithEmail,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF578BB3),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        disabledBackgroundColor: Colors.grey[400],
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : Text(
+                              'Daftar',
+                              style: GoogleFonts.nunito(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Login Link
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Sudah punya akun? ',
+                          style: GoogleFonts.nunito(
+                            fontSize: 13,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => context.go('/login'),
+                          child: Text(
+                            'Masuk',
+                            style: GoogleFonts.nunito(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF578BB3),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 28),
                   ],
                 ),
               ),
@@ -316,6 +373,7 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ],
       ),
+    ),
     );
   }
 }

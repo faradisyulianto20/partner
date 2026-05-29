@@ -1,21 +1,11 @@
-import 'dart:async';
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/state/user_role_state.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hackathon/core/constants.dart';
 import 'package:hackathon/core/services/api_client.dart';
-import 'package:hackathon/core/services/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'dart:developer' as developer;
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -27,23 +17,8 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final SupabaseClient supabase = Supabase.instance.client;
-
-  String get _webClientId => dotenv.env['WEB_CLIENT'] ?? '';
-  String? get _iosClientId => dotenv.env['IOS_CLIENT'];
-
-  // Isn't used because android use web client id for native sign in, but we can keep it for future use if needed
-  // String? get _androidClientId => dotenv.env['ANDROID_CLIENT'];
-
-  StreamSubscription<AuthState>? _authSubscription;
-  bool _didNavigate = false;
-  bool _isLoading = false;
-
-  final LinearGradient verticalGradient = const LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [Color(0xFF578BB3), Color(0xFF194F78)],
-  );
+  bool _obscurePassword = true;
+  bool _isEmailLoading = false;
 
   final LinearGradient horizontalGradient = const LinearGradient(
     begin: Alignment.centerLeft,
@@ -60,168 +35,24 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    _didNavigate = false;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _redirectIfAlreadyLoggedIn();
-    });
-
-    _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
-      final session = data.session;
-      final user = session?.user;
-
-      final accessToken = session?.accessToken;
-      final refreshToken = session?.refreshToken;
-
-      final safeAccess = (accessToken != null && accessToken.length > 50)
-          ? '${accessToken.substring(0, 50)}...'
-          : accessToken;
-
-      // 🔒 Pemotongan Refresh Token yang aman (Penyembuh Crash!)
-      final safeRefresh = (refreshToken != null && refreshToken.length > 20)
-          ? '${refreshToken.substring(0, 20)}...'
-          : refreshToken;
-
-      // ═══════════════════════════════════════════
-      // 🔍 SESSION LOGGING - Cek semua token & info
-      // ═══════════════════════════════════════════
-      print('╔══════════════════════════════════════╗');
-      print('║        AUTH STATE CHANGE EVENT        ║');
-      print('╚══════════════════════════════════════╝');
-      print(
-        'Role State: ${userRoleState.isPsychologist ? 'Psychologist' : 'Regular User'}',
-      );
-      print('Event      : ${data.event}');
-      print('User ID    : ${user?.id ?? 'null'}');
-      print('Email      : ${user?.email ?? 'null'}');
-      print('Display Name: ${user?.userMetadata?['full_name'] ?? 'null'}');
-      print('Avatar URL : ${user?.userMetadata?['avatar_url'] ?? 'null'}');
-      print('Provider   : ${user?.appMetadata['provider'] ?? 'null'}');
-      print('─────────────────────────────────────');
-      print('Access Token: $safeAccess');
-      print('Refresh Token: $safeRefresh');
-      print(
-        'Expires At  : ${session?.expiresAt != null ? DateTime.fromMillisecondsSinceEpoch(session!.expiresAt! * 1000) : 'null'}',
-      );
-      developer.log('Access Token: ${session?.accessToken ?? 'null'}');
-      print('Access Token: ${session?.accessToken ?? 'null'}');
-      print('Token Type  : ${session?.tokenType ?? 'null'}');
-      print('─────────────────────────────────────');
-
-      // Tampilkan user metadata lengkap
-      if (user?.userMetadata != null) {
-        print('User Metadata:');
-        user!.userMetadata!.forEach((key, value) {
-          print('   $key: $value');
-        });
-      }
-
-      if (user?.appMetadata != null) {
-        print('App Metadata:');
-        user!.appMetadata.forEach((key, value) {
-          print('   $key: $value');
-        });
-      }
-      print('══════════════════════════════════════');
-
-      if (user != null && !_didNavigate) {
-        setState(() {
-          _didNavigate = true;
-          _isLoading = false;
-        });
-
-        _showToast(
-          'Login berhasil! Selamat datang, ${user.userMetadata?['full_name'] ?? user.email}',
-          isError: false,
-        );
-        
-        // Selalu panggil /auth/login untuk mendapatkan custom JWT dari backend
-       _exchangeForCustomToken();
-        
-        // Jika ada providerToken, kirim juga ke backend
-        if (session?.providerToken != null) {
-          _sendProviderTokenToBackend(
-            session!.providerToken!,
-            refreshToken: session.providerRefreshToken,
-          );
-        }
-
-        _navigateAfterLogin();
-      }
-
-      setState(() {
-        _isLoading = false;
-      });
-    });
+    // Cek apakah sudah ada token tersimpan, jika ya langsung navigasi
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkExistingToken());
   }
 
-  /// Menukarkan Supabase access token dengan custom JWT dari backend NestJS.
-  /// Ini adalah langkah utama agar semua request selanjutnya menggunakan token buatan backend.
-  Future<void> _exchangeForCustomToken() async {
-    try {
-      final baseUrl = AppConstants.baseUrl;
-      final apiClient = ApiClient(baseUrl: baseUrl);
-      final authService = AuthService(apiClient);
-      
-      // Panggil POST /auth/login dengan Supabase token (otomatis di-attach oleh ApiClient)
-      final response = await apiClient.post<Map<String, dynamic>>(
-        '/auth/login',
-        parser: (json) => json as Map<String, dynamic>,
-      );
+  /// Jika sudah pernah login sebelumnya (token tersimpan di SharedPreferences),
+  /// langsung arahkan user ke halaman yang sesuai tanpa perlu login ulang.
+  Future<void> _checkExistingToken() async {
+    if (!mounted) return;
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('custom_access_token');
+    if (token == null || token.isEmpty) return;
 
-      if (response.isSuccess && response.data != null) {
-        final accessToken = response.data!['accessToken'];
-        if (accessToken != null) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('custom_access_token', accessToken);
-          apiClient.authToken = accessToken;
-          
-          print('====================================');
-          print('CUSTOM BEARER TOKEN (for Postman):');
-          print(accessToken);
-          print('====================================');
-        }
-      }
-    } catch (e) {
-      print('Failed to exchange for custom token: $e');
-    }
-  }
+    final role = prefs.getString('user_role') ?? '';
+    userRoleState.isPsychologist = role == 'PSYCHOLOGIST';
 
-  Future<void> _sendProviderTokenToBackend(String providerToken, {String? refreshToken}) async {
-    try {
-      final baseUrl = AppConstants.baseUrl;
-      final apiClient = ApiClient(baseUrl: baseUrl);
-      final authService = AuthService(apiClient);
-      await authService.saveProviderToken(providerToken, providerRefreshToken: refreshToken);
-      print('Provider token successfully sent to backend');
-    } catch (e) {
-      print('Failed to send provider token to backend: $e');
-    }
-  }
-
-  Future<void> _redirectIfAlreadyLoggedIn() async {
-    final session = supabase.auth.currentSession;
-    final user = session?.user;
-
-    if (user == null || _didNavigate || !mounted) return;
-
-    // if (user.userMetadata?['is_registered'] != true) {
-    //   await _blockIfUnregistered();
-    //   return;
-    // }
-
-    setState(() {
-      _didNavigate = true;
-      _isLoading = true;
-    });
-
-    await _navigateAfterLogin();
-
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    if (!mounted) return;
+    final dest = userRoleState.isPsychologist ? '/psychologist/home' : '/home';
+    context.go(dest);
   }
 
   void _showToast(String message, {bool isError = false}) {
@@ -246,130 +77,116 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // Use later
-  // Future<void> _blockIfUnregistered() async {
-  //   await supabase.auth.signOut();
-  //   if (!mounted) return;
-  //   _showToast(
-  //     'Akun belum terdaftar. Silakan daftar terlebih dahulu.',
-  //     isError: true,
-  //   );
-  // }
+  /// Login dengan email & password ke endpoint /auth/login backend.
+  /// Menyimpan accessToken dan role ke SharedPreferences untuk digunakan
+  /// sebagai Bearer token pada semua request berikutnya.
+  Future<void> _loginWithEmailPassword() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
 
-  Future<void> _navigateAfterLogin() async {
-    try {
-      await userRoleState.fetchRole();
-      print(
-        'User Role: ${userRoleState.isPsychologist ? 'Psychologist' : 'Regular User'}',
-      );
-    } catch (e) {
-      print('fetchRole error: $e');
+    if (email.isEmpty || password.isEmpty) {
+      _showToast('Email dan password tidak boleh kosong.', isError: true);
+      return;
     }
 
-    if (mounted) {
+    if (_isEmailLoading) return;
+    setState(() => _isEmailLoading = true);
+
+    try {
+      // Hapus token lama agar tidak dikirim ke endpoint /auth/login
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('custom_access_token');
+
+      final apiClient = ApiClient(
+        baseUrl: AppConstants.baseUrl,
+        autoLoadToken: false,
+      );
+      apiClient.authToken = null;
+
+      final response = await apiClient.post<Map<String, dynamic>>(
+        '/auth/login',
+        body: {'email': email, 'password': password},
+        parser: (json) {
+          if (json is Map<String, dynamic>) return json;
+          if (json is Map) return Map<String, dynamic>.from(json);
+          return <String, dynamic>{};
+        },
+      );
+      apiClient.close();
+
+      print('Login request sent with email: $email');
+      print(
+        'Password length: ${password.length}',
+      ); // Jangan print password asli
+      print('Login response: ${response.statusCode} - ${response.data}');
+
+      if (!response.isSuccess || response.data == null) {
+        final msg =
+            response.data?['message']?.toString() ??
+            'Login gagal. Periksa email dan password.';
+        _showToast(msg, isError: true);
+        return;
+      }
+
+      final accessToken = response.data!['accessToken']?.toString();
+      if (accessToken == null || accessToken.isEmpty) {
+        _showToast('Token tidak ditemukan dalam response.', isError: true);
+        return;
+      }
+
+      // Simpan token ke SharedPreferences
+      await prefs.setString('custom_access_token', accessToken);
+
+      // Baca & simpan role dari response
+      final userMap = response.data!['user'];
+      final role = userMap is Map ? userMap['role']?.toString() : null;
+      await prefs.setString('user_role', role ?? '');
+      userRoleState.isPsychologist = role == 'PSYCHOLOGIST';
+
+      final userId = userMap is Map ? userMap['id']?.toString() : null;
+      await prefs.setString('user_id', userId ?? '');
+
+      if (!mounted) return;
+      _showToast('Login berhasil!', isError: false);
+
       final destination = userRoleState.isPsychologist
           ? '/psychologist/home'
           : '/home';
-      print('Navigating to: $destination');
       context.go(destination);
+    } catch (e) {
+      if (mounted) {
+        _showToast('Terjadi kesalahan: $e', isError: true);
+      }
+    } finally {
+      if (mounted) setState(() => _isEmailLoading = false);
     }
+  }
+
+  InputDecoration _inputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: GoogleFonts.nunito(color: Colors.black38, fontSize: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF578BB3)),
+      ),
+    );
   }
 
   @override
   void dispose() {
-    _authSubscription?.cancel();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
-  }
-
-  Future<void> _nativeGoogleSignIn() async {
-    final GoogleSignIn signIn = GoogleSignIn.instance;
-
-    print('Starting Native Google Sign In...');
-    print('Platform: ${Platform.isIOS ? 'iOS' : 'Android'}');
-    print(
-      'Web Client ID: ${_webClientId.isNotEmpty ? '${_webClientId.substring(0, 20)}...' : 'EMPTY! ⚠️'}',
-    );
-
-    try {
-      await signIn.initialize(
-        clientId: Platform.isIOS ? _iosClientId : null,
-        serverClientId: _webClientId,
-      );
-
-      print('GoogleSignIn initialized');
-
-      final googleAccount = await signIn.authenticate();
-      if (googleAccount.authentication.idToken == null) {
-        print('User cancelled Google Sign In');
-        _showToast('Login dibatalkan', isError: true);
-        setState(() => _isLoading = false);
-        return;
-      }
-
-      print('Google Account: ${googleAccount.email}');
-      print('Display Name: ${googleAccount.displayName}');
-
-      final googleAuthentication = googleAccount.authentication;
-      final idToken = googleAuthentication.idToken;
-
-      print('─────────────────────────────────────');
-      print(
-        'Google ID Token    : ${idToken != null ? '${idToken.substring(0, 30)}... ✅' : 'NULL ❌'}',
-      );
-      print('─────────────────────────────────────');
-
-      if (idToken == null) {
-        throw 'No ID Token found. Pastikan Web Client ID sudah benar di Google Console!';
-      }
-
-      print('Sending idToken to Supabase...');
-      final response = await supabase.auth.signInWithIdToken(
-        provider: OAuthProvider.google,
-        idToken: idToken,
-      );
-
-      print('Supabase signInWithIdToken success!');
-      print('Supabase User ID: ${response.user?.id}');
-      print('Supabase Email  : ${response.user?.email}');
-      
-    } on GoogleSignInException catch (error) {
-      print('GoogleSignInException: ${error.code} - ${error.description}');
-      if (error.code == GoogleSignInExceptionCode.canceled) {
-        setState(() => _isLoading = false);
-        return;
-      }
-      _showToast('Google Sign In error: ${error.description}', isError: true);
-      setState(() => _isLoading = false);
-      rethrow;
-    } catch (e) {
-      print('Unexpected error: $e');
-      _showToast('Error: $e', isError: true);
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _handleGoogleSignIn() async {
-    if (_isLoading) return;
-    setState(() => _isLoading = true);
-
-    print('_handleGoogleSignIn called');
-    print('kIsWeb: $kIsWeb');
-
-    try {
-      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-        await _nativeGoogleSignIn();
-        return;
-      }
-      await supabase.auth.signInWithOAuth(OAuthProvider.google);
-    } catch (e) {
-      print('_handleGoogleSignIn error: $e');
-      if (mounted) {
-        _showToast('Gagal login: $e', isError: true);
-        setState(() => _isLoading = false);
-      }
-    }
   }
 
   @override
@@ -377,7 +194,7 @@ class _LoginPageState extends State<LoginPage> {
     final LinearGradient activeHorizontalGradient = userRoleState.isPsychologist
         ? psychologistHorizontalGradient
         : horizontalGradient;
-    // ... widget tree tetap sama, hanya tambahkan loading indicator
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFF194F78),
@@ -413,165 +230,145 @@ class _LoginPageState extends State<LoginPage> {
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: FractionallySizedBox(
-              widthFactor: 1,
-              heightFactor: 1.9 / 4,
-              child: Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(42),
-                    topRight: Radius.circular(42),
-                  ),
+            child: Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(42),
+                  topRight: Radius.circular(42),
                 ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 50,
-                ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'Selamat datang kembali di ruang amanmu',
-                        style: GoogleFonts.nunito(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF294669),
-                        ),
+              ),
+              padding: const EdgeInsets.fromLTRB(32, 36, 32, 52),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Selamat datang kembali, tempat dukunganmu telah menunggu',
+                      style: GoogleFonts.nunito(
+                        fontSize: 24,
+                        height: 1.3,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF294669),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Lanjutkan perjalanan emosionalmu bersama\ndukungan yang memahami dirimu',
-                        style: GoogleFonts.nunito(
-                          fontSize: 14,
-                          color: Colors.black54,
-                          fontWeight: FontWeight.w700,
-                        ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Bantu lebih banyak orang merasa didengar, dipahami, dan tidak sendirian',
+                      style: GoogleFonts.nunito(
+                        fontSize: 13,
+                        color: const Color(0xFF294669),
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(height: 42),
-                      // Google Login Button dengan loading state
-                      SizedBox(
-                        width: double.infinity,
-                        child: Container(
-                          padding: const EdgeInsets.all(1),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: const Color(0xFFDDDDDD),
-                              width: 1,
-                            ),
-                            borderRadius: BorderRadius.circular(30),
-                            gradient: activeHorizontalGradient,
+                    ),
+                    const SizedBox(height: 24),
+
+                    // ── Email Field ──
+                    TextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: _inputDecoration('Email'),
+                      style: GoogleFonts.nunito(
+                        fontSize: 14,
+                        color: const Color(0xFF294669),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // ── Password Field ──
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      decoration: _inputDecoration('Password').copyWith(
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            color: Colors.black38,
+                            size: 20,
                           ),
-                          child: Material(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(27),
-                            child: InkWell(
-                              onTap: _isLoading ? null : _handleGoogleSignIn,
-                              borderRadius: BorderRadius.circular(27),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                ),
-                                child: _isLoading
-                                    ? const Center(
-                                        child: SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        ),
-                                      )
-                                    : Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          SvgPicture.asset(
-                                            'assets/images/google-icon.svg',
-                                            width: 20,
-                                            height: 20,
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Text(
-                                            'Masuk dengan Google',
-                                            style: GoogleFonts.nunito(
-                                              fontSize: 12,
-                                              color: const Color(0xFF294669),
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                              ),
-                            ),
+                          onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              height: 1,
-                              color: const Color(0xFFDDDDDD),
-                            ),
-                          ),
-                          Flexible(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
-                              child: Text(
-                                'Belum memiliki akun? Daftar terlebih dahulu',
-                                style: GoogleFonts.nunito(
-                                  fontSize: 11,
-                                  color: Colors.black54,
-                                ),
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Container(
-                              height: 1,
-                              color: const Color(0xFFDDDDDD),
-                            ),
-                          ),
-                        ],
+                      style: GoogleFonts.nunito(
+                        fontSize: 14,
+                        color: const Color(0xFF294669),
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(height: 16),
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: activeHorizontalGradient,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Login Button ──
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: activeHorizontalGradient,
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _isEmailLoading
+                              ? null
+                              : _loginWithEmailPassword,
                           borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () => context.push('/register'),
-                            borderRadius: BorderRadius.circular(30),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              child: Center(
-                                child: Text(
-                                  'Daftar',
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 15,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            child: Center(
+                              child: _isEmailLoading
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Text(
+                                      'Masuk',
+                                      style: GoogleFonts.nunito(
+                                        fontSize: 15,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
                             ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Daftar ──
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Belum punya akun? ',
+                          style: GoogleFonts.nunito(
+                            fontSize: 13,
+                            color: Colors.black54,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => context.push('/register'),
+                          child: Text(
+                            'Daftar',
+                            style: GoogleFonts.nunito(
+                              fontSize: 13,
+                              color: const Color(0xFF578BB3),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                 ),
               ),
             ),

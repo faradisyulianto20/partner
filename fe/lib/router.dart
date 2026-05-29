@@ -55,7 +55,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 bool firstInstall = true;
 
-bool get _isLoggedIn => Supabase.instance.client.auth.currentSession != null;
+bool get _isLoggedIn {
+  // Login via Google/Supabase
+  if (Supabase.instance.client.auth.currentSession != null) return true;
+  // Login via email/password (custom JWT — cek synchronous tidak bisa,
+  // tapi SharedPreferences sudah diload saat app init;
+  // router akan di-refresh oleh context.go dari _loginWithEmailPassword)
+  return false;
+}
 
 String get _initialLocation {
   if (firstInstall) return '/onboarding/welcome';
@@ -234,13 +241,9 @@ final clientShellRoute = StatefulShellRoute.indexedStack(
               builder: (context, state) => const VoiceInput(),
             ),
             GoRoute(
-              path: 'analysis-result',
-              builder: (context, state) {
-                final result = state.extra;
-                return AnalysisResult(
-                  result: result is AnalysisResultData ? result : null,
-                );
-              },
+              path: '/home/analysis-result',
+              builder: (context, state) =>
+                  AnalysisResult(result: state.extra as AnalysisResultData?),
             ),
           ],
         ),

@@ -39,7 +39,10 @@ class _AnalysisResultState extends State<AnalysisResult> {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CustomAppBar(title: 'Hasil Analisis', onBack: () => context.go('/home')),
+          CustomAppBar(
+            title: 'Hasil Analisis',
+            onBack: () => context.go('/home'),
+          ),
           const SizedBox(height: 12),
           Expanded(
             child: SingleChildScrollView(
@@ -58,7 +61,14 @@ class _AnalysisResultState extends State<AnalysisResult> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    Container(child: Recommendation()),
+                    Recommendation(
+                      title: result?.recommendations.title ?? 'Rekomendasi Dukungan Untukmu',
+                      apiItems: result?.recommendations.items.map((item) => {
+                        'key': item.key,
+                        'title': item.title,
+                        'description': item.description,
+                      }).toList(),
+                    ),
                   ],
                 ),
               ),

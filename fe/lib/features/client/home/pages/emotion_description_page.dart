@@ -4,6 +4,9 @@ import 'package:hackathon/core/models/analysis_models.dart';
 import 'package:hackathon/core/services/analysis_service.dart';
 import 'package:hackathon/core/constants.dart';
 import 'package:hackathon/core/services/api_client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class EmotionDescriptionPage extends StatefulWidget {
   const EmotionDescriptionPage({super.key});
@@ -134,11 +137,10 @@ class EmotionDescription extends StatefulWidget {
 }
 
 class _EmotionDescriptionState extends State<EmotionDescription> {
-  static final String _baseUrl = AppConstants.baseUrl;
+  static const String _endpoint =
+      'https://partner-seven-phi.vercel.app/analysis/text';
 
   final TextEditingController _controller = TextEditingController();
-  late final ApiClient _apiClient = ApiClient(baseUrl: _baseUrl);
-  late final AnalysisService _analysisService = AnalysisService(_apiClient);
   bool _isSubmitting = false;
 
   final List<String> emotionTags = [
@@ -152,20 +154,14 @@ class _EmotionDescriptionState extends State<EmotionDescription> {
 
   void _onTagTapped(String tag) {
     final current = _controller.text.trim();
-    if (current.isEmpty) {
-      _controller.text = tag;
-    } else {
-      _controller.text = '$current $tag';
-    }
+    _controller.text = current.isEmpty ? tag : '$current $tag';
     _controller.selection = TextSelection.fromPosition(
       TextPosition(offset: _controller.text.length),
     );
   }
 
   Future<void> _submitAnalysis() async {
-    if (_isSubmitting) {
-      return;
-    }
+    if (_isSubmitting) return;
 
     final text = _controller.text.trim();
     if (text.isEmpty) {
@@ -176,25 +172,63 @@ class _EmotionDescriptionState extends State<EmotionDescription> {
     setState(() => _isSubmitting = true);
 
     try {
-      final response = await _analysisService.analyzeText(
-        AnalysisTextRequest(text: text),
-      );
+      // ── Ambil userId & token dari SharedPreferences ──────────────
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('user_id') ?? '';
+      final token = prefs.getString('custom_access_token') ?? '';
 
-      if (!response.isSuccess) {
-        _showSnackBar('Gagal menganalisis perasaan. Coba lagi ya.');
+      debugPrint('📤 POST /analysis/text');
+      debugPrint('userId : $userId');
+      debugPrint('text   : $text');
+
+      if (userId.isEmpty || token.isEmpty) {
+        _showSnackBar('Sesi tidak ditemukan. Silakan login ulang.');
         return;
       }
 
-      final result = response.data.result;
+      // ── HTTP POST ─────────────────────────────────────────────────
+      final response = await http.post(
+        Uri.parse(_endpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'text': text, 'userId': userId}),
+      );
+
+      debugPrint('Status : ${response.statusCode}');
+      debugPrint('Body   : ${response.body}');
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        final msg = _parseErrorMessage(response.body);
+        _showSnackBar(msg);
+        return;
+      }
+
+      final Map<String, dynamic> jsonBody =
+          jsonDecode(response.body) as Map<String, dynamic>;
+
+      // Parse langsung, bukan ambil json['result']
+      final result = AnalysisResultData.fromJson(jsonBody);
 
       if (!mounted) return;
       context.go('/home/analysis-result', extra: result);
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('❌ Exception: $e\n$st');
       if (!mounted) return;
       _showSnackBar('Terjadi kesalahan. Silakan coba lagi.');
     } finally {
-      if (!mounted) return;
-      setState(() => _isSubmitting = false);
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  String _parseErrorMessage(String body) {
+    try {
+      final json = jsonDecode(body);
+      return json['message']?.toString() ?? 'Gagal menganalisis perasaan.';
+    } catch (_) {
+      return 'Gagal menganalisis perasaan.';
     }
   }
 
@@ -202,6 +236,12 @@ class _EmotionDescriptionState extends State<EmotionDescription> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -369,12 +409,5 @@ class _EmotionDescriptionState extends State<EmotionDescription> {
         ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _apiClient.close();
-    super.dispose();
   }
 }

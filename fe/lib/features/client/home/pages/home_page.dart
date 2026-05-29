@@ -1,16 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:hackathon/core/constants.dart';
-import 'package:hackathon/core/models/analysis_models.dart';
-import 'package:hackathon/core/services/analysis_service.dart';
-import 'package:hackathon/core/services/api_client.dart';
+import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:hackathon/core/shared_widgets/header.dart';
 import 'package:hackathon/features/client/home/widgets/cta.dart';
 import 'package:hackathon/features/client/home/widgets/history.dart';
 import 'package:hackathon/features/client/home/widgets/today.dart';
-import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// RouteObserver global — daftarkan di MaterialApp/GoRouter navigatorObservers
 final RouteObserver<ModalRoute<void>> homeRouteObserver =
     RouteObserver<ModalRoute<void>>();
 
@@ -22,13 +21,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> with RouteAware {
-  static final String _baseUrl = AppConstants.baseUrl;
-
-  late final ApiClient _apiClient = ApiClient(baseUrl: _baseUrl);
-  late final AnalysisService _analysisService = AnalysisService(_apiClient);
-
   bool _isLoading = true;
   String? _errorMessage;
+
   List<HistoryDay> _historyDays = const [];
   String? _todayEmotion;
   String? _todaySummary;
@@ -43,24 +38,16 @@ class _HomePageState extends State<HomePage> with RouteAware {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Daftarkan ke RouteObserver agar didPopNext dipanggil
-    // saat user kembali ke halaman ini dari sub-route
     final route = ModalRoute.of(context);
-    if (route != null) {
-      homeRouteObserver.subscribe(this, route);
-    }
+    if (route != null) homeRouteObserver.subscribe(this, route);
   }
 
-  /// Dipanggil saat user pop dari sub-route (misal: analysis-result → home)
   @override
-  void didPopNext() {
-    _loadDashboard();
-  }
+  void didPopNext() => _loadDashboard();
 
   @override
   void dispose() {
     homeRouteObserver.unsubscribe(this);
-    _apiClient.close();
     super.dispose();
   }
 
@@ -71,129 +58,92 @@ class _HomePageState extends State<HomePage> with RouteAware {
     });
 
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
-      print('─────────────────────────────────────');
-      print('User ID     : ${userId ?? 'null'}');
-      print(
-        'Auth State  : ${Supabase.instance.client.auth.currentSession != null ? 'Authenticated' : 'Unauthenticated'}',
-      );
-      print(
-        'Session     : ${Supabase.instance.client.auth.currentSession != null ? 'Exists' : 'None'}',
-      );
-      print(
-        'User Email  : ${Supabase.instance.client.auth.currentUser?.email ?? 'null'}',
-      );
-      print('─────────────────────────────────────');
-      if (userId == null) {
-        setState(() {
-          _errorMessage = 'Sesi tidak ditemukan. Silakan login ulang.';
-        });
-        return;
-      }
-      final response = await _analysisService.fetchDashboard(userId: userId);
+      // ── Ambil userId & token dari SharedPreferences ──────────────
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('user_id') ?? '';
+      final token = prefs.getString('custom_access_token') ?? '';
 
-      print('Status Code : ${response.statusCode}');
-      print('Is Success  : ${response.isSuccess}');
-      print('Data type   : ${response.data.runtimeType}');
-      print('───────────────────────────────────────────────────────');
+      print('── Dashboard Fetch ──────────────────────');
+      print('userId : $userId');
+      print('token  : ${token.isEmpty ? 'KOSONG' : token.substring(0, 20)}...');
 
-      if (!response.isSuccess) {
-        print('❌ Error: Response tidak berhasil');
-        print('═══════════════════════════════════════════════════════');
-        setState(() {
-          _errorMessage = 'Gagal memuat data dashboard.';
-        });
+      if (userId.isEmpty || token.isEmpty) {
+        setState(() =>
+            _errorMessage = 'Sesi tidak ditemukan. Silakan login ulang.');
         return;
       }
 
-      final data = response.data;
-      if (data == null) {
-        print('❌ Error: Data response adalah null');
-        print('═══════════════════════════════════════════════════════');
-        setState(() => _errorMessage = 'Data tidak ditemukan.');
+      // ── HTTP GET ke endpoint dashboard ───────────────────────────
+      final uri = Uri.parse(
+        'https://partner-seven-phi.vercel.app/analysis/dashboard'
+        '?userId=$userId',
+      );
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('Status : ${response.statusCode}');
+      print('Body   : ${response.body}');
+
+      if (response.statusCode != 200) {
+        setState(() => _errorMessage = 'Gagal memuat dashboard (${response.statusCode}).');
         return;
       }
 
-      print('✅ Data diterima dari API');
-      print('───────────────────────────────────────────────────────');
+      // ── Parse JSON ───────────────────────────────────────────────
+      final Map<String, dynamic> json =
+          jsonDecode(response.body) as Map<String, dynamic>;
 
-      // Log last7Days
-      print('📅 LAST 7 DAYS DATA:');
-      print('Total days: ${data.last7Days.length}');
-      for (int i = 0; i < data.last7Days.length; i++) {
-        final day = data.last7Days[i];
-        print(
-          '  [$i] Date: ${day.date}, Day: ${day.dayLabel}, Emotion: ${day.emotionLabel}',
-        );
-      }
-      print('───────────────────────────────────────────────────────');
-
-      final days = data.last7Days.map((item) {
+      // last7Days
+      final rawDays = json['last7Days'] as List<dynamic>? ?? [];
+      final days = rawDays.map((item) {
+        final map = item as Map<String, dynamic>;
+        final emotionLabel = map['emotionLabel']?.toString();
         return HistoryDay(
-          dayLabel: item.dayLabel,
-          emotionLabel: item.emotionLabel,
-          iconAsset: _iconForEmotionLabel(item.emotionLabel),
+          dayLabel: map['dayLabel']?.toString() ?? '',
+          emotionLabel: emotionLabel ?? '',
+          iconAsset: _iconForEmotion(emotionLabel),
         );
       }).toList();
 
+      // today
       String? todayEmotion;
       String? todaySummary;
-      List<Map<String, String>> todayRecommendations = const [];
+      List<Map<String, String>> todayRecs = const [];
 
-      if (data.today != null) {
-        todayEmotion = data.today!.emotionLabel;
-        todaySummary = data.today!.summary;
+      final rawToday = json['today'];
+      if (rawToday is Map<String, dynamic>) {
+        todayEmotion = rawToday['emotionLabel']?.toString();
+        todaySummary = rawToday['summary']?.toString();
 
-        print('📌 TODAY\'S DATA:');
-        print('  Emotion : $todayEmotion');
-        print('  Summary : $todaySummary');
-
-        // recommendations dari API adalah Map { title, narrative, items[] }
-        final rawRec = data.today!.recommendations;
-        print(
-          '💭 RECOMMENDATIONS type: ${rawRec.runtimeType} | value: $rawRec',
-        );
-
+        final rawRec = rawToday['recommendations'];
         if (rawRec is Map) {
-          todayRecommendations = _buildRecommendationsFromMap(rawRec);
-          print('  Built ${todayRecommendations.length} recommendation(s).');
-        } else {
-          print('  ⚠️ recommendations bukan Map, diabaikan.');
+          todayRecs = _parseRecommendations(rawRec);
         }
-      } else {
-        print('📌 TODAY\'S DATA: null (belum ada analisis hari ini)');
       }
-
-      print('✅ Data dashboard berhasil dimuat.');
 
       setState(() {
         _historyDays = days;
         _todayEmotion = todayEmotion;
         _todaySummary = todaySummary;
-        _todayRecommendations = todayRecommendations;
+        _todayRecommendations = todayRecs;
       });
 
-      print('📦 STATE UPDATED:');
-      print('  History Days      : ${_historyDays.length} days');
-      print('  Today Emotion     : $_todayEmotion');
-      print('  Recommendations   : ${_todayRecommendations.length} items');
-      print('═══════════════════════════════════════════════════════\n');
-    } catch (e) {
-      print('═══════════════════════════════════════════════════════');
-      print('❌ EXCEPTION CAUGHT:');
-      print('  Error: $e');
-      print('  Stack Trace: ${StackTrace.current}');
-      print('═══════════════════════════════════════════════════════\n');
-      setState(() {
-        _errorMessage = 'Terjadi kesalahan saat memuat data.';
-      });
+      print('✅ Dashboard loaded — ${days.length} hari, today: $todayEmotion');
+    } catch (e, st) {
+      print('❌ Exception: $e\n$st');
+      setState(() => _errorMessage = 'Terjadi kesalahan saat memuat data.');
     } finally {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  List<Map<String, String>> _buildRecommendationsFromMap(Map raw) {
+  List<Map<String, String>> _parseRecommendations(Map raw) {
     final items = <Map<String, String>>[];
 
     final narrative = raw['narrative']?.toString();
@@ -220,29 +170,22 @@ class _HomePageState extends State<HomePage> with RouteAware {
     return items;
   }
 
-  String _iconForEmotionLabel(String? label) {
+  String _iconForEmotion(String? label) {
     if (label == null || label.trim().isEmpty) {
       return 'assets/images/emoji/damai.svg';
     }
-    final normalized = label.toLowerCase();
-    if (normalized.contains('bahagia') || normalized.contains('senang')) {
+    final n = label.toLowerCase();
+    if (n.contains('bahagia') || n.contains('senang')) {
       return 'assets/images/emoji/bahagia.svg';
     }
-    if (normalized.contains('damai') ||
-        normalized.contains('tenang') ||
-        normalized.contains('rileks')) {
+    if (n.contains('damai') || n.contains('tenang') || n.contains('rileks')) {
       return 'assets/images/emoji/damai.svg';
     }
-    if (normalized.contains('ovt') ||
-        normalized.contains('overthinking') ||
-        normalized.contains('cemas') ||
-        normalized.contains('gelisah')) {
+    if (n.contains('ovt') || n.contains('overthinking') ||
+        n.contains('cemas') || n.contains('gelisah')) {
       return 'assets/images/emoji/ovt.svg';
     }
-    if (normalized.contains('sedih') ||
-        normalized.contains('kesedihan') ||
-        normalized.contains('murung') ||
-        normalized.contains('down')) {
+    if (n.contains('sedih') || n.contains('murung') || n.contains('down')) {
       return 'assets/images/emoji/sedih.svg';
     }
     return 'assets/images/emoji/happy.svg';
@@ -275,19 +218,9 @@ class _HomePageState extends State<HomePage> with RouteAware {
           HomeToday(
             emotion: _todayEmotion,
             message: _todaySummary,
-            iconAsset: _iconForEmotionLabel(_todayEmotion),
+            iconAsset: _iconForEmotion(_todayEmotion),
             recommendations: _todayRecommendations,
             isLoading: _isLoading,
-          ),
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Add more content here
-              ],
-            ),
           ),
         ],
       ),
