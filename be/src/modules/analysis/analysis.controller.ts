@@ -1,17 +1,9 @@
-<<<<<<< HEAD
-import { BadRequestException, Body, Controller, Get, Post, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
-import { AnalysisService } from './analysis.service';
-import { CreateAnalysisDto } from './dto/create-analysis.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
-import 'multer';
-=======
 import { BadRequestException, Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { AnalysisService } from './analysis.service';
 import { CreateAnalysisDto } from './dto/create-analysis.dto';
 import { SupabaseJwtGuard } from '../auth/supabase-jwt.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { CurrentUserPayload } from '../auth/current-user.decorator';
->>>>>>> fix/user-page
 
 @Controller('analysis')
 export class AnalysisController {
