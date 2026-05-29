@@ -8,6 +8,7 @@ import 'package:hackathon/core/shared_widgets/waveform.dart';
 import 'package:hackathon/core/models/analysis_models.dart';
 import 'package:hackathon/core/services/analysis_service.dart';
 import 'package:hackathon/core/services/api_client.dart';
+import 'package:hackathon/core/constants.dart';
 
 class VoiceInput extends StatefulWidget {
   const VoiceInput({super.key});
@@ -17,7 +18,7 @@ class VoiceInput extends StatefulWidget {
 }
 
 class _VoiceInputState extends State<VoiceInput> with TickerProviderStateMixin {
-  static const String _baseUrl = 'http://10.72.12.108:3000';
+  static final String _baseUrl = AppConstants.baseUrl;
 
   final SpeechToText _speechToText = SpeechToText();
   late final ApiClient _apiClient = ApiClient(baseUrl: _baseUrl);

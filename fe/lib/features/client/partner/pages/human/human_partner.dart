@@ -7,6 +7,7 @@ import 'package:hackathon/core/models/human_partner_models.dart';
 import 'package:hackathon/core/services/api_client.dart';
 import 'package:hackathon/core/services/human_partner_service.dart';
 import 'package:hackathon/core/theme/app_gradients.dart';
+import 'package:hackathon/core/constants.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HumanPartnerPage extends StatefulWidget {
@@ -17,7 +18,7 @@ class HumanPartnerPage extends StatefulWidget {
 }
 
 class _HumanPartnerPageState extends State<HumanPartnerPage> {
-  static const String _baseUrl = 'http://10.72.12.108:3000';
+  static final String _baseUrl = AppConstants.baseUrl;
   static const _primary = Color(0xFF1B517A);
   static const _secondary = Color(0xFF2F6FB4);
   static const _titleStyle = TextStyle(

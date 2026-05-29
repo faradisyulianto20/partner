@@ -64,7 +64,12 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
 
   @override
   void dispose() {
-    cameraController?.dispose();
+    // cameraController bisa sudah null jika sudah di-dispose setelah capture
+    final ctrl = cameraController;
+    if (ctrl != null) {
+      cameraController = null;
+      ctrl.dispose();
+    }
     _apiClient.close();
     super.dispose();
   }
@@ -77,7 +82,7 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
         cameraController = CameraController(
           availableCams.last,
           ResolutionPreset
-              .medium, // ← turunkan resolusi, hindari buffer overflow
+              .low, // ← gunakan low untuk kurangi tekanan buffer
           enableAudio: false,
           imageFormatGroup: ImageFormatGroup.jpeg,
         );
@@ -87,7 +92,7 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
 
       if (mounted) {
         setState(() {});
-        // Tunggu lebih lama agar buffer kamera benar-benar siap
+        // Tunggu agar buffer kamera benar-benar siap
         await Future.delayed(const Duration(seconds: 2));
         if (mounted) _captureAndSubmit();
       }
@@ -147,6 +152,17 @@ class _ExpressionAnalysisState extends State<ExpressionAnalysis> {
       }
 
       setState(() => _hasSubmitted = true);
+
+      // Dispose kamera SEGERA setelah foto diambil
+      // Ini mencegah BLASTBufferQueue buffer overflow saat API call berlangsung
+      final camController = cameraController;
+      if (camController != null) {
+        setState(() => cameraController = null);
+        try {
+          await camController.dispose();
+          debugPrint('📷 [DEBUG-FACE] CameraController disposed setelah capture.');
+        } catch (_) {}
+      }
 
       // 2. Proses Pengiriman POST API (base64 JSON)
       debugPrint(

@@ -13,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
+import 'package:hackathon/core/constants.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AIPartnerVoice extends StatefulWidget {
@@ -24,7 +25,7 @@ class AIPartnerVoice extends StatefulWidget {
 
 class _AIPartnerVoiceState extends State<AIPartnerVoice>
     with TickerProviderStateMixin {
-  static const String _baseUrl = 'http://10.72.12.108:3000';
+  static final String _baseUrl = AppConstants.baseUrl;
 
   late AnimationController _waveController;
   final AudioRecorder _recorder = AudioRecorder();

@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/state/user_role_state.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hackathon/core/constants.dart';
 import 'package:hackathon/core/services/api_client.dart';
 import 'package:hackathon/core/services/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -158,7 +159,7 @@ class _LoginPageState extends State<LoginPage> {
   /// Ini adalah langkah utama agar semua request selanjutnya menggunakan token buatan backend.
   Future<void> _exchangeForCustomToken() async {
     try {
-      final baseUrl = dotenv.env['API_URL'] ?? 'http://10.72.12.108:3000';
+      final baseUrl = AppConstants.baseUrl;
       final apiClient = ApiClient(baseUrl: baseUrl);
       final authService = AuthService(apiClient);
       
@@ -188,7 +189,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _sendProviderTokenToBackend(String providerToken, {String? refreshToken}) async {
     try {
-      final baseUrl = dotenv.env['API_URL'] ?? 'http://10.72.12.108:3000';
+      final baseUrl = AppConstants.baseUrl;
       final apiClient = ApiClient(baseUrl: baseUrl);
       final authService = AuthService(apiClient);
       await authService.saveProviderToken(providerToken, providerRefreshToken: refreshToken);

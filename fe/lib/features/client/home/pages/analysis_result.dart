@@ -39,7 +39,7 @@ class _AnalysisResultState extends State<AnalysisResult> {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CustomAppBar(title: 'Hasil Analisis', onBack: () => context.pop()),
+          CustomAppBar(title: 'Hasil Analisis', onBack: () => context.go('/home')),
           const SizedBox(height: 12),
           Expanded(
             child: SingleChildScrollView(

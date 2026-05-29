@@ -101,7 +101,7 @@ class _HomeCTAState extends State<HomeCTA> {
               children: [
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => context.push('/expression/analysis'),
+                    onTap: () => context.push('/home/expression-analysis'),
                     child: Container(
                       alignment: Alignment.center,
                       decoration: BoxDecoration(

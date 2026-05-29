@@ -8,6 +8,7 @@ class HomeToday extends StatelessWidget {
   final String? message;
   final String iconAsset;
   final List<Map<String, String>> recommendations;
+  final bool isLoading;
 
   static const String _happyIcon = 'assets/images/emoji/happy_white.svg';
   static const String _sadIcon = 'assets/images/emoji/sad_white.svg';
@@ -18,6 +19,7 @@ class HomeToday extends StatelessWidget {
     this.message,
     this.iconAsset = 'assets/images/emoji/happy_white.svg',
     this.recommendations = const [],
+    this.isLoading = false,
   });
 
   void _showRecommendationDialog(BuildContext context) {

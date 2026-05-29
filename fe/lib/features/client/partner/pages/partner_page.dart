@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/models/ai_partner_models.dart';
 import 'package:hackathon/core/services/ai_partner_service.dart';
 import 'package:hackathon/core/services/api_client.dart';
+import 'package:hackathon/core/constants.dart';
 import 'package:hackathon/core/shared_widgets/header.dart';
 import 'package:hackathon/features/client/partner/widgets/ai_partner.dart';
 import 'package:hackathon/features/client/partner/widgets/chat_content.dart';
@@ -19,7 +20,7 @@ class PartnerPage extends StatefulWidget {
 }
 
 class _PartnerPageState extends State<PartnerPage> {
-  static const String _baseUrl = 'http://10.72.12.108:3000';
+  static final String _baseUrl = AppConstants.baseUrl;
 
   late final ApiClient _apiClient = ApiClient(baseUrl: _baseUrl);
   late final AiPartnerService _aiPartnerService = AiPartnerService(_apiClient);

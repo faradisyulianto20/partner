@@ -102,12 +102,89 @@ class AnalysisFaceResponse {
   }
 }
 
-class AnalysisDashboardResponse {
-  final Object? data;
+// Ganti class AnalysisDashboardResponse dan tambah DayAnalysis
 
-  const AnalysisDashboardResponse({required this.data});
+class AnalysisDashboardResponse {
+  final List<DayAnalysis> last7Days;
+  final DashboardTodayData? today;
+
+  const AnalysisDashboardResponse({
+    required this.last7Days,
+    this.today,
+  });
 
   factory AnalysisDashboardResponse.fromJson(Object? json) {
-    return AnalysisDashboardResponse(data: _resolvePayload(json));
+    final payload = _resolvePayload(json);
+    if (payload is! Map) {
+      return const AnalysisDashboardResponse(last7Days: []);
+    }
+
+    final map = Map<String, dynamic>.from(payload);
+
+    return AnalysisDashboardResponse(
+      last7Days: (map['last7Days'] as List<dynamic>? ?? [])
+          .map((e) => DayAnalysis.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      today: DashboardTodayData.tryFromJson(map['today']),
+    );
+  }
+}
+
+/// Data hari ini dari dashboard — recommendations disimpan sebagai Object?
+/// agar bisa menampung Map yang dikembalikan API.
+class DashboardTodayData {
+  final String id;
+  final DateTime createdAt;
+  final String emotionLabel;
+  final String summary;
+  final Object? recommendations; // Map { title, narrative, items[] } dari API
+
+  const DashboardTodayData({
+    required this.id,
+    required this.createdAt,
+    required this.emotionLabel,
+    required this.summary,
+    this.recommendations,
+  });
+
+  static DashboardTodayData? tryFromJson(Object? json) {
+    if (json is! Map) return null;
+    final map = Map<String, dynamic>.from(json);
+    if (!map.containsKey('id')) return null;
+
+    DateTime createdAt = DateTime.now();
+    final createdAtRaw = map['createdAt'];
+    if (createdAtRaw is String) {
+      final parsed = DateTime.tryParse(createdAtRaw);
+      if (parsed != null) createdAt = parsed.toLocal();
+    }
+
+    return DashboardTodayData(
+      id: map['id']?.toString() ?? '',
+      createdAt: createdAt,
+      emotionLabel: map['emotionLabel']?.toString() ?? '',
+      summary: map['summary']?.toString() ?? '',
+      recommendations: map['recommendations'],
+    );
+  }
+}
+
+class DayAnalysis {
+  final String date;
+  final String dayLabel;
+  final String? emotionLabel; // nullable — bisa null jika belum ada analisis
+
+  const DayAnalysis({
+    required this.date,
+    required this.dayLabel,
+    this.emotionLabel,
+  });
+
+  factory DayAnalysis.fromJson(Map<String, dynamic> json) {
+    return DayAnalysis(
+      date: json['date'] as String,
+      dayLabel: json['dayLabel'] as String,
+      emotionLabel: json['emotionLabel'] as String?,
+    );
   }
 }

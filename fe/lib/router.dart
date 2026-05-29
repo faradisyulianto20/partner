@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:hackathon/features/client/home/pages/home_page.dart';
 
 // Home Route
 import 'package:hackathon/features/client/home/home.dart';
@@ -64,6 +65,7 @@ String get _initialLocation {
 
 final GoRouter router = GoRouter(
   initialLocation: _initialLocation,
+  observers: [homeRouteObserver],
   redirect: (context, state) {
     if (firstInstall || !_isLoggedIn) return null;
 

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HistoryDay {
   final String dayLabel;
@@ -14,13 +17,139 @@ class HistoryDay {
   });
 }
 
-class HomeHistory extends StatelessWidget {
-  const HomeHistory({super.key, this.days = const []});
+class HomeHistory extends StatefulWidget {
+  const HomeHistory({super.key});
 
-  final List<HistoryDay> days;
+  @override
+  State<HomeHistory> createState() => _HomeHistoryState();
+}
 
+class _HomeHistoryState extends State<HomeHistory> {
   static const String _happyIcon = 'assets/images/emoji/happy_blue.svg';
   static const String _sadIcon = 'assets/images/emoji/sad_blue.svg';
+  static const String _baseUrl = 'https://partner-seven-phi.vercel.app/';
+
+  List<HistoryDay> _days = [];
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetch();
+  }
+
+  Future<void> _fetch() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      debugPrint('═══════════════════════════════════════════════════════');
+      debugPrint('📊 HISTORY FETCH - /analysis/dashboard');
+      debugPrint('═══════════════════════════════════════════════════════');
+      debugPrint('User ID     : ${userId ?? 'null'}');
+      debugPrint(
+        'Auth State  : ${Supabase.instance.client.auth.currentSession != null ? 'Authenticated' : 'Unauthenticated'}',
+      );
+      debugPrint(
+        'Session     : ${Supabase.instance.client.auth.currentSession != null ? 'Exists' : 'None'}',
+      );
+      debugPrint(
+        'User Email  : ${Supabase.instance.client.auth.currentUser?.email ?? 'null'}',
+      );
+      debugPrint('───────────────────────────────────────────────────────');
+
+      if (userId == null) {
+        throw Exception('User ID not found. Please login first.');
+      }
+
+      // Build URL with userId query parameter
+      final uri = Uri.parse('$_baseUrl/analysis/dashboard').replace(
+        queryParameters: {'userId': userId},
+      );
+
+      debugPrint('Request URL : $uri');
+      debugPrint('───────────────────────────────────────────────────────');
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization':
+              'Bearer ${Supabase.instance.client.auth.currentSession?.accessToken ?? ''}',
+        },
+      );
+
+      debugPrint('Status Code : ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        final completeData =
+            const JsonEncoder.withIndent('  ').convert(data);
+
+        debugPrint('Response Data:');
+        debugPrint(completeData);
+        debugPrint('───────────────────────────────────────────────────────');
+
+        // Parse last7Days from response
+        final last7Days =
+            (data['last7Days'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ??
+                [];
+
+        debugPrint('✅ Last 7 Days: ${last7Days.length} items');
+        for (int i = 0; i < last7Days.length; i++) {
+          final day = last7Days[i];
+          debugPrint(
+            '  [$i] ${day['dayLabel']} - ${day['emotionLabel'] ?? 'no emotion'}',
+          );
+        }
+
+        // Convert to HistoryDay objects
+        final days = last7Days
+            .map((day) => HistoryDay(
+                  dayLabel: day['dayLabel'] ?? '',
+                  emotionLabel: day['emotionLabel'],
+                  iconAsset: _resolveIcon(day['emotionLabel'],  _happyIcon),
+                ))
+            .toList();
+
+        debugPrint('───────────────────────────────────────────────────────');
+        debugPrint('📋 Today Data:');
+        final today = data['today'] as Map<String, dynamic>?;
+        if (today != null) {
+          debugPrint('  Emotion: ${today['emotionLabel']}');
+          debugPrint('  Summary: ${today['summary']?.substring(0, 50)}...');
+          debugPrint(
+            '  Recommendations: ${(today['recommendations'] as Map?)?['narrative']?.substring(0, 50)}...',
+          );
+        } else {
+          debugPrint('  No data for today');
+        }
+        debugPrint('═══════════════════════════════════════════════════════\n');
+
+        setState(() {
+          _days = days;
+          _isLoading = false;
+        });
+      } else {
+        throw Exception(
+          'Failed to fetch dashboard: ${response.statusCode} - ${response.body}',
+        );
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error: $e');
+      debugPrint(stackTrace.toString());
+      debugPrint('═══════════════════════════════════════════════════════\n');
+
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +186,29 @@ class HomeHistory extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          if (days.isEmpty)
+          if (_isLoading)
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: List.generate(
+                  7,
+                  (index) => Padding(
+                    padding: EdgeInsets.only(right: index < 6 ? 6 : 0),
+                    child: _buildSkeletonDay(),
+                  ),
+                ),
+              ),
+            )
+          else if (_errorMessage != null)
+            Text(
+              'Error: $_errorMessage',
+              style: GoogleFonts.nunito(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.red,
+              ),
+            )
+          else if (_days.isEmpty)
             Text(
               'Belum ada data riwayat.',
               style: GoogleFonts.nunito(
@@ -71,15 +222,15 @@ class HomeHistory extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: List.generate(
-                  days.length,
+                  _days.length,
                   (index) => Padding(
                     padding: EdgeInsets.only(
-                      right: index < days.length - 1 ? 6 : 0,
+                      right: index < _days.length - 1 ? 6 : 0,
                     ),
                     child: _buildEmotionDay(
-                      day: days[index].dayLabel,
-                      emotion: days[index].emotionLabel,
-                      iconAsset: days[index].iconAsset,
+                      day: _days[index].dayLabel,
+                      emotion: _days[index].emotionLabel,
+                      iconAsset: _days[index].iconAsset,
                     ),
                   ),
                 ),
@@ -131,6 +282,48 @@ class HomeHistory extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSkeletonDay() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+      width: 39,
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEF3F8),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE9E9E9), width: 1),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 20,
+            height: 10,
+            decoration: BoxDecoration(
+              color: const Color(0xFFD4DFE8),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            width: 16,
+            height: 16,
+            decoration: const BoxDecoration(
+              color: Color(0xFFD4DFE8),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            width: 24,
+            height: 8,
+            decoration: BoxDecoration(
+              color: const Color(0xFFD4DFE8),
+              borderRadius: BorderRadius.circular(4),
             ),
           ),
         ],

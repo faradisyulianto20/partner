@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hackathon/core/services/api_client.dart';
 import 'package:hackathon/core/services/profile_service.dart';
+import 'package:hackathon/core/constants.dart';
 import 'package:hackathon/core/models/profile_models.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -18,7 +19,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final SupabaseClient supabase = Supabase.instance.client;
   late final ProfileService _profileService = ProfileService(
-    ApiClient(baseUrl: 'http://10.72.12.108:3000'),
+    ApiClient(baseUrl: AppConstants.baseUrl),
   );
 
   final TextEditingController _nameController = TextEditingController(

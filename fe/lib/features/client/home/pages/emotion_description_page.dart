@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/models/analysis_models.dart';
 import 'package:hackathon/core/services/analysis_service.dart';
+import 'package:hackathon/core/constants.dart';
 import 'package:hackathon/core/services/api_client.dart';
 
 class EmotionDescriptionPage extends StatefulWidget {
@@ -133,7 +134,7 @@ class EmotionDescription extends StatefulWidget {
 }
 
 class _EmotionDescriptionState extends State<EmotionDescription> {
-  static const String _baseUrl = 'http://10.72.12.108:3000';
+  static final String _baseUrl = AppConstants.baseUrl;
 
   final TextEditingController _controller = TextEditingController();
   late final ApiClient _apiClient = ApiClient(baseUrl: _baseUrl);
