@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, InternalServerErrorException } from '@
 import nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenAI } from '@google/genai';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 export type RankedPsychologist = {
@@ -46,6 +47,26 @@ export type BookingDetailResult = {
         recommendations: unknown;
         createdAt: Date;
     } | null;
+};
+
+export type ClientSessionListResult = {
+    items: Array<{
+        bookingId: string;
+        psychologistId: string;
+        psychologistName: string;
+        psychologistPhotoUrl: string | null;
+        specialization: string;
+        scheduledAt: Date;
+        dateLabel: string;
+        timeLabel: string;
+        method: string;
+        status: string;
+        paymentStatus: string;
+        price: number;
+        notes: string | null;
+        fullName: string;
+    }>;
+    total: number;
 };
 
 export type DaySessionResult = {
@@ -167,6 +188,12 @@ export type ReviewListResult = {
     total: number;
 };
 
+type ReviewerLookup = {
+    clientMap: Map<string, { userId: string; username: string; photoUrl: string | null }>;
+    userMap: Map<string, { id: string; displayName: string | null }>;
+    bookingNameMap: Map<string, string>;
+};
+
 @Injectable()
 export class PsychologistService {
     private readonly ai: GoogleGenAI;
@@ -224,14 +251,133 @@ export class PsychologistService {
     }
 
     async getDetail(id: string) {
-        return this.prismaService.psychologist.findUnique({
+        const psychologist = await this.prismaService.psychologist.findUnique({
             where: { id },
             include: {
                 education: true,
-                reviews: { orderBy: { createdAt: 'desc' } },
+                reviews: {
+                    orderBy: { createdAt: 'desc' },
+                    select: {
+                        id: true,
+                        userId: true,
+                        rating: true,
+                        comment: true,
+                        createdAt: true,
+                    },
+                },
                 schedules: true,
             },
         });
+
+        if (!psychologist) {
+            return null;
+        }
+
+        const reviewerIds = [...new Set(psychologist.reviews.map((review) => review.userId))];
+        const lookup = await this.buildReviewerLookup(psychologist.id, reviewerIds);
+
+        return {
+            ...psychologist,
+            price: psychologist.sessionPrice ?? 0,
+            reviews: psychologist.reviews.map((review) => {
+                const client = lookup.clientMap.get(review.userId) || null;
+                const user = lookup.userMap.get(review.userId) || null;
+                const bookingName = lookup.bookingNameMap.get(review.userId) || null;
+
+                return {
+                    ...review,
+                    reviewerName: client?.username || bookingName || user?.displayName || 'Anonim',
+                    reviewerPhotoUrl: client?.photoUrl ?? null,
+                };
+            }),
+        };
+    }
+
+    async getAvailableSlots(psychologistId: string, dateInput?: string) {
+        const psychologist = await this.prismaService.psychologist.findUnique({
+            where: { id: psychologistId },
+            select: {
+                id: true,
+                fullName: true,
+                isAcceptingSessions: true,
+                sessionPrice: true,
+                schedules: {
+                    where: { isAvailable: true },
+                    select: {
+                        dayOfWeek: true,
+                        startTime: true,
+                        endTime: true,
+                    },
+                },
+            },
+        });
+
+        if (!psychologist) {
+            return null;
+        }
+
+        const date = this.parseDateInput(dateInput);
+        const dateKey = this.toDateKey(date);
+        const dayOfWeek = this.getJakartaDayOfWeek(dateKey);
+
+        const schedules = psychologist.schedules.filter((schedule) => schedule.dayOfWeek === dayOfWeek);
+        const slotMap = new Map<string, string>();
+
+        for (const schedule of schedules) {
+            const startMinutes = this.timeToMinutes(schedule.startTime);
+            const endMinutes = this.timeToMinutes(schedule.endTime);
+
+            if (startMinutes === null || endMinutes === null || endMinutes < startMinutes) {
+                continue;
+            }
+
+            for (let minutes = startMinutes; minutes <= endMinutes; minutes += 60) {
+                const timeLabel = this.minutesToTime(minutes);
+                const isoValue = `${dateKey}T${timeLabel}:00+07:00`;
+                slotMap.set(timeLabel, isoValue);
+            }
+        }
+
+        const startOfDay = new Date(`${dateKey}T00:00:00+07:00`);
+        const startOfNextDay = new Date(startOfDay);
+        startOfNextDay.setUTCDate(startOfNextDay.getUTCDate() + 1);
+
+        const bookings = await this.prismaService.psychologistBooking.findMany({
+            where: {
+                psychologistId,
+                status: { not: 'CANCELLED' },
+                scheduledAt: {
+                    gte: startOfDay,
+                    lt: startOfNextDay,
+                },
+            },
+            select: {
+                scheduledAt: true,
+            },
+        });
+
+        const bookedTimeSet = new Set(bookings.map((booking) => this.getJakartaTimeLabel(new Date(booking.scheduledAt))));
+
+        const slots = Array.from(slotMap.entries())
+            .sort(([left], [right]) => left.localeCompare(right))
+            .map(([timeLabel, scheduledAt]) => ({
+                time: timeLabel,
+                scheduledAt,
+                isBooked: bookedTimeSet.has(timeLabel),
+                isAvailable: !bookedTimeSet.has(timeLabel),
+            }));
+
+        return {
+            date: dateKey,
+            dayLabel: this.getDayLabel(date),
+            psychologist: {
+                id: psychologist.id,
+                fullName: psychologist.fullName,
+                isAcceptingSessions: psychologist.isAcceptingSessions,
+                sessionPrice: psychologist.sessionPrice,
+            },
+            slots,
+        };
     }
 
     async getBookingDetail(bookingId: string): Promise<BookingDetailResult | null> {
@@ -310,6 +456,14 @@ export class PsychologistService {
                 }
                 : null,
         };
+    }
+
+    async getClientUpcomingSessions(userId: string): Promise<ClientSessionListResult> {
+        return this.getClientSessions(userId, 'UPCOMING');
+    }
+
+    async getClientSessionHistory(userId: string): Promise<ClientSessionListResult> {
+        return this.getClientSessions(userId, 'HISTORY');
     }
 
     async getDaySessions(userId: string, dateInput?: string): Promise<DaySessionResult | null> {
@@ -416,6 +570,70 @@ export class PsychologistService {
             sessions,
             timeline,
             totalSessions: sessions.length,
+        };
+    }
+
+    private async getClientSessions(userId: string, mode: 'UPCOMING' | 'HISTORY'): Promise<ClientSessionListResult> {
+        const safeUserId = userId?.trim();
+        if (!safeUserId) {
+            throw new BadRequestException('userId is required');
+        }
+
+        const now = new Date();
+        const whereClause: Prisma.PsychologistBookingWhereInput =
+            mode === 'UPCOMING'
+                ? {
+                    userId: safeUserId,
+                    scheduledAt: { gte: now },
+                    status: { not: 'CANCELLED' },
+                }
+                : {
+                    userId: safeUserId,
+                    OR: [
+                        { scheduledAt: { lt: now } },
+                        { status: { in: ['COMPLETED', 'CANCELLED'] } },
+                    ],
+                };
+
+        const bookings = await this.prismaService.psychologistBooking.findMany({
+            where: whereClause,
+            include: {
+                psychologist: {
+                    select: {
+                        id: true,
+                        fullName: true,
+                        specialization: true,
+                        photoUrl: true,
+                    },
+                },
+            },
+            orderBy: {
+                scheduledAt: mode === 'UPCOMING' ? 'asc' : 'desc',
+            },
+        });
+
+        return {
+            items: bookings.map((booking) => {
+                const scheduledAt = new Date(booking.scheduledAt);
+
+                return {
+                    bookingId: booking.id,
+                    psychologistId: booking.psychologist.id,
+                    psychologistName: booking.psychologist.fullName,
+                    psychologistPhotoUrl: booking.psychologist.photoUrl,
+                    specialization: booking.psychologist.specialization,
+                    scheduledAt,
+                    dateLabel: this.formatLongDate(scheduledAt),
+                    timeLabel: this.formatTimeWithWIB(scheduledAt),
+                    method: booking.method,
+                    status: booking.status,
+                    paymentStatus: booking.paymentStatus,
+                    price: booking.price,
+                    notes: booking.notes,
+                    fullName: booking.fullName,
+                };
+            }),
+            total: bookings.length,
         };
     }
 
@@ -648,19 +866,7 @@ export class PsychologistService {
         ]);
 
         const reviewerIds = [...new Set(reviews.map((review) => review.userId))];
-        const [clientProfiles, userProfiles] = await Promise.all([
-            this.prismaService.clientProfile.findMany({
-                where: { userId: { in: reviewerIds } },
-                select: { userId: true, username: true, photoUrl: true },
-            }),
-            this.prismaService.user.findMany({
-                where: { id: { in: reviewerIds } },
-                select: { id: true, displayName: true },
-            }),
-        ]);
-
-        const clientMap = new Map(clientProfiles.map((item) => [item.userId, item]));
-        const userMap = new Map(userProfiles.map((item) => [item.id, item]));
+        const lookup = await this.buildReviewerLookup(psychologist.id, reviewerIds);
 
         const breakdown = await Promise.all([5, 4, 3, 2, 1].map(async (rating) => {
             const count = await this.prismaService.psychologistReview.count({
@@ -680,9 +886,10 @@ export class PsychologistService {
                 breakdown,
             },
             items: reviews.map((review) => {
-                const client = clientMap.get(review.userId) || null;
-                const user = userMap.get(review.userId) || null;
-                const reviewerName = client?.username || user?.displayName || 'Anonim';
+                const client = lookup.clientMap.get(review.userId) || null;
+                const user = lookup.userMap.get(review.userId) || null;
+                const bookingName = lookup.bookingNameMap.get(review.userId) || null;
+                const reviewerName = client?.username || bookingName || user?.displayName || 'Anonim';
                 const createdAt = new Date(review.createdAt);
 
                 return {
@@ -700,14 +907,51 @@ export class PsychologistService {
         };
     }
 
+    private async buildReviewerLookup(psychologistId: string, reviewerIds: string[]): Promise<ReviewerLookup> {
+        const [clientProfiles, userProfiles, bookings] = await Promise.all([
+            this.prismaService.clientProfile.findMany({
+                where: { userId: { in: reviewerIds } },
+                select: { userId: true, username: true, photoUrl: true },
+            }),
+            this.prismaService.user.findMany({
+                where: { id: { in: reviewerIds } },
+                select: { id: true, displayName: true },
+            }),
+            this.prismaService.psychologistBooking.findMany({
+                where: {
+                    psychologistId,
+                    userId: { in: reviewerIds },
+                },
+                orderBy: { createdAt: 'desc' },
+                select: { userId: true, fullName: true },
+            }),
+        ]);
+
+        const clientMap = new Map(clientProfiles.map((item) => [item.userId, item]));
+        const userMap = new Map(userProfiles.map((item) => [item.id, item]));
+        const bookingNameMap = new Map<string, string>();
+
+        for (const booking of bookings) {
+            if (!bookingNameMap.has(booking.userId) && booking.fullName?.trim()) {
+                bookingNameMap.set(booking.userId, booking.fullName.trim());
+            }
+        }
+
+        return {
+            clientMap,
+            userMap,
+            bookingNameMap,
+        };
+    }
+
     async createBooking(
         userId: string,
         psychologistId: string,
         fullName: string,
         method: 'CHAT' | 'VOICE' | 'VIDEO',
-        price: number,
         notes: string | undefined,
-        scheduledAt: string,
+        scheduledAt: string | undefined,
+        selectedSlots?: string[],
     ) {
         const safeUserId = userId?.trim();
         if (!safeUserId) {
@@ -719,18 +963,41 @@ export class PsychologistService {
         if (!['CHAT', 'VOICE', 'VIDEO'].includes(method)) {
             throw new BadRequestException('method must be CHAT, VOICE, or VIDEO');
         }
-        if (!Number.isFinite(price) || price <= 0) {
-            throw new BadRequestException('price must be a positive number');
+
+        const requestedSlotValues = (selectedSlots?.length ? selectedSlots : [scheduledAt]).filter(
+            (slot): slot is string => typeof slot === 'string' && slot.trim().length > 0,
+        );
+
+        if (!requestedSlotValues.length) {
+            throw new BadRequestException('selectedSlots (or scheduledAt) is required');
         }
 
-        const date = new Date(scheduledAt);
-        if (Number.isNaN(date.getTime())) {
-            throw new BadRequestException('scheduledAt is invalid');
+        const parsedSlots = requestedSlotValues
+            .map((slot) => new Date(slot))
+            .filter((date) => !Number.isNaN(date.getTime()))
+            .sort((left, right) => left.getTime() - right.getTime());
+
+        if (parsedSlots.length !== requestedSlotValues.length) {
+            throw new BadRequestException('one or more selectedSlots are invalid datetime values');
         }
+
+        const uniqueSlotMap = new Map(parsedSlots.map((date) => [date.toISOString(), date]));
+        const uniqueSlots = Array.from(uniqueSlotMap.values());
 
         const psychologist = await this.prismaService.psychologist.findUnique({
             where: { id: psychologistId },
-            select: { isAcceptingSessions: true },
+            select: {
+                isAcceptingSessions: true,
+                sessionPrice: true,
+                schedules: {
+                    where: { isAvailable: true },
+                    select: {
+                        dayOfWeek: true,
+                        startTime: true,
+                        endTime: true,
+                    },
+                },
+            },
         });
 
         if (!psychologist) {
@@ -740,17 +1007,149 @@ export class PsychologistService {
             throw new BadRequestException('psychologist is not accepting sessions');
         }
 
-        return this.prismaService.psychologistBooking.create({
-            data: {
-                userId: safeUserId,
+        const sessionPrice = Math.max(0, Math.round(psychologist.sessionPrice ?? 0));
+        if (sessionPrice <= 0) {
+            throw new BadRequestException('psychologist sessionPrice is not configured');
+        }
+
+        for (const slot of uniqueSlots) {
+            if (!this.isSlotWithinSchedule(slot, psychologist.schedules)) {
+                throw new BadRequestException(`selected slot ${slot.toISOString()} is outside psychologist availability`);
+            }
+        }
+
+        const conflicts = await this.prismaService.psychologistBooking.findMany({
+            where: {
                 psychologistId,
-                fullName: fullName.trim(),
-                method,
-                price: Math.round(price),
-                notes: notes?.trim() || null,
-                scheduledAt: date,
+                status: { not: 'CANCELLED' },
+                scheduledAt: {
+                    in: uniqueSlots,
+                },
+            },
+            select: {
+                id: true,
+                scheduledAt: true,
             },
         });
+
+        if (conflicts.length) {
+            const conflictTimes = conflicts.map((item) => item.scheduledAt.toISOString());
+            throw new BadRequestException(`some slots are already booked: ${conflictTimes.join(', ')}`);
+        }
+
+        const bookings = await this.prismaService.$transaction(async (tx) => {
+            return Promise.all(
+                uniqueSlots.map((slot) =>
+                    tx.psychologistBooking.create({
+                        data: {
+                            userId: safeUserId,
+                            psychologistId,
+                            fullName: fullName.trim(),
+                            method,
+                            price: sessionPrice,
+                            notes: notes?.trim() || null,
+                            scheduledAt: slot,
+                        },
+                    }),
+                ),
+            );
+        });
+
+        return {
+            bookings,
+            totalSessions: bookings.length,
+            sessionPrice,
+            totalPrice: sessionPrice * bookings.length,
+        };
+    }
+
+    private isSlotWithinSchedule(
+        slot: Date,
+        schedules: Array<{ dayOfWeek: number; startTime: string; endTime: string }>,
+    ) {
+        const slotDateKey = this.toDateKey(slot);
+        const dayOfWeek = this.getJakartaDayOfWeek(slotDateKey);
+        const slotMinutes = this.getJakartaMinutes(slot);
+
+        return schedules.some((schedule) => {
+            if (schedule.dayOfWeek !== dayOfWeek) {
+                return false;
+            }
+
+            const startMinutes = this.timeToMinutes(schedule.startTime);
+            const endMinutes = this.timeToMinutes(schedule.endTime);
+
+            if (startMinutes === null || endMinutes === null) {
+                return false;
+            }
+
+            return slotMinutes >= startMinutes && slotMinutes <= endMinutes;
+        });
+    }
+
+    private timeToMinutes(value: string): number | null {
+        const [hourRaw, minuteRaw] = value.split(':');
+        const hour = Number(hourRaw);
+        const minute = Number(minuteRaw);
+
+        if (!Number.isInteger(hour) || !Number.isInteger(minute)) {
+            return null;
+        }
+
+        if (hour === 24 && minute === 0) {
+            return 24 * 60;
+        }
+
+        if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+            return null;
+        }
+
+        return hour * 60 + minute;
+    }
+
+    private minutesToTime(totalMinutes: number) {
+        const normalizedMinutes = Math.max(0, Math.min(24 * 60, totalMinutes));
+        if (normalizedMinutes === 24 * 60) {
+            return '24:00';
+        }
+
+        const hour = Math.floor(normalizedMinutes / 60);
+        const minute = normalizedMinutes % 60;
+
+        return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+    }
+
+    private getJakartaDayOfWeek(dateKey: string) {
+        const probe = new Date(`${dateKey}T12:00:00+07:00`);
+        return probe.getUTCDay();
+    }
+
+    private getJakartaMinutes(date: Date) {
+        const parts = new Intl.DateTimeFormat('en-GB', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+            timeZone: 'Asia/Jakarta',
+        }).formatToParts(date);
+
+        const hour = Number(parts.find((part) => part.type === 'hour')?.value ?? '0');
+        const minute = Number(parts.find((part) => part.type === 'minute')?.value ?? '0');
+
+        return hour * 60 + minute;
+    }
+
+    private getJakartaTimeLabel(date: Date) {
+        const parts = new Intl.DateTimeFormat('en-GB', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+            timeZone: 'Asia/Jakarta',
+        }).formatToParts(date);
+
+        const hour = parts.find((part) => part.type === 'hour')?.value ?? '00';
+        const minute = parts.find((part) => part.type === 'minute')?.value ?? '00';
+
+        return `${hour}:${minute}`;
     }
 
     async payBooking(bookingId: string, userId: string) {

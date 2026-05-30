@@ -3,7 +3,7 @@ export class CreateBookingDto {
     psychologistId!: string;
     fullName!: string;
     method!: 'CHAT' | 'VOICE' | 'VIDEO';
-    price!: number;
     notes?: string;
-    scheduledAt!: string;
+    scheduledAt?: string;
+    selectedSlots?: string[];
 }

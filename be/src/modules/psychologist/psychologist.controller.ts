@@ -65,6 +65,18 @@ export class PsychologistController {
         return this.psychologistService.completeBooking(id, user?.sub ?? '');
     }
 
+    @UseGuards(JwtAuthGuard)
+    @Get('booking/me/upcoming')
+    getMyUpcomingSessions(@CurrentUser() user: CurrentUserPayload) {
+        return this.psychologistService.getClientUpcomingSessions(user?.sub ?? '');
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('booking/me/history')
+    getMySessionHistory(@CurrentUser() user: CurrentUserPayload) {
+        return this.psychologistService.getClientSessionHistory(user?.sub ?? '');
+    }
+
     @Get('booking/:id/detail')
     getBookingDetail(@Param('id') id: string) {
         return this.psychologistService.getBookingDetail(id);
@@ -102,6 +114,11 @@ export class PsychologistController {
         return this.psychologistService.getReviewSummary(user?.sub ?? '', Number(limit) || 20, Number(page) || 1);
     }
 
+    @Get(':id/available-slots')
+    getAvailableSlots(@Param('id') id: string, @Query('date') date?: string) {
+        return this.psychologistService.getAvailableSlots(id, date);
+    }
+
     @Get(':id')
     getDetail(@Param('id') id: string) {
         return this.psychologistService.getDetail(id);
@@ -115,9 +132,9 @@ export class PsychologistController {
             body.psychologistId,
             body.fullName,
             body.method,
-            body.price,
             body.notes,
             body.scheduledAt,
+            body.selectedSlots,
         );
     }
 

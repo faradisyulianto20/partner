@@ -1,20 +1,120 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseService } from '../supabase/supabase.service';
 import { ClientProfileDto } from './dto/client-profile.dto';
 import { PsychologistProfileDto } from './dto/psychologist-profile.dto';
 import { PsychologistDocumentsDto } from './dto/psychologist-documents.dto';
 
+type PsychologistDocumentFiles = {
+    ktp?: Express.Multer.File;
+    faceWithKtp?: Express.Multer.File;
+    strLicense?: Express.Multer.File;
+};
+
 @Injectable()
 export class ProfileService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly supabaseService: SupabaseService,
+    ) { }
+
+    private getPublicBucket() {
+        return process.env.SUPABASE_BUCKET?.trim() || 'partner';
+    }
+
+    private getPrivateBucket() {
+        return process.env.SUPABASE_DOCUMENT_BUCKET?.trim() || 'partner-documents';
+    }
+
+    private async signPsychologistDocuments(profile: any) {
+        if (!profile?.documents?.length) {
+            return profile;
+        }
+
+        const documents = await Promise.all(
+            profile.documents.map(async (document) => ({
+                ...document,
+                url: await this.supabaseService.getSignedUrl(this.getPrivateBucket(), document.url),
+            })),
+        );
+
+        return {
+            ...profile,
+            documents,
+        };
+    }
+
+    private parseStringArray(value: unknown) {
+        if (Array.isArray(value)) {
+            return value.map((item) => String(item).trim()).filter(Boolean);
+        }
+
+        if (typeof value !== 'string') {
+            return undefined;
+        }
+
+        const trimmed = value.trim();
+        if (!trimmed) {
+            return undefined;
+        }
+
+        try {
+            const parsed = JSON.parse(trimmed);
+            if (Array.isArray(parsed)) {
+                return parsed.map((item) => String(item).trim()).filter(Boolean);
+            }
+        } catch {
+            // Fall back to comma-separated input.
+        }
+
+        return trimmed
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean);
+    }
+
+    private parseNumber(value: unknown) {
+        if (typeof value === 'number' && Number.isFinite(value)) {
+            return value;
+        }
+
+        if (typeof value !== 'string') {
+            return undefined;
+        }
+
+        const parsed = Number(value.trim());
+        return Number.isFinite(parsed) ? parsed : undefined;
+    }
+
+    private parseBoolean(value: unknown) {
+        if (typeof value === 'boolean') {
+            return value;
+        }
+
+        if (typeof value !== 'string') {
+            return undefined;
+        }
+
+        const normalized = value.trim().toLowerCase();
+
+        if (['true', '1', 'yes', 'on'].includes(normalized)) {
+            return true;
+        }
+
+        if (['false', '0', 'no', 'off'].includes(normalized)) {
+            return false;
+        }
+
+        return undefined;
+    }
 
     async getCurrentProfile(userId: string) {
         if (!userId?.trim()) {
             return null;
         }
 
-        return this.prisma.user.findUnique({
+        const profile = await this.prisma.user.findUnique({
             where: { id: userId.trim() },
             include: {
                 clientProfile: true,
@@ -27,6 +127,15 @@ export class ProfileService {
                 },
             },
         });
+
+        if (profile?.psychologist) {
+            return {
+                ...profile,
+                psychologist: await this.signPsychologistDocuments(profile.psychologist),
+            };
+        }
+
+        return profile;
     }
 
     private async upsertUser(data: {
@@ -51,13 +160,17 @@ export class ProfileService {
         });
     }
 
-    async upsertClientProfile(dto: ClientProfileDto) {
+    async upsertClientProfile(dto: ClientProfileDto, photoFile?: Express.Multer.File) {
         await this.upsertUser({
             id: dto.userId,
             email: dto.email,
             displayName: dto.displayName ?? dto.username,
             role: UserRole.CLIENT,
         });
+
+        const photoUrl = photoFile
+            ? await this.supabaseService.uploadFile(photoFile, this.getPublicBucket(), `clients/${dto.userId}`)
+            : dto.photoUrl;
 
         return this.prisma.clientProfile.upsert({
             where: { userId: dto.userId },
@@ -66,21 +179,27 @@ export class ProfileService {
                 username: dto.username,
                 birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
                 gender: dto.gender,
-                photoUrl: dto.photoUrl,
+                photoUrl,
             },
             update: {
                 username: dto.username,
                 birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
                 gender: dto.gender,
-                photoUrl: dto.photoUrl,
+                photoUrl,
             },
         });
     }
 
-    async upsertPsychologistProfile(dto: PsychologistProfileDto) {
+    async upsertPsychologistProfile(dto: PsychologistProfileDto, photoFile?: Express.Multer.File) {
         const userId = dto.userId?.trim();
         const nik = dto.nik?.trim();
         const strNumber = dto.strNumber?.trim();
+        const education = this.parseStringArray((dto as unknown as { education?: unknown }).education) ?? dto.education ?? [];
+        const tags = this.parseStringArray((dto as unknown as { tags?: unknown }).tags) ?? dto.tags ?? [];
+        const clientsHandled = this.parseNumber((dto as unknown as { clientsHandled?: unknown }).clientsHandled) ?? dto.clientsHandled ?? 0;
+        const yearsExperience = this.parseNumber((dto as unknown as { yearsExperience?: unknown }).yearsExperience) ?? dto.yearsExperience;
+        const isAcceptingSessions = this.parseBoolean((dto as unknown as { isAcceptingSessions?: unknown }).isAcceptingSessions);
+        const sessionPrice = this.parseNumber((dto as unknown as { sessionPrice?: unknown }).sessionPrice) ?? dto.sessionPrice;
 
         if (!userId) {
             throw new BadRequestException('userId is required');
@@ -120,6 +239,10 @@ export class ProfileService {
             role: UserRole.PSYCHOLOGIST,
         });
 
+        const photoUrl = photoFile
+            ? await this.supabaseService.uploadFile(photoFile, this.getPublicBucket(), `psychologists/${userId}`)
+            : dto.photoUrl;
+
         const createData: Prisma.PsychologistUncheckedCreateInput = {
             userId,
             fullName: dto.fullName,
@@ -129,14 +252,15 @@ export class ProfileService {
             location: dto.location,
             clinicName: dto.clinicName,
             specialization: dto.specialization,
-            clientsHandled: dto.clientsHandled ?? 0,
-            yearsExperience: dto.yearsExperience,
+            clientsHandled,
+            yearsExperience,
             nik: nik ?? dto.nik,
             strNumber: strNumber ?? dto.strNumber,
             bio: dto.bio,
-            tags: dto.tags ?? [],
-            photoUrl: dto.photoUrl,
-            isAcceptingSessions: dto.isAcceptingSessions ?? true,
+            tags,
+            photoUrl,
+            isAcceptingSessions: isAcceptingSessions ?? dto.isAcceptingSessions ?? true,
+            sessionPrice: Math.max(0, Math.round(sessionPrice ?? 0)),
         };
 
         const updateData: Prisma.PsychologistUncheckedUpdateInput = {
@@ -147,15 +271,18 @@ export class ProfileService {
             location: dto.location,
             clinicName: dto.clinicName,
             specialization: dto.specialization,
-            clientsHandled: dto.clientsHandled ?? 0,
-            yearsExperience: dto.yearsExperience,
+            clientsHandled,
+            yearsExperience,
             nik: nik ?? dto.nik,
             strNumber: strNumber ?? dto.strNumber,
             bio: dto.bio,
-            tags: dto.tags ?? [],
-            photoUrl: dto.photoUrl,
+            tags,
+            photoUrl,
             ...(dto.isAcceptingSessions !== undefined
-                ? { isAcceptingSessions: dto.isAcceptingSessions }
+                ? { isAcceptingSessions: isAcceptingSessions ?? dto.isAcceptingSessions }
+                : {}),
+            ...(sessionPrice !== undefined
+                ? { sessionPrice: Math.max(0, Math.round(sessionPrice)) }
                 : {}),
         };
 
@@ -365,22 +492,42 @@ export class ProfileService {
         });
     }
 
-    async submitPsychologistDocuments(dto: PsychologistDocumentsDto) {
+    async submitPsychologistDocuments(dto: PsychologistDocumentsDto, files?: PsychologistDocumentFiles) {
+        const userId = dto.userId?.trim();
+
+        if (!userId) {
+            throw new BadRequestException('userId is required');
+        }
+
         const psychologist = await this.prisma.psychologist.findUnique({
-            where: { userId: dto.userId },
+            where: { userId },
         });
 
         if (!psychologist) {
             return null;
         }
 
+        const ktpUrl = files?.ktp
+            ? await this.supabaseService.uploadPrivateFile(files.ktp, this.getPrivateBucket(), `psychologists/${userId}`)
+            : dto.ktpUrl?.trim();
+        const faceWithKtpUrl = files?.faceWithKtp
+            ? await this.supabaseService.uploadPrivateFile(files.faceWithKtp, this.getPrivateBucket(), `psychologists/${userId}`)
+            : dto.faceWithKtpUrl?.trim();
+        const strLicenseUrl = files?.strLicense
+            ? await this.supabaseService.uploadPrivateFile(files.strLicense, this.getPrivateBucket(), `psychologists/${userId}`)
+            : dto.strLicenseUrl?.trim();
+
+        if (!ktpUrl || !faceWithKtpUrl || !strLicenseUrl) {
+            throw new BadRequestException('ktp, faceWithKtp, and strLicense are required');
+        }
+
         const docs = [
-            { type: 'KTP' as const, url: dto.ktpUrl },
-            { type: 'FACE_WITH_KTP' as const, url: dto.faceWithKtpUrl },
-            { type: 'STR_LICENSE' as const, url: dto.strLicenseUrl },
+            { type: 'KTP' as const, url: ktpUrl },
+            { type: 'FACE_WITH_KTP' as const, url: faceWithKtpUrl },
+            { type: 'STR_LICENSE' as const, url: strLicenseUrl },
         ];
 
-        return this.prisma.$transaction(
+        const savedDocs = await this.prisma.$transaction(
             docs.map((doc) =>
                 this.prisma.psychologistVerificationDoc.upsert({
                     where: {
@@ -401,6 +548,8 @@ export class ProfileService {
                 }),
             ),
         );
+
+        return this.signPsychologistDocuments({ documents: savedDocs });
     }
 
     async getClientProfile(userId: string) {
@@ -421,7 +570,7 @@ export class ProfileService {
             throw new NotFoundException('client profile not found');
         }
 
-        return profile;
+        return this.signPsychologistDocuments(profile);
     }
 
     async getPsychologistProfile(userId: string) {

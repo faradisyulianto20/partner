@@ -16,4 +16,5 @@ export class PsychologistProfileDto {
     bio?: string;
     tags?: string[];
     isAcceptingSessions?: boolean;
+    sessionPrice?: number;
 }
