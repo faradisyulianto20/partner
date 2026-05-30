@@ -275,18 +275,12 @@ Psychologist object with `education`, `documents`, `schedules`, and linked `user
 ### POST /profile/client
 Create or update the client profile.
 
-**Body**
-```json
-{
-  "userId": "user-id-optional",
-  "email": "user@mail.com",
-  "displayName": "Nazwa User",
-  "username": "nazwa",
-  "birthDate": "2000-01-01",
-  "gender": "FEMALE",
-  "photoUrl": "https://..."
-}
-```
+**Body** `multipart/form-data`
+- `username` required
+- `birthDate` optional
+- `gender` optional
+- `photo` optional file upload, saved to Supabase Storage and stored as `photoUrl`
+- Other text fields follow the same names as before (`userId`, `email`, `displayName`)
 
 **Response**
 The saved client profile.
@@ -294,28 +288,10 @@ The saved client profile.
 ### POST /profile/psychologist
 Create or update the psychologist profile.
 
-**Body**
-```json
-{
-  "userId": "user-id-optional",
-  "email": "psych@mail.com",
-  "fullName": "Dr. Shinta Prawiti",
-  "phoneNumber": "08123456789",
-  "gender": "FEMALE",
-  "location": "Jakarta",
-  "clinicName": "Partner Clinic",
-  "specialization": "Psikolog Klinis",
-  "yearsExperience": 5,
-  "nik": "1234567890123456",
-  "strNumber": "STR-12345",
-  "photoUrl": "https://...",
-  "education": ["S1 Psikologi UI", "S2 Psikologi Klinis UGM"],
-  "clientsHandled": 120,
-  "bio": "Berpengalaman menangani kecemasan dan burnout.",
-  "tags": ["Cemas", "Burnout"],
-  "isAcceptingSessions": true
-}
-```
+**Body** `multipart/form-data`
+- `fullName`, `phoneNumber`, `gender`, `location`, `clinicName`, `specialization`, `yearsExperience`, `nik`, and `strNumber` are required
+- `photo` optional file upload, saved to Supabase Storage and stored as `photoUrl`
+- `education` and `tags` can be sent as JSON strings like `["S1 Psikologi UI"]` or `["Cemas", "Burnout"]`
 
 **Response**
 The saved psychologist profile.
@@ -323,15 +299,11 @@ The saved psychologist profile.
 ### POST /profile/psychologist/documents
 Upload or update psychologist verification documents.
 
-**Body**
-```json
-{
-  "userId": "user-id-optional",
-  "ktpUrl": "https://...",
-  "faceWithKtpUrl": "https://...",
-  "strLicenseUrl": "https://..."
-}
-```
+**Body** `multipart/form-data`
+- `ktp` required file upload
+- `faceWithKtp` required file upload
+- `strLicense` required file upload
+- Each file is uploaded to Supabase Storage and the returned public URL is saved in the database
 
 **Response**
 Array of updated verification document records.
@@ -979,6 +951,17 @@ Voice assistant namespace.
 - `assistant_audio` → `{ chunk, mimeType, isLast }`
 - `error` → `{ message }`
 
+FE flow yang benar:
+
+1. connect ke namespace `/ai/voice`
+2. emit `start`
+3. tunggu `session`
+4. emit `audio`
+5. emit `stop`
+6. tunggu `transcript`, `assistant_text`, dan `assistant_audio`
+
+Kalau event di atas muncul berurutan di log FE, koneksi WebSocket sudah bekerja.
+
 ### `/partner/chat`
 Human / psychologist chat namespace.
 
@@ -1006,6 +989,19 @@ Human / psychologist chat namespace.
 **Server emits**
 - `joined` → `{ matchId, roomType }`
 - `message` → message object
+
+Room rule:
+
+- `roomType: HUMAN` untuk human partner match.
+- `roomType: PSYCHOLOGIST` untuk sesi psikolog.
+- `matchId` adalah room identifier; untuk psikolog gunakan `bookingId`.
+
+FE verification:
+
+1. dua client join room yang sama
+2. keduanya menerima `joined`
+3. saat satu client emit `message`, client lain menerima event `message`
+4. backend menyimpan message ke database
 
 ### `/partner/call`
 WebRTC signaling namespace.
@@ -1048,6 +1044,20 @@ WebRTC signaling namespace.
 - `offer` → `{ userId, offer }`
 - `answer` → `{ userId, answer }`
 - `ice` → `{ userId, candidate }`
+
+Room rule sama seperti chat:
+
+- `roomType: HUMAN` untuk human partner match.
+- `roomType: PSYCHOLOGIST` untuk sesi psikolog.
+- `matchId` harus sama di dua peer yang sedang call.
+
+FE verification:
+
+1. dua client join room yang sama
+2. client A emit `offer`, client B menerima `offer`
+3. client B emit `answer`, client A menerima `answer`
+4. kedua client saling emit `ice` dan diteruskan ke peer lain
+5. kalau event signaling jalan, layer WebRTC media sudah bisa dilanjutkan di FE
 
 ---
 

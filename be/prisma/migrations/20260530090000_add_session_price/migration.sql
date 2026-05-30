@@ -1,0 +1,2 @@
+ALTER TABLE "Psychologist"
+ADD COLUMN "sessionPrice" INTEGER NOT NULL DEFAULT 0;

@@ -447,15 +447,42 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{clientToken}}",
                                 "type": "text"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
                             }
                         ],
                         "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"email\": \"user@mail.com\",\n  \"displayName\": \"Nazwa User\",\n  \"username\": \"nazwa\",\n  \"birthDate\": \"2000-01-01\",\n  \"gender\": \"FEMALE\",\n  \"photoUrl\": \"https://...\"\n}"
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "email",
+                                    "value": "user@mail.com",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "displayName",
+                                    "value": "Nazwa User",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "username",
+                                    "value": "nazwa",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "birthDate",
+                                    "value": "2000-01-01",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "gender",
+                                    "value": "FEMALE",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "photo",
+                                    "type": "file",
+                                    "src": ""
+                                }
+                            ]
                         },
                         "url": {
                             "raw": "{{baseUrl}}/profile/client",
@@ -478,15 +505,97 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{psychologistToken}}",
                                 "type": "text"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
                             }
                         ],
                         "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"email\": \"psych@mail.com\",\n  \"fullName\": \"Dr. Shinta Prawiti\",\n  \"phoneNumber\": \"08123456789\",\n  \"gender\": \"FEMALE\",\n  \"location\": \"Jakarta\",\n  \"clinicName\": \"Partner Clinic\",\n  \"specialization\": \"Psikolog Klinis\",\n  \"yearsExperience\": 5,\n  \"nik\": \"1234567890123456\",\n  \"strNumber\": \"STR-12345\",\n  \"photoUrl\": \"https://...\",\n  \"education\": [\"S1 Psikologi UI\", \"S2 Psikologi Klinis UGM\"],\n  \"clientsHandled\": 120,\n  \"bio\": \"Berpengalaman menangani kecemasan dan burnout.\",\n  \"tags\": [\"Cemas\", \"Burnout\"],\n  \"isAcceptingSessions\": true\n}"
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "email",
+                                    "value": "psych@mail.com",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "fullName",
+                                    "value": "Dr. Shinta Prawiti",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "phoneNumber",
+                                    "value": "08123456789",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "gender",
+                                    "value": "FEMALE",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "location",
+                                    "value": "Jakarta",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "clinicName",
+                                    "value": "Partner Clinic",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "specialization",
+                                    "value": "Psikolog Klinis",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "yearsExperience",
+                                    "value": "5",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "nik",
+                                    "value": "1234567890123456",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "strNumber",
+                                    "value": "STR-12345",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "photo",
+                                    "type": "file",
+                                    "src": ""
+                                },
+                                {
+                                    "key": "education",
+                                    "value": "[\"S1 Psikologi UI\", \"S2 Psikologi Klinis UGM\"]",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "clientsHandled",
+                                    "value": "120",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "bio",
+                                    "value": "Berpengalaman menangani kecemasan dan burnout.",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "tags",
+                                    "value": "[\"Cemas\", \"Burnout\"]",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "isAcceptingSessions",
+                                    "value": "true",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "sessionPrice",
+                                    "value": "250000",
+                                    "type": "text"
+                                }
+                            ]
                         },
                         "url": {
                             "raw": "{{baseUrl}}/profile/psychologist",
@@ -509,15 +618,27 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{psychologistToken}}",
                                 "type": "text"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
                             }
                         ],
                         "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"ktpUrl\": \"https://...\",\n  \"faceWithKtpUrl\": \"https://...\",\n  \"strLicenseUrl\": \"https://...\"\n}"
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "ktp",
+                                    "type": "file",
+                                    "src": ""
+                                },
+                                {
+                                    "key": "faceWithKtp",
+                                    "type": "file",
+                                    "src": ""
+                                },
+                                {
+                                    "key": "strLicense",
+                                    "type": "file",
+                                    "src": ""
+                                }
+                            ]
                         },
                         "url": {
                             "raw": "{{baseUrl}}/profile/psychologist/documents",
@@ -842,7 +963,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"psychologistId\": \"{{psychologistId}}\",\n  \"fullName\": \"Suroto Ahmad\",\n  \"method\": \"VIDEO\",\n  \"price\": 250000,\n  \"notes\": \"Cemas karena pekerjaan\",\n  \"scheduledAt\": \"2026-05-29T07:00:00.000Z\"\n}"
+                            "raw": "{\n  \"psychologistId\": \"{{psychologistId}}\",\n  \"fullName\": \"Suroto Ahmad\",\n  \"method\": \"VIDEO\",\n  \"notes\": \"Cemas karena pekerjaan\",\n  \"selectedSlots\": [\n    \"2026-06-02T05:00:00.000Z\",\n    \"2026-06-02T06:00:00.000Z\"\n  ]\n}"
                         },
                         "url": {
                             "raw": "{{baseUrl}}/psychologist/booking",
@@ -852,6 +973,30 @@
                             "path": [
                                 "psychologist",
                                 "booking"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET Available Slots",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/{{psychologistId}}/available-slots?date={{date}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "{{psychologistId}}",
+                                "available-slots"
+                            ],
+                            "query": [
+                                {
+                                    "key": "date",
+                                    "value": "{{date}}"
+                                }
                             ]
                         }
                     }
@@ -968,6 +1113,56 @@
                                 "booking",
                                 "{{bookingId}}",
                                 "detail"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET My Upcoming Sessions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{clientToken}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/booking/me/upcoming",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "booking",
+                                "me",
+                                "upcoming"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET My Session History",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{clientToken}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/psychologist/booking/me/history",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "psychologist",
+                                "booking",
+                                "me",
+                                "history"
                             ]
                         }
                     }

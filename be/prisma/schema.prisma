@@ -131,6 +131,7 @@ model Psychologist {
     tags                String[]
     photoUrl            String?
     isAcceptingSessions Boolean  @default(true)
+    sessionPrice        Int      @default(0)
     rating              Float    @default(0)
     reviewCount         Int      @default(0)
     createdAt           DateTime @default(now())
