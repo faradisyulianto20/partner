@@ -88,6 +88,8 @@ class _InputDataPageState extends State<InputDataPage> {
         return;
       }
 
+      final psychologistId = (profileResp.data is Map ? (profileResp.data as Map)['id'] : null) as String?;
+
       // POST /profile/psychologist/documents
       final docBody = <String, dynamic>{
         'ktpUrl': _step3Data['ktpUrl'] ?? '',
@@ -97,6 +99,15 @@ class _InputDataPageState extends State<InputDataPage> {
 
       final docResp = await _apiClient.post('/profile/psychologist/documents', body: docBody);
       debugPrint('📥 POST /profile/psychologist/documents — status: ${docResp.statusCode}');
+
+      // POST /psychologist/verification/request
+      if (psychologistId != null) {
+        final verificationResp = await _apiClient.post(
+          '/psychologist/verification/request',
+          body: {'psychologistId': psychologistId},
+        );
+        debugPrint('📥 POST /psychologist/verification/request — status: ${verificationResp.statusCode}');
+      }
 
       if (!mounted) return;
       setState(() => _stepIndex = 3);

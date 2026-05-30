@@ -145,7 +145,6 @@ class _VerificationDocumentsStepState extends State<VerificationDocumentsStep> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
       ],
     );
   }
