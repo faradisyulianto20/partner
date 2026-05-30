@@ -23,6 +23,7 @@ class Booking extends StatefulWidget {
 }
 
 class _BookingState extends State<Booking> {
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   final List<String> _times = [
@@ -139,6 +140,11 @@ class _BookingState extends State<Booking> {
   }
 
   Future<void> _handleBooking() async {
+    final fullName = _nameController.text.trim();
+    if (fullName.isEmpty) {
+      _showErrorDialog('Silakan masukkan nama lengkap');
+      return;
+    }
     if (_dateController.text.isEmpty) {
       _showErrorDialog('Silakan pilih tanggal');
       return;
@@ -167,11 +173,13 @@ class _BookingState extends State<Booking> {
         int.parse(_selectedTime!.split(':')[1]),
       );
 
+      
+
       final response = await _psychologistService.createBooking(
         PsychologistBookingRequest(
           userId: userId,
           psychologistId: widget.psychologistId,
-          fullName: authState.displayName ?? 'Unknown',
+          fullName: fullName,
           method: _selectedMethod,
           price: widget.price,
           scheduledAt: bookingDateTime.toIso8601String(),
@@ -198,6 +206,7 @@ class _BookingState extends State<Booking> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _dateController.dispose();
     _notesController.dispose();
     super.dispose();
@@ -224,6 +233,40 @@ class _BookingState extends State<Booking> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
+                'Nama Lengkap',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1F4C7A),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  hintText: 'Masukkan nama lengkap Anda',
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFBFD0E6)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFBFD0E6)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFF1F4C7A)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
                 'Pilih Tanggal',
                 style: TextStyle(
                   fontSize: 14,
@@ -238,6 +281,41 @@ class _BookingState extends State<Booking> {
                 onTap: () => _pickDate(context),
                 decoration: InputDecoration(
                   hintText: 'dd/mm/yy',
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFBFD0E6)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFBFD0E6)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFF1F4C7A)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Catatan Tambahan',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1F4C7A),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _notesController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Tuliskan catatan atau keluhan Anda...',
                   filled: true,
                   fillColor: Colors.white,
                   contentPadding: const EdgeInsets.symmetric(
@@ -349,41 +427,7 @@ class _BookingState extends State<Booking> {
                   ),
                 ],
               ),
-              const SizedBox(height: 18),
-              const Text(
-                'Catatan Tambahan',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1F4C7A),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _notesController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'Tuliskan catatan atau keluhan Anda...',
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFBFD0E6)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFBFD0E6)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF1F4C7A)),
-                  ),
-                ),
-              ),
+              
               const SizedBox(height: 24),
               Row(
                 children: [

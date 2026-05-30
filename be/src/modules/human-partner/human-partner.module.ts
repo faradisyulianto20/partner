@@ -5,7 +5,11 @@ import { HumanPartnerChatGateway } from './human-partner.chat.gateway';
 import { HumanPartnerCallGateway } from './human-partner.call.gateway';
 
 @Module({
-    controllers: [HumanPartnerController],
-    providers: [HumanPartnerService, HumanPartnerChatGateway, HumanPartnerCallGateway],
+  controllers: [HumanPartnerController],
+  providers: [
+    HumanPartnerService,
+    HumanPartnerChatGateway,
+    HumanPartnerCallGateway,
+  ],
 })
-export class HumanPartnerModule { }
+export class HumanPartnerModule {}

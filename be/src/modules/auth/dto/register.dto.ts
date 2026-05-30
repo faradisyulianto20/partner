@@ -1,6 +1,6 @@
 export class RegisterDto {
-    email!: string;
-    password!: string;
-    displayName?: string;
-    role?: 'CLIENT' | 'PSYCHOLOGIST';
+  email!: string;
+  password!: string;
+  displayName?: string;
+  role?: 'CLIENT' | 'PSYCHOLOGIST';
 }

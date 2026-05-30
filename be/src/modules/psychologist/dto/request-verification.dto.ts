@@ -1,3 +1,3 @@
 export class RequestVerificationDto {
-    psychologistId!: string;
+  psychologistId!: string;
 }

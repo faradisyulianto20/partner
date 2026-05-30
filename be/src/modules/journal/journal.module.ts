@@ -6,8 +6,8 @@ import { JournalController } from './journal.controller';
 import { JournalService } from './journal.service';
 
 @Module({
-    imports: [ConfigModule, PrismaModule, AuthModule],
-    controllers: [JournalController],
-    providers: [JournalService],
+  imports: [ConfigModule, PrismaModule, AuthModule],
+  controllers: [JournalController],
+  providers: [JournalService],
 })
-export class JournalModule { }
+export class JournalModule {}

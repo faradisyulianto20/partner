@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hackathon/core/constants.dart';
+import 'package:hackathon/core/services/api_client.dart';
 
 class Income extends StatefulWidget {
   const Income({super.key});
@@ -12,51 +14,72 @@ class _IncomeState extends State<Income> {
   final Color _primaryColor = const Color(0xFF1B517A);
   final Color _softBlue = const Color(0xFF7DA0C4);
   bool _isWithdrawing = false;
+  bool _isLoading = true;
 
-  final List<_IncomeItem> _items = const [
-    _IncomeItem(
-      title: 'Pembayaran Masuk',
-      date: '12 September 2026',
-      time: '10:00 WIB',
-      amount: '+Rp. 150.000',
-    ),
-    _IncomeItem(
-      title: 'Pembayaran Masuk',
-      date: '12 September 2026',
-      time: '14:00 WIB',
-      amount: '+Rp. 150.000',
-    ),
-    _IncomeItem(
-      title: 'Pembayaran Masuk',
-      date: '12 September 2026',
-      time: '14:00 WIB',
-      amount: '+Rp. 150.000',
-    ),
-    _IncomeItem(
-      title: 'Pembayaran Masuk',
-      date: '12 September 2026',
-      time: '14:00 WIB',
-      amount: '+Rp. 150.000',
-    ),
-    _IncomeItem(
-      title: 'Pembayaran Masuk',
-      date: '12 September 2026',
-      time: '14:00 WIB',
-      amount: '+Rp. 150.000',
-    ),
-    _IncomeItem(
-      title: 'Pembayaran Masuk',
-      date: '12 September 2026',
-      time: '14:00 WIB',
-      amount: '+Rp. 150.000',
-    ),
-    _IncomeItem(
-      title: 'Pembayaran Masuk',
-      date: '12 September 2026',
-      time: '14:00 WIB',
-      amount: '+Rp. 150.000',
-    ),
-  ];
+  late final ApiClient _apiClient = ApiClient(
+    baseUrl: AppConstants.baseUrl,
+    autoLoadToken: true,
+  );
+
+  int _totalBalance = 0;
+  List<_IncomeItem> _items = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchIncome();
+  }
+
+  Future<void> _fetchIncome() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await _apiClient.get<Map<String, dynamic>>(
+        '/psychologist/me/income',
+        query: {'limit': '50'},
+      );
+
+      if (!mounted) return;
+
+      if (response.isSuccess) {
+        final data = response.data;
+        setState(() {
+          _totalBalance = (data['totalBalance'] as num?)?.toInt() ?? 0;
+
+          final raw = data['transactions'];
+          if (raw is List) {
+            _items = raw.map((t) {
+              final tx = t as Map<String, dynamic>;
+              return _IncomeItem(
+                title: tx['title'] as String? ?? 'Pembayaran Masuk',
+                date: tx['dateLabel'] as String? ?? '',
+                time: tx['timeLabel'] as String? ?? '',
+                amount: tx['amountLabel'] as String? ?? '',
+                clientName: tx['clientName'] as String? ?? '',
+              );
+            }).toList();
+          } else {
+            _items = [];
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Fetch income error: $e');
+    }
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+  }
+
+  String _formatRupiah(int amount) {
+    if (amount == 0) return 'Rp. 0';
+    final regExp = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
+    final formatted = amount.toString().replaceAllMapped(
+      regExp,
+      (Match m) => '${m[1]}.',
+    );
+    return 'Rp. $formatted';
+  }
 
   Future<void> _withdrawBalance() async {
     if (_isWithdrawing) return;
@@ -68,9 +91,7 @@ class _IncomeState extends State<Income> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -82,44 +103,38 @@ class _IncomeState extends State<Income> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: Colors.white,
-            size: 20,
-          ),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           'Riwayat Pendapatan',
           style: GoogleFonts.nunito(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
+            fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white,
           ),
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildTotalCard(),
-              const SizedBox(height: 18),
-              Text(
-                'Riwayat Pembayaran',
-                style: GoogleFonts.nunito(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: _primaryColor,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildTotalCard(),
+                    const SizedBox(height: 18),
+                    Text(
+                      'Riwayat Pembayaran',
+                      style: GoogleFonts.nunito(
+                        fontSize: 13, fontWeight: FontWeight.w800, color: _primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildHistoryCard(),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              _buildHistoryCard(),
-            ],
-          ),
-        ),
-      ),
+            ),
       bottomNavigationBar: SafeArea(
         top: false,
         child: Container(
@@ -164,18 +179,14 @@ class _IncomeState extends State<Income> {
           Text(
             'Total Saldo',
             style: GoogleFonts.nunito(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Colors.white70,
+              fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white70,
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            'Rp. 10.650.000',
+            _formatRupiah(_totalBalance),
             style: GoogleFonts.nunito(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
+              fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white,
             ),
           ),
         ],
@@ -184,6 +195,30 @@ class _IncomeState extends State<Income> {
   }
 
   Widget _buildHistoryCard() {
+    if (_items.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _softBlue, width: 1),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.receipt_long_outlined, size: 48, color: _softBlue),
+            const SizedBox(height: 12),
+            Text(
+              'Belum ada transaksi',
+              style: GoogleFonts.nunito(
+                fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black54,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -234,18 +269,14 @@ class _IncomeState extends State<Income> {
                 Text(
                   item.title,
                   style: GoogleFonts.nunito(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: _primaryColor,
+                    fontSize: 12, fontWeight: FontWeight.w800, color: _primaryColor,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${item.date} - ${item.time}',
                   style: GoogleFonts.nunito(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black54,
+                    fontSize: 10, fontWeight: FontWeight.w600, color: Colors.black54,
                   ),
                 ),
               ],
@@ -254,9 +285,7 @@ class _IncomeState extends State<Income> {
           Text(
             item.amount,
             style: GoogleFonts.nunito(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: _primaryColor,
+              fontSize: 12, fontWeight: FontWeight.w800, color: _primaryColor,
             ),
           ),
         ],
@@ -272,30 +301,20 @@ class _IncomeState extends State<Income> {
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 14),
           backgroundColor: _primaryColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         icon: _isWithdrawing
             ? const SizedBox(
-                width: 16,
-                height: 16,
+                width: 16, height: 16,
                 child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
+                  strokeWidth: 2, color: Colors.white,
                 ),
               )
-            : const Icon(
-                Icons.account_balance_wallet_outlined,
-                color: Colors.white,
-                size: 18,
-              ),
+            : const Icon(Icons.account_balance_wallet_outlined, color: Colors.white, size: 18),
         label: Text(
           _isWithdrawing ? 'Memproses...' : 'Tarik Saldo',
           style: GoogleFonts.nunito(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
+            fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white,
           ),
         ),
       ),
@@ -308,11 +327,13 @@ class _IncomeItem {
   final String date;
   final String time;
   final String amount;
+  final String clientName;
 
   const _IncomeItem({
     required this.title,
     required this.date,
     required this.time,
     required this.amount,
+    required this.clientName,
   });
 }

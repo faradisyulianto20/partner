@@ -1,8 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
 import 'package:hackathon/core/constants.dart';
+import 'package:hackathon/core/services/api_client.dart';
 
 class ProfileService extends StatefulWidget {
   const ProfileService({super.key});
@@ -17,6 +19,10 @@ class _ProfileServiceState extends State<ProfileService> {
   final _nameController = TextEditingController();
   final _aboutController = TextEditingController();
   final _priceController = TextEditingController(text: '100000');
+  static final String _baseUrl = AppConstants.baseUrl;
+  late final ApiClient _apiClient = ApiClient(baseUrl: _baseUrl, autoLoadToken: true);
+  String? _photoBase64;
+  bool _isUploading = false;
 
   // Ganti _specialties yang hardcoded dengan getter
   List<String> get _allSpecialties {
@@ -64,11 +70,61 @@ class _ProfileServiceState extends State<ProfileService> {
 
     setState(() => _isSaving = true);
 
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+    try {
+      final rawEducation = _psychologistData?['education'];
+      late List<String> educationList;
+      if (rawEducation is List) {
+        educationList = rawEducation.map((e) {
+          if (e is Map) {
+            final level = e['level']?.toString() ?? '';
+            final institution = e['institution']?.toString() ?? '';
+            return '${level.isNotEmpty ? '$level - ' : ''}$institution';
+          }
+          return e.toString();
+        }).toList();
+      } else {
+        educationList = [];
+      }
+
+      final data = <String, dynamic>{
+        'email': _psychologistData?['email'] ?? '',
+        'fullName': _nameController.text.trim(),
+        'phoneNumber': _psychologistData?['phoneNumber'] ?? '',
+        'gender': _psychologistData?['gender'] ?? 'MALE',
+        'location': _psychologistData?['location'] ?? '',
+        'clinicName': _psychologistData?['clinicName'] ?? '',
+        'specialization': _psychologistData?['specialization'] ?? '',
+        'yearsExperience': _psychologistData?['yearsExperience'] ?? 0,
+        'nik': _psychologistData?['nik'] ?? '',
+        'strNumber': _psychologistData?['strNumber'] ?? '',
+        'education': educationList,
+        'clientsHandled': _psychologistData?['clientsHandled'] ?? 0,
+        'bio': _aboutController.text.trim(),
+        'tags': _selectedSpecialties.toList(),
+        'isAcceptingSessions': _psychologistData?['isAcceptingSessions'] ?? true,
+      };
+      if (_photoBase64 != null) {
+        data['photoUrl'] = _photoBase64;
+      } else if (_psychologistData?['photoUrl'] != null) {
+        data['photoUrl'] = _psychologistData?['photoUrl'];
+      }
+
+      final response = await _apiClient.post('/profile/psychologist', body: data);
+      if (response.isSuccess) {
+        if (!mounted) return;
+        _showSnackBar('Perubahan berhasil disimpan.');
+      } else {
+        if (!mounted) return;
+        _showSnackBar('Gagal menyimpan perubahan.');
+      }
+    } catch (e) {
+      debugPrint('Save changes error: $e');
+      if (!mounted) return;
+      _showSnackBar('Terjadi kesalahan.');
+    }
 
     if (!mounted) return;
     setState(() => _isSaving = false);
-    _showSnackBar('Perubahan berhasil disimpan.');
   }
 
   void _showSnackBar(String message) {
@@ -77,28 +133,102 @@ class _ProfileServiceState extends State<ProfileService> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  static const String _psychologistId = '4a63c647-72f7-4cd7-8e45-476b6ffdd8f4';
-  static String get _baseUrl => AppConstants.baseUrl;
+  Future<void> _pickAndUploadPhoto() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70, maxWidth: 512);
+    if (picked == null) return;
+
+    setState(() => _isUploading = true);
+
+    try {
+      final bytes = await picked.readAsBytes();
+      final base64Str = base64Encode(bytes);
+      final dataUri = 'data:image/jpeg;base64,$base64Str';
+
+      final rawEducation = _psychologistData?['education'];
+      late List<String> educationList;
+      if (rawEducation is List) {
+        educationList = rawEducation.map((e) {
+          if (e is Map) {
+            final level = e['level']?.toString() ?? '';
+            final institution = e['institution']?.toString() ?? '';
+            return '${level.isNotEmpty ? '$level - ' : ''}$institution';
+          }
+          return e.toString();
+        }).toList();
+      } else {
+        educationList = [];
+      }
+
+      final data = <String, dynamic>{
+        'email': _psychologistData?['email'] ?? '',
+        'fullName': _nameController.text.trim(),
+        'phoneNumber': _psychologistData?['phoneNumber'] ?? '',
+        'gender': _psychologistData?['gender'] ?? 'MALE',
+        'location': _psychologistData?['location'] ?? '',
+        'clinicName': _psychologistData?['clinicName'] ?? '',
+        'specialization': _psychologistData?['specialization'] ?? '',
+        'yearsExperience': _psychologistData?['yearsExperience'] ?? 0,
+        'nik': _psychologistData?['nik'] ?? '',
+        'strNumber': _psychologistData?['strNumber'] ?? '',
+        'education': educationList,
+        'clientsHandled': _psychologistData?['clientsHandled'] ?? 0,
+        'bio': _aboutController.text.trim(),
+        'tags': _selectedSpecialties.toList(),
+        'isAcceptingSessions': _psychologistData?['isAcceptingSessions'] ?? true,
+        'photoUrl': dataUri,
+      };
+
+      final response = await _apiClient.post('/profile/psychologist', body: data);
+      if (response.isSuccess) {
+        setState(() {
+          _photoBase64 = dataUri;
+          _psychologistData ??= {};
+          _psychologistData!['photoUrl'] = dataUri;
+        });
+        _showSnackBar('Foto profil berhasil diperbarui.');
+      } else {
+        _showSnackBar('Gagal mengunggah foto.');
+      }
+    } catch (e) {
+      debugPrint('Upload photo error: $e');
+      _showSnackBar('Terjadi kesalahan.');
+    }
+    setState(() => _isUploading = false);
+  }
+
+  ImageProvider _getImageProvider(String? url) {
+    if (_photoBase64 != null) {
+      return MemoryImage(base64Decode(_photoBase64!.split(',').last));
+    }
+    if (url != null && url.startsWith('data:')) {
+      final parts = url.split(',');
+      if (parts.length == 2) {
+        return MemoryImage(base64Decode(parts[1]));
+      }
+    }
+    if (url != null) return NetworkImage(url);
+    return const AssetImage('assets/images/doctor1.png');
+  }
+
   Map<String, dynamic>? _psychologistData;
 
   Future<void> _fetchPsychologistProfile() async {
-    final uri = Uri.parse('$_baseUrl/psychologist/$_psychologistId');
-
     try {
-      final response = await http.get(
-        uri,
-        headers: {'Content-Type': 'application/json'},
+      final response = await _apiClient.get<Map<String, dynamic>>(
+        '/profile/me/psychologist',
       );
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body);
+      if (!mounted) return;
+
+      if (response.isSuccess) {
+        final data = response.data;
         setState(() {
           _psychologistData = data;
 
           _nameController.text = data['fullName'] ?? '';
           _aboutController.text = data['bio'] ?? '';
 
-          // Populate selected specialties dari tags
           final tags =
               (data['tags'] as List<dynamic>?)
                   ?.map((e) => e.toString())
@@ -109,9 +239,7 @@ class _ProfileServiceState extends State<ProfileService> {
             ..addAll(tags);
         });
       } else {
-        debugPrint(
-          'Fetch failed: status ${response.statusCode} — ${response.body}',
-        );
+        debugPrint('Fetch failed: status ${response.statusCode}');
       }
     } catch (e, stackTrace) {
       debugPrint('Error fetching psychologist profile: $e');
@@ -264,25 +392,37 @@ class _ProfileServiceState extends State<ProfileService> {
                 backgroundColor: Colors.white,
                 child: CircleAvatar(
                   radius: 42,
-                  backgroundImage: const AssetImage(
-                    'assets/images/doctor1.png',
-                  ),
+                  backgroundImage: _getImageProvider(_psychologistData?['photoUrl'] as String?),
                   backgroundColor: Colors.white,
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1B517A),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
+              if (_isUploading)
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1B517A),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  ),
+                )
+              else
+                GestureDetector(
+                  onTap: _pickAndUploadPhoto,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1B517A),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                  ),
                 ),
-                child: const Icon(
-                  Icons.camera_alt,
-                  size: 16,
-                  color: Colors.white,
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 8),

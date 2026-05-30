@@ -1,25 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/constants.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:hackathon/core/models/psychologist_models.dart';
 import 'package:hackathon/core/services/api_client.dart';
 import 'package:hackathon/core/services/psychologist_service.dart';
-import 'package:go_router/go_router.dart';
 
-enum PartnerFilter { matchCondition, lowestPrice, highestPrice }
+enum PartnerFilter { matchCondition, lowestRating, highestRating }
 
 class ProfessionalPartnerPage extends StatefulWidget {
   const ProfessionalPartnerPage({super.key});
 
   @override
-  State<ProfessionalPartnerPage> createState() => _ProfessionalPartnerState();
+  State<ProfessionalPartnerPage> createState() =>
+      _ProfessionalPartnerPageState();
 }
 
-class _ProfessionalPartnerState extends State<ProfessionalPartnerPage> {
+class _ProfessionalPartnerPageState extends State<ProfessionalPartnerPage> {
+  late PsychologistService _psychologistService;
   final TextEditingController _searchController = TextEditingController();
-  late final PsychologistService _service = PsychologistService(
-    ApiClient(baseUrl: AppConstants.baseUrl),
-  );
 
   List<PsychologistListItem> _allItems = [];
   bool _isLoading = true;
@@ -29,6 +27,9 @@ class _ProfessionalPartnerState extends State<ProfessionalPartnerPage> {
   @override
   void initState() {
     super.initState();
+    _psychologistService = PsychologistService(
+      ApiClient(baseUrl: AppConstants.baseUrl),
+    );
     _fetchPsychologists();
   }
 
@@ -44,24 +45,28 @@ class _ProfessionalPartnerState extends State<ProfessionalPartnerPage> {
       _errorMessage = null;
     });
 
-    // Pastikan service kamu mereturn ApiResponse<List<PsychologistListItem>>
-    final response = await _service.search(
-      const PsychologistSearchRequest(limit: 20),
-    );
+    try {
+      final response = await _psychologistService.search(
+        const PsychologistSearchRequest(limit: 50),
+      );
+      if (!mounted) return;
 
-    if (!mounted) return;
-
-    if (response.isSuccess) {
+      if (response.isSuccess) {
+        setState(() {
+          _allItems = response.data;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage = 'Gagal memuat data psikolog';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
       setState(() {
-        // Pastikan di service, data yang diparsing sudah berbentuk List langsung
-        _allItems = response.data;
+        _errorMessage = 'Error: ${e.toString()}';
         _isLoading = false;
-      });
-    } else {
-      setState(() {
-        _isLoading = false;
-        // Tangkap pesan error dari server untuk ditampilkan di layar 'Coba Lagi'
-        _errorMessage = 'Gagal memuat data partner';
       });
     }
   }
@@ -77,10 +82,9 @@ class _ProfessionalPartnerState extends State<ProfessionalPartnerPage> {
           p.clinicName.toLowerCase().contains(query);
     }).toList();
 
-    if (_filters.contains(PartnerFilter.lowestPrice)) {
-      // Sort by rating ascending sebagai proxy (harga belum ada di response)
+    if (_filters.contains(PartnerFilter.lowestRating)) {
       result.sort((a, b) => a.rating.compareTo(b.rating));
-    } else if (_filters.contains(PartnerFilter.highestPrice)) {
+    } else if (_filters.contains(PartnerFilter.highestRating)) {
       result.sort((a, b) => b.rating.compareTo(a.rating));
     }
 
@@ -91,10 +95,10 @@ class _ProfessionalPartnerState extends State<ProfessionalPartnerPage> {
     switch (value) {
       case PartnerFilter.matchCondition:
         return 'Sesuai Kondisi';
-      case PartnerFilter.lowestPrice:
-        return 'Harga Terendah';
-      case PartnerFilter.highestPrice:
-        return 'Harga Tertinggi';
+      case PartnerFilter.lowestRating:
+        return 'Rating Terendah';
+      case PartnerFilter.highestRating:
+        return 'Rating Tertinggi';
     }
   }
 
@@ -125,7 +129,7 @@ class _ProfessionalPartnerState extends State<ProfessionalPartnerPage> {
                       controller: _searchController,
                       onChanged: (_) => setState(() {}),
                       decoration: InputDecoration(
-                        hintText: 'Cari psikolog',
+                        hintText: 'Cari psikolog...',
                         prefixIcon: const Icon(
                           Icons.search,
                           color: Color(0xFF7A8CA5),
@@ -160,13 +164,11 @@ class _ProfessionalPartnerState extends State<ProfessionalPartnerPage> {
                   PopupMenuButton<PartnerFilter>(
                     onSelected: (value) {
                       setState(() {
-                        // Bersihkan filter harga yang berlawanan sebelum menambahkan yang baru
-                        if (value == PartnerFilter.lowestPrice) {
-                          _filters.remove(PartnerFilter.highestPrice);
-                        } else if (value == PartnerFilter.highestPrice) {
-                          _filters.remove(PartnerFilter.lowestPrice);
+                        if (value == PartnerFilter.lowestRating) {
+                          _filters.remove(PartnerFilter.highestRating);
+                        } else if (value == PartnerFilter.highestRating) {
+                          _filters.remove(PartnerFilter.lowestRating);
                         }
-
                         if (_filters.contains(value)) {
                           if (_filters.length > 1) _filters.remove(value);
                         } else {
@@ -254,6 +256,22 @@ class _ProfessionalPartnerState extends State<ProfessionalPartnerPage> {
                       ),
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: () => context.push(
+                      '/partner/professional-partner/my-appointments',
+                    ),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF1B517A)),
+                      ),
+                      // Jangan lupa masukkan child berupa Icon/Widget di sini jika ada
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -292,25 +310,25 @@ class _ProfessionalPartnerState extends State<ProfessionalPartnerPage> {
                       ),
                     )
                   : _filtered.isEmpty
-                  ? const Center(child: Text('Tidak ada psikolog yang cocok.'))
+                  ? const Center(
+                      child: Text(
+                        'Tidak ada psikolog yang cocok.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    )
                   : RefreshIndicator(
                       onRefresh: _fetchPsychologists,
                       color: const Color(0xFF1B517A),
-                      child: // Ubah bagian ListView.builder di ProfessionalPartnerPage menjadi seperti ini:
-                      ListView.builder(
+                      child: ListView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                         itemCount: _filtered.length,
                         itemBuilder: (context, index) {
                           final psychologist = _filtered[index];
                           return _PsychologistCard(
                             item: psychologist,
-                            onTap: () {
-                              print("ini ditekan");
-                              // Navigasi menggunakan GoRouter dengan menginjeksikan id psikolog
-                              context.push(
-                                '/partner/professional-partner/detail/${psychologist.id}',
-                              );
-                            },
+                            onTap: () => context.push(
+                              '/partner/professional-partner/detail/${psychologist.id}',
+                            ),
                           );
                         },
                       ),
@@ -323,7 +341,6 @@ class _ProfessionalPartnerState extends State<ProfessionalPartnerPage> {
   }
 }
 
-// ── Card Widget ──
 class _PsychologistCard extends StatelessWidget {
   final PsychologistListItem item;
   final VoidCallback? onTap;
@@ -334,7 +351,6 @@ class _PsychologistCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -347,48 +363,55 @@ class _PsychologistCard extends StatelessWidget {
         ],
       ),
       child: Material(
-        color: Colors.transparent, // Biarkan warna container yang terlihat
+        color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16), // Samakan agar efek klik tidak luber
-          onTap: onTap, // Memicu fungsi navigasi GoRouter dari halaman utama
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(16), // Padding dipindah ke dalam InkWell agar seluruh area kartu bisa diklik
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 // Avatar
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: const Color(0xFFDCEAF5),
-                  child: Text(
-                    item.fullName.isNotEmpty ? item.fullName[0] : '?',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1B517A),
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    color: const Color(0xFFDCEAF5),
+                  ),
+                  child: Center(
+                    child: Text(
+                      item.fullName.isNotEmpty ? item.fullName[0] : '?',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1B517A),
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                // Info Lengkap Dokter
+                const SizedBox(width: 14),
+
+                // Info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         item.fullName,
-                        style: GoogleFonts.nunito(
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
-                          color: const Color(0xFF1B517A),
+                          color: Color(0xFF1B517A),
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         item.specialization,
-                        style: GoogleFonts.nunito(
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF4D79A6),
+                          color: Color(0xFF4D79A6),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -403,9 +426,9 @@ class _PsychologistCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               '${item.clinicName} · ${item.location}',
-                              style: GoogleFonts.nunito(
+                              style: const TextStyle(
                                 fontSize: 11,
-                                color: const Color(0xFF94A3B8),
+                                color: Color(0xFF94A3B8),
                                 fontWeight: FontWeight.w600,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -416,7 +439,8 @@ class _PsychologistCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Rating & Ulasan
+
+                // Rating
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -430,10 +454,10 @@ class _PsychologistCard extends StatelessWidget {
                         const SizedBox(width: 2),
                         Text(
                           item.rating.toStringAsFixed(1),
-                          style: GoogleFonts.nunito(
+                          style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: const Color(0xFF1B517A),
+                            color: Color(0xFF1B517A),
                           ),
                         ),
                       ],
@@ -441,9 +465,9 @@ class _PsychologistCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       '${item.reviewCount} ulasan',
-                      style: GoogleFonts.nunito(
+                      style: const TextStyle(
                         fontSize: 11,
-                        color: const Color(0xFF94A3B8),
+                        color: Color(0xFF94A3B8),
                       ),
                     ),
                   ],
@@ -452,7 +476,7 @@ class _PsychologistCard extends StatelessWidget {
             ),
           ),
         ),
-      )
+      ),
     );
   }
 }

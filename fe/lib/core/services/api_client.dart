@@ -120,6 +120,68 @@ class ApiClient {
     return ApiResponse(statusCode: response.statusCode, data: data);
   }
 
+  Future<ApiResponse<T>> put<T>(
+    String path, {
+    Object? body,
+    Map<String, String>? headers,
+    T Function(Object? json)? parser,
+  }) async {
+    final uri = _buildUri(path);
+    final requestHeaders = await _defaultHeaders();
+    if (body != null) {
+      requestHeaders['Content-Type'] = 'application/json';
+    }
+    if (headers != null) requestHeaders.addAll(headers);
+
+    final response = await _client.put(
+      uri,
+      headers: requestHeaders,
+      body: body != null ? jsonEncode(body) : null,
+    );
+    final parsed = _decodeBody(response.body);
+    final data = parser != null ? parser(parsed) : parsed as T;
+    return ApiResponse(statusCode: response.statusCode, data: data);
+  }
+
+  Future<ApiResponse<T>> patch<T>(
+    String path, {
+    Object? body,
+    Map<String, String>? headers,
+    T Function(Object? json)? parser,
+  }) async {
+    final uri = _buildUri(path);
+    final requestHeaders = await _defaultHeaders();
+    if (body != null) {
+      requestHeaders['Content-Type'] = 'application/json';
+    }
+    if (headers != null) requestHeaders.addAll(headers);
+
+    final response = await _client.patch(
+      uri,
+      headers: requestHeaders,
+      body: body != null ? jsonEncode(body) : null,
+    );
+    final parsed = _decodeBody(response.body);
+    final data = parser != null ? parser(parsed) : parsed as T;
+    return ApiResponse(statusCode: response.statusCode, data: data);
+  }
+
+  Future<ApiResponse<T>> delete<T>(
+    String path, {
+    Map<String, dynamic>? query,
+    Map<String, String>? headers,
+    T Function(Object? json)? parser,
+  }) async {
+    final uri = _buildUri(path, query);
+    final requestHeaders = await _defaultHeaders();
+    if (headers != null) requestHeaders.addAll(headers);
+
+    final response = await _client.delete(uri, headers: requestHeaders);
+    final parsed = _decodeBody(response.body);
+    final data = parser != null ? parser(parsed) : parsed as T;
+    return ApiResponse(statusCode: response.statusCode, data: data);
+  }
+
   void close() => _client.close();
 
   Future<Map<String, String>> _defaultHeaders() async {

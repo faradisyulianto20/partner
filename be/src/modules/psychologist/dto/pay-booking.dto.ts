@@ -1,3 +1,3 @@
 export class PayBookingDto {
-    userId!: string;
+  userId!: string;
 }

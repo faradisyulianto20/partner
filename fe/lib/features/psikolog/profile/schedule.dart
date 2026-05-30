@@ -1,5 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hackathon/core/constants.dart';
+import 'package:hackathon/core/services/api_client.dart';
+
+const List<String> _dayLabels = [
+  'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu',
+];
+
+const Map<String, int> _labelToDayOfWeek = {
+  'Senin': 1, 'Selasa': 2, 'Rabu': 3, 'Kamis': 4,
+  'Jumat': 5, 'Sabtu': 6, 'Minggu': 7,
+};
 
 class Schedule extends StatefulWidget {
   const Schedule({super.key});
@@ -12,51 +23,63 @@ class _ScheduleState extends State<Schedule> {
   final Color _primaryColor = const Color(0xFF1B517A);
   final Color _softBlue = const Color(0xFF7DA0C4);
 
-  late final List<_DaySchedule> _days;
+  late final ApiClient _apiClient = ApiClient(
+    baseUrl: AppConstants.baseUrl,
+    autoLoadToken: true,
+  );
+
+  late List<_DaySchedule> _days;
   bool _isSaving = false;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _days = [
-      _DaySchedule(
-        label: 'Senin',
-        start: '09:00',
-        end: '17:00',
-        isActive: true,
-      ),
-      _DaySchedule(
-        label: 'Selasa',
-        start: '09:00',
-        end: '17:00',
-        isActive: true,
-      ),
-      _DaySchedule(label: 'Rabu', start: '09:00', end: '17:00', isActive: true),
-      _DaySchedule(
-        label: 'Kamis',
-        start: '09:00',
-        end: '17:00',
-        isActive: true,
-      ),
-      _DaySchedule(
-        label: 'Jumat',
-        start: '09:00',
-        end: '15:00',
-        isActive: true,
-      ),
-      _DaySchedule(
-        label: 'Sabtu',
-        start: '09:00',
-        end: '17:00',
-        isActive: false,
-      ),
-      _DaySchedule(
-        label: 'Minggu',
-        start: '09:00',
-        end: '17:00',
-        isActive: false,
-      ),
-    ];
+    _days = _dayLabels.map((label) => _DaySchedule(
+      label: label,
+      start: '09:00',
+      end: '17:00',
+      isActive: false,
+    )).toList();
+    _fetchSchedules();
+  }
+
+  Future<void> _fetchSchedules() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await _apiClient.get<Map<String, dynamic>>(
+        '/profile/me/psychologist',
+      );
+
+      if (!mounted) return;
+
+      if (response.isSuccess) {
+        final raw = response.data['schedules'];
+        if (raw is List) {
+          for (final s in raw) {
+            if (s is! Map) continue;
+            final dayOfWeek = s['dayOfWeek'] as int?;
+            final startTime = s['startTime'] as String? ?? '09:00';
+            final endTime = s['endTime'] as String? ?? '17:00';
+            final isAvailable = s['isAvailable'] as bool? ?? false;
+
+            final idx = _days.indexWhere((d) =>
+                _labelToDayOfWeek[d.label] == dayOfWeek);
+            if (idx != -1) {
+              _days[idx].start = startTime;
+              _days[idx].end = endTime;
+              _days[idx].isActive = isAvailable;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Fetch schedules error: $e');
+    }
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
   }
 
   @override
@@ -68,43 +91,37 @@ class _ScheduleState extends State<Schedule> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: Colors.white,
-            size: 20,
-          ),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           'Pengaturan Jadwal',
           style: GoogleFonts.nunito(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
+            fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white,
           ),
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildInfoCard(),
-              const SizedBox(height: 16),
-              Column(
-                children: _days
-                    .map(
-                      (day) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _buildDayCard(day),
-                      ),
-                    )
-                    .toList(),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildInfoCard(),
+                    const SizedBox(height: 16),
+                    Column(
+                      children: _days
+                          .map((day) => Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _buildDayCard(day),
+                              ))
+                          .toList(),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
       ),
       bottomNavigationBar: SafeArea(
         top: false,
@@ -144,17 +161,13 @@ class _ScheduleState extends State<Schedule> {
           Text(
             'Jam Praktik Mingguan',
             style: GoogleFonts.nunito(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
+              fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white,
             ),
           ),
           Text(
             'Klien hanya dapat memesan sesi pada rentang waktu yang Anda aktifkan di bawah ini',
             style: GoogleFonts.nunito(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: Colors.white70,
+              fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white70,
             ),
           ),
         ],
@@ -185,15 +198,12 @@ class _ScheduleState extends State<Schedule> {
                 child: Text(
                   day.label,
                   style: GoogleFonts.nunito(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: _primaryColor,
+                    fontSize: 16, fontWeight: FontWeight.w800, color: _primaryColor,
                   ),
                 ),
               ),
               Transform.scale(
-                scale:
-                    0.8, // <--- Angka di bawah 1.0 untuk memperkecil (misal jadi 80%)
+                scale: 0.8,
                 child: Switch(
                   value: day.isActive,
                   onChanged: (value) => setState(() => day.isActive = value),
@@ -221,9 +231,7 @@ class _ScheduleState extends State<Schedule> {
                 Text(
                   '—',
                   style: GoogleFonts.nunito(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: _primaryColor,
+                    fontSize: 16, fontWeight: FontWeight.w700, color: _primaryColor,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -256,9 +264,7 @@ class _ScheduleState extends State<Schedule> {
         child: Text(
           label,
           style: GoogleFonts.nunito(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: _primaryColor,
+            fontSize: 12, fontWeight: FontWeight.w700, color: _primaryColor,
           ),
         ),
       ),
@@ -300,10 +306,41 @@ class _ScheduleState extends State<Schedule> {
     }
 
     setState(() => _isSaving = true);
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+
+    try {
+      final schedules = _days
+          .where((d) => d.isActive)
+          .map((d) => {
+                'dayOfWeek': _labelToDayOfWeek[d.label],
+                'startTime': d.start,
+                'endTime': d.end,
+                'isAvailable': true,
+              })
+          .toList();
+
+      final body = <String, dynamic>{'schedules': schedules};
+
+      final response = await _apiClient.put(
+        '/psychologist/me/schedules',
+        body: body,
+      );
+
+      if (!mounted) return;
+
+      if (response.isSuccess) {
+        _showSnackBar('Jadwal berhasil disimpan.');
+        await _fetchSchedules();
+      } else {
+        _showSnackBar('Gagal menyimpan jadwal.');
+      }
+    } catch (e) {
+      debugPrint('Save schedule error: $e');
+      if (!mounted) return;
+      _showSnackBar('Terjadi kesalahan.');
+    }
+
     if (!mounted) return;
     setState(() => _isSaving = false);
-    _showSnackBar('Jadwal berhasil disimpan.');
   }
 
   bool _isValidRange(String start, String end) {
@@ -327,9 +364,7 @@ class _ScheduleState extends State<Schedule> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Widget _buildSaveButton() {
@@ -340,26 +375,20 @@ class _ScheduleState extends State<Schedule> {
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 14),
           backgroundColor: _primaryColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         icon: _isSaving
             ? const SizedBox(
-                width: 16,
-                height: 16,
+                width: 16, height: 16,
                 child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
+                  strokeWidth: 2, color: Colors.white,
                 ),
               )
             : const Icon(Icons.save, color: Colors.white, size: 18),
         label: Text(
           _isSaving ? 'Menyimpan...' : 'Simpan Jadwal',
           style: GoogleFonts.nunito(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
+            fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white,
           ),
         ),
       ),

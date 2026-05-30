@@ -1,18 +1,14 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/state/user_role_state.dart';
-
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hackathon/core/constants.dart';
+import 'package:hackathon/core/services/auth_state.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -31,10 +27,6 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isLoading = false;
   bool _showPassword = false;
   bool _showConfirmPassword = false;
-
-  static final String _webClientId = dotenv.env['WEB_CLIENT'] ?? '';
-  static final String? _iosClientId = dotenv.env['IOS_CLIENT'];
-
   bool _didNavigate = false;
 
   final LinearGradient verticalGradient = const LinearGradient(
@@ -137,6 +129,25 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        final body = jsonDecode(response.body);
+        final accessToken = body['accessToken']?.toString();
+        final userMap = body['user'] is Map ? body['user'] : null;
+        final userId = userMap?['id']?.toString();
+        final role = userMap?['role']?.toString() ?? 'CLIENT';
+        final email = userMap?['email']?.toString() ?? '';
+        final displayName = userMap?['displayName']?.toString();
+
+        if (accessToken != null && userId != null) {
+          await authState.login(
+            token: accessToken,
+            userId: userId,
+            email: email,
+            displayName: displayName,
+            role: role,
+          );
+          userRoleState.isPsychologist = role == 'PSYCHOLOGIST';
+        }
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Registrasi berhasil!')),

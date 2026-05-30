@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hackathon/core/state/user_role_state.dart';
 import 'package:hackathon/core/constants.dart';
 import 'package:hackathon/core/services/api_client.dart';
+import 'package:hackathon/core/services/auth_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
@@ -134,17 +135,21 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      // Simpan token ke SharedPreferences
-      await prefs.setString('custom_access_token', accessToken);
-
-      // Baca & simpan role dari response
+      // Simpan token & user info ke SharedPreferences + authState
       final userMap = response.data!['user'];
-      final role = userMap is Map ? userMap['role']?.toString() : null;
-      await prefs.setString('user_role', role ?? '');
-      userRoleState.isPsychologist = role == 'PSYCHOLOGIST';
+      final role = userMap is Map ? (userMap['role']?.toString() ?? 'CLIENT') : 'CLIENT';
+      final userId = userMap is Map ? (userMap['id']?.toString() ?? '') : '';
+      final userEmail = userMap is Map ? (userMap['email']?.toString() ?? '') : '';
+      final displayName = userMap is Map ? userMap['displayName']?.toString() : null;
 
-      final userId = userMap is Map ? userMap['id']?.toString() : null;
-      await prefs.setString('user_id', userId ?? '');
+      await authState.login(
+        token: accessToken,
+        userId: userId,
+        email: userEmail,
+        displayName: displayName,
+        role: role,
+      );
+      userRoleState.isPsychologist = role == 'PSYCHOLOGIST';
 
       if (!mounted) return;
       _showToast('Login berhasil!', isError: false);

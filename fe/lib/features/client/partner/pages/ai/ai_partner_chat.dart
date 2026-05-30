@@ -34,7 +34,7 @@ class _AIPartnerChatState extends State<AIPartnerChat> {
   final List<ChatMessage> _messages = [];
 
   void _handleVoice(BuildContext context) {
-    context.go('/partner/ai-partner/voice');
+    context.push('/partner/ai-partner/voice');
   }
 
   @override
@@ -66,21 +66,71 @@ class _AIPartnerChatState extends State<AIPartnerChat> {
       return;
     }
 
-    _sessionId = sessionId;
-    final initial = widget.initialMessages;
-    if (initial != null && initial.isNotEmpty) {
-      _messages
-        ..clear()
-        ..addAll(initial);
-      setState(() => _isLoading = false);
-      _scrollToBottom();
-      return;
-    }
+    // Fetch GET session untuk ambil data terbaru + id yang valid
+    debugPrint('🔍 GET session — sessionId: $sessionId');
+    try {
+      final response = await _aiPartnerService
+          .getSession(sessionId)
+          .timeout(const Duration(seconds: 12));
+      debugPrint('📥 GET session response — sessionId: $sessionId | success: ${response.isSuccess} | data: ${response.data?.data}');
 
-    await _loadSessionMessages(sessionId);
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-    _scrollToBottom();
+      if (!response.isSuccess) {
+        setState(() {
+          _errorMessage = 'Gagal memuat sesi chat.';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final data = response.data.data;
+      final map = data is Map ? Map<String, dynamic>.from(data) : null;
+
+      // Ambil id dari response (pastikan pakai id yang benar)
+      _sessionId = map?['id']?.toString() ?? sessionId;
+
+      final items = <ChatMessage>[];
+      final messages = map?['messages'];
+      if (messages is List) {
+        for (final item in messages) {
+          if (item is Map) {
+            final role = item['role']?.toString() ?? 'assistant';
+            final content = item['content']?.toString() ?? '';
+            final createdAt = item['createdAt']?.toString();
+            items.add(
+              ChatMessage(
+                isSender: role == 'user',
+                message: content,
+                time: _formatTime(createdAt),
+              ),
+            );
+          }
+        }
+      }
+
+      if (items.isEmpty) {
+        items.add(
+          const ChatMessage(
+            isSender: false,
+            message:
+                'Halo, aku siap mendengarkanmu. Apa yang sedang kamu rasakan hari ini?',
+            time: '--:--',
+          ),
+        );
+      }
+
+      setState(() {
+        _messages
+          ..clear()
+          ..addAll(items);
+        _isLoading = false;
+      });
+      _scrollToBottom();
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Terjadi kesalahan. Coba lagi.';
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _loadSessionMessages(String sessionId) async {
@@ -93,6 +143,9 @@ class _AIPartnerChatState extends State<AIPartnerChat> {
       return;
     }
 
+    print('── Session Detail Data ──────────────────────');
+    print(response.data.data);
+    print('──────────────────────────────────────────────');
     final data = response.data.data;
     final map = data is Map ? Map<String, dynamic>.from(data) : null;
     final items = <ChatMessage>[];
@@ -134,9 +187,7 @@ class _AIPartnerChatState extends State<AIPartnerChat> {
 
   Future<void> _handleSend() async {
     final text = _textController.text.trim();
-    if (text.isEmpty || _isSending) {
-      return;
-    }
+    if (text.isEmpty || _isSending) return;
 
     final sessionId = _sessionId;
     if (sessionId == null) {
@@ -158,13 +209,14 @@ class _AIPartnerChatState extends State<AIPartnerChat> {
     _scrollToBottom();
 
     try {
-      final userId = _currentUserId();
+      debugPrint('📤 POST message — sessionId: $sessionId | content: $text');
       final response = await _aiPartnerService
           .sendMessage(
             sessionId,
-            AiChatMessageRequest(content: text, userId: userId),
+            AiChatMessageRequest(content: text), // ← hapus userId
           )
-          .timeout(const Duration(seconds: 12));
+          .timeout(const Duration(seconds: 30)); // ← naikkan ke 30 detik
+      debugPrint('📥 POST message response — sessionId: $sessionId | success: ${response.isSuccess} | data: ${response.data?.data}');
 
       if (!response.isSuccess) {
         _showSnackBar('Gagal mengirim pesan.');
@@ -173,6 +225,9 @@ class _AIPartnerChatState extends State<AIPartnerChat> {
 
       final data = response.data.data;
       final map = data is Map ? Map<String, dynamic>.from(data) : null;
+
+      // Response sendMessage adalah assistant message langsung
+      // { id, sessionId, role: 'assistant', content, createdAt }
       final reply =
           map?['content']?.toString() ??
           'Maaf, aku belum bisa menjawab sekarang.';
@@ -184,7 +239,7 @@ class _AIPartnerChatState extends State<AIPartnerChat> {
           time: _formatTime(map?['createdAt']?.toString()),
         ),
       );
-    } catch (_) {
+    } catch (e) {
       _showSnackBar('Terjadi kesalahan saat mengirim pesan.');
     } finally {
       if (!mounted) return;

@@ -1,6 +1,4 @@
 import 'package:go_router/go_router.dart';
-import 'package:hackathon/features/client/home/pages/home_page.dart';
-
 // Home Route
 import 'package:hackathon/features/client/home/home.dart';
 import 'package:hackathon/features/client/home/pages/emotion_description_page.dart';
@@ -8,8 +6,8 @@ import 'package:hackathon/features/client/home/pages/expression_analysis.dart';
 import 'package:hackathon/features/client/home/pages/voice_input.dart';
 import 'package:hackathon/features/client/home/pages/analysis_result.dart';
 import 'package:hackathon/features/client/home/pages/home_page.dart';
-import 'package:hackathon/features/client/home/widgets/cta.dart';
 import 'package:hackathon/core/models/analysis_models.dart';
+import 'package:hackathon/core/models/psychologist_models.dart';
 
 // Partner Route
 import 'package:hackathon/features/client/partner/pages/partner_page.dart';
@@ -28,6 +26,7 @@ import 'package:hackathon/features/client/partner/pages/human/human_partner_end_
 import 'package:hackathon/features/client/partner/pages/professional/professional_partner.dart';
 import 'package:hackathon/features/client/partner/pages/professional/professional_partner_detail.dart';
 import 'package:hackathon/features/client/partner/pages/professional/professional_partner_booking.dart';
+import 'package:hackathon/features/client/partner/pages/professional/my_appointments.dart';
 
 import 'package:hackathon/features/client/profile/profile_page.dart';
 import 'package:hackathon/features/client/journal/journal_page.dart';
@@ -165,6 +164,10 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const EndCall(),
     ),
     GoRoute(
+      path: '/partner/professional-partner/my-appointments',
+      builder: (context, state) => const MyAppointments(),
+    ),
+    GoRoute(
       path: '/partner/professional-partner/detail/:id',
       builder: (context, state) {
         final psychologistId = state.pathParameters['id'] ?? '';
@@ -175,23 +178,23 @@ final GoRouter router = GoRouter(
       path: '/partner/professional-partner/booking',
       builder: (context, state) {
         final extra = state.extra;
-        // if (extra is PsychologistDetailResponse) {
-        //   return Booking(
-        //     psychologistId: extra.id,
-        //     psychologistName: extra.fullName,
-        //     price: extra.price,
-        //   );
-        // }
+        if (extra is PsychologistDetailResponse) {
+          return Booking(
+            psychologistId: extra.id,
+            psychologistName: extra.fullName,
+            price: extra.price,
+          );
+        }
         return const Booking(
           psychologistId: '',
-          psychologistName: 'Unknown',
+          psychologistName: '',
           price: 0,
         );
       },
     ),
     GoRoute(
       path: '/journal/add',
-      builder: (context, state) => const JournalAdd(),
+      builder: (context, state) => JournalAdd(journalId: state.extra as String?),
     ),
     GoRoute(
       path: '/psychologist/profile/schedule',

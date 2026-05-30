@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hackathon/core/constants.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dotted_border/dotted_border.dart';
+import 'package:hackathon/core/constants.dart';
 import 'package:hackathon/core/models/psychologist_models.dart';
 import 'package:hackathon/core/services/api_client.dart';
 import 'package:hackathon/core/services/psychologist_service.dart';
+import 'package:hackathon/core/theme/app_gradients.dart';
 
 class DetailDoctor extends StatefulWidget {
   final String psychologistId;
@@ -43,7 +45,9 @@ class _DetailDoctorState extends State<DetailDoctor> {
     });
 
     try {
-      final response = await _psychologistService.getDetail(widget.psychologistId);
+      final response = await _psychologistService.getDetail(
+        widget.psychologistId,
+      );
       if (!mounted) return;
 
       if (response.isSuccess) {
@@ -68,26 +72,24 @@ class _DetailDoctorState extends State<DetailDoctor> {
 
   String _formatPrice(int price) {
     if (price == 0) return 'Hubungi klinik';
-    final raw = price.toString();
-    final buffer = StringBuffer();
-    for (var i = 0; i < raw.length; i++) {
-      final position = raw.length - i;
-      buffer.write(raw[i]);
-      if (position > 1 && position % 3 == 1) buffer.write('.');
-    }
-    return 'Rp ${buffer.toString()}';
+    final regExp = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
+    final formatted = price.toString().replaceAllMapped(
+      regExp,
+      (Match m) => '${m[1]}.',
+    );
+    return 'Rp. $formatted';
   }
 
   AppBar _buildAppBar() => AppBar(
-        backgroundColor: const Color(0xFF4D79A6),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Profil Psikolog',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
-        ),
-        centerTitle: true,
-      );
+    backgroundColor: const Color(0xFF4D79A6),
+    foregroundColor: Colors.white,
+    elevation: 0,
+    title: const Text(
+      'Profil Psikolog',
+      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+    ),
+    centerTitle: true,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +109,11 @@ class _DetailDoctorState extends State<DetailDoctor> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Color(0xFFB0BEC5)),
+              const Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Color(0xFFB0BEC5),
+              ),
               const SizedBox(height: 12),
               Text(_errorMessage!, style: const TextStyle(color: Colors.grey)),
               const SizedBox(height: 16),
@@ -123,19 +129,17 @@ class _DetailDoctorState extends State<DetailDoctor> {
     }
 
     final psychologist = _psychologistData!;
-
-    // FIX #8: Gunakan price dari API response, bukan dari fallback Doctor
     final price = psychologist.price;
 
     return DefaultTabController(
-      length: 4, // FIX #3: Tambah tab Pendidikan
+      length: 3,
       child: Scaffold(
         backgroundColor: const Color(0xFFF4F6F8),
         appBar: _buildAppBar(),
         bottomNavigationBar: SafeArea(
           top: false,
           child: Container(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
             decoration: const BoxDecoration(
               color: Colors.white,
               border: Border(top: BorderSide(color: Color(0xFFE1E8F2))),
@@ -149,17 +153,18 @@ class _DetailDoctorState extends State<DetailDoctor> {
                     children: [
                       const Text(
                         'Tarif Sesi',
-                        style:
-                            TextStyle(fontSize: 12, color: Color(0xFF6D7C93)),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF6D7C93),
+                        ),
                       ),
                       const SizedBox(height: 4),
-                      // FIX #8: Tampilkan price dari API
                       Text(
                         _formatPrice(price),
                         style: const TextStyle(
                           fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                          color: Color(0xFF1F3B59),
+                          fontSize: 18,
+                          color: Color(0xFF1F4C7A),
                         ),
                       ),
                     ],
@@ -167,7 +172,6 @@ class _DetailDoctorState extends State<DetailDoctor> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    // Kirim PsychologistDetailResponse sebagai extra untuk halaman booking
                     context.push(
                       '/partner/professional-partner/booking',
                       extra: psychologist,
@@ -175,16 +179,23 @@ class _DetailDoctorState extends State<DetailDoctor> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1F4C7A),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
+                      horizontal: 28,
+                      vertical: 14,
+                    ),
                   ),
                   child: const Text(
                     'Booking Sekarang',
                     style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.w600),
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
               ],
@@ -193,56 +204,49 @@ class _DetailDoctorState extends State<DetailDoctor> {
         ),
         body: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
             child: Column(
               children: [
-                const SizedBox(height: 12),
                 _HeaderSection(psychologist: psychologist),
                 const SizedBox(height: 16),
                 _SpecializationSection(tags: psychologist.tags),
                 const SizedBox(height: 16),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: const Color(0xFFD9E3F1)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(10),
-                        blurRadius: 10,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
                   ),
                   child: Column(
                     children: [
-                      // FIX #3: Tambah tab Pendidikan
                       const TabBar(
                         labelColor: Color(0xFF1F4C7A),
-                        unselectedLabelColor: Color(0xFF7A8CA5),
+                        unselectedLabelColor: Color(0xFF9BAFC5),
                         indicatorColor: Color(0xFF1F4C7A),
-                        indicatorWeight: 2,
+                        indicatorWeight: 2.5,
+                        labelStyle: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                        unselectedLabelStyle: TextStyle(
+                          fontWeight: FontWeight.w400,
+                          fontSize: 13,
+                        ),
                         tabs: [
                           Tab(text: 'Tentang'),
                           Tab(text: 'Review'),
                           Tab(text: 'Program'),
-                          Tab(text: 'Pendidikan'),
                         ],
                       ),
                       const SizedBox(height: 16),
                       SizedBox(
-                        height: 280,
+                        height: 440,
                         child: TabBarView(
                           children: [
                             _AboutTab(psychologist: psychologist),
-                            // FIX #4 & #5: Kirim seluruh reviews ke tab
                             _ReviewTab(reviews: psychologist.reviews),
                             _ProgramTab(schedules: psychologist.schedules),
-                            // FIX #3: Render data education dari API
-                            _EducationTab(
-                                education: psychologist.education),
                           ],
                         ),
                       ),
@@ -261,39 +265,47 @@ class _DetailDoctorState extends State<DetailDoctor> {
 // ── Header ──
 class _HeaderSection extends StatelessWidget {
   final PsychologistDetailResponse psychologist;
-
   const _HeaderSection({required this.psychologist});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
+        // Avatar dengan gradient background
         Container(
-          width: 88,
-          height: 88,
+          width: 96,
+          height: 96,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: const Color(0xFFDCEAF5),
+            borderRadius: BorderRadius.circular(20),
+            gradient: AppGradients.horizontal,
+            border: Border.all(color: const Color(0xFFD9E3F1), width: 1.5),
           ),
-          child: Center(
-            child: Text(
-              psychologist.fullName.isNotEmpty
-                  ? psychologist.fullName[0]
-                  : '?',
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1B517A),
-              ),
-            ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child:
+                psychologist.photoUrl != null &&
+                    psychologist.photoUrl!.isNotEmpty
+                ? Image.network(psychologist.photoUrl!, fit: BoxFit.cover)
+                : Center(
+                    child: Text(
+                      psychologist.fullName.isNotEmpty
+                          ? psychologist.fullName[0]
+                          : '?',
+                      style: const TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         Text(
           psychologist.fullName,
           style: const TextStyle(
             fontSize: 18,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
             color: Color(0xFF1F3B59),
           ),
           textAlign: TextAlign.center,
@@ -301,35 +313,29 @@ class _HeaderSection extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           psychologist.specialization,
-          style: const TextStyle(fontSize: 13, color: Color(0xFF6D7C93)),
+          style: const TextStyle(
+            fontSize: 13,
+            color: Color(0xFF6D7C93),
+            fontWeight: FontWeight.w400,
+          ),
         ),
-        const SizedBox(height: 4),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.location_on, size: 14, color: Color(0xFF94A3B8)),
-            const SizedBox(width: 4),
-            Text(
-              '${psychologist.clinicName} · ${psychologist.location}',
-              style: const TextStyle(
-                  fontSize: 12, color: Color(0xFF94A3B8)),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
+        // Rating badge — bintang biru
         Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(color: const Color(0xFFBFD0E6)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.star,
-                  color: Color(0xFFF4B740), size: 16),
+              const Icon(
+                Icons.star_rounded,
+                color: Colors.amber, // ← biru
+                size: 18,
+              ),
               const SizedBox(width: 6),
               Text(
                 '${psychologist.rating.toStringAsFixed(1)}/5 (${psychologist.reviewCount} review)',
@@ -350,7 +356,6 @@ class _HeaderSection extends StatelessWidget {
 // ── Spesialisasi ──
 class _SpecializationSection extends StatelessWidget {
   final List<String> tags;
-
   const _SpecializationSection({required this.tags});
 
   @override
@@ -360,10 +365,11 @@ class _SpecializationSection extends StatelessWidget {
         : ['Depresi', 'Kecemasan', 'Stres', 'Keluarga'];
 
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFD9E3F1)),
       ),
       child: Column(
@@ -371,14 +377,18 @@ class _SpecializationSection extends StatelessWidget {
         children: [
           const Row(
             children: [
-              Icon(Icons.psychology, color: Color(0xFF1F4C7A), size: 20),
+              Icon(
+                Icons.psychology_rounded,
+                color: Color(0xFF1F4C7A),
+                size: 20,
+              ),
               SizedBox(width: 8),
               Text(
                 'Spesialisasi',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF1B517A),
+                  color: Color(0xFF1F3B59),
                 ),
               ),
             ],
@@ -391,17 +401,21 @@ class _SpecializationSection extends StatelessWidget {
                 .map(
                   (label) => Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
-                      border:
-                          Border.all(color: const Color(0xFFBFD0E6)),
+                      border: Border.all(color: const Color(0xFFBFD0E6)),
                       color: Colors.white,
                     ),
                     child: Text(
                       label,
                       style: const TextStyle(
-                          fontSize: 12, color: Color(0xFF1F4C7A)),
+                        fontSize: 12,
+                        color: Color(0xFF1F4C7A),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 )
@@ -416,7 +430,6 @@ class _SpecializationSection extends StatelessWidget {
 // ── Tab Tentang ──
 class _AboutTab extends StatelessWidget {
   final PsychologistDetailResponse psychologist;
-
   const _AboutTab({required this.psychologist});
 
   @override
@@ -425,12 +438,13 @@ class _AboutTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Tentang Saya
           const Text(
             'Tentang Saya',
             style: TextStyle(
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               fontSize: 13,
-              color: Color(0xFF1B517A),
+              color: Color(0xFF1F3B59),
             ),
           ),
           const SizedBox(height: 8),
@@ -438,18 +452,19 @@ class _AboutTab extends StatelessWidget {
             psychologist.bio,
             style: const TextStyle(
               fontSize: 12,
-              color: Colors.grey,
-              height: 1.4,
-              fontWeight: FontWeight.w500,
+              color: Color(0xFF6D7C93),
+              height: 1.6,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
+
+          // Pengalaman
           const Text(
             'Pengalaman',
             style: TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 13,
-              color: Color(0xFF1B517A),
+              color: Color(0xFF1F3B59),
             ),
           ),
           const SizedBox(height: 12),
@@ -465,13 +480,70 @@ class _AboutTab extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _InfoChip(
-                  icon: Icons.people_outline,
+                  icon: Icons.people_outline_rounded,
                   title: '${psychologist.clientsHandled}+',
                   subtitle: 'Klien ditangani',
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 20),
+
+          // Nomor STR
+          if (psychologist.strNumber.isNotEmpty) ...[
+            const Text(
+              'Nomor STR',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                color: Color(0xFF1F3B59),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              psychologist.strNumber,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF6D7C93)),
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          // Pendidikan
+          if (psychologist.education.isNotEmpty) ...[
+            const Text(
+              'Pendidikan',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                color: Color(0xFF1F3B59),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...psychologist.education.map(
+              (edu) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '• ',
+                      style: TextStyle(color: Color(0xFF6D7C93), fontSize: 12),
+                    ),
+                    Expanded(
+                      child: Text(
+                        '${edu.level} - ${edu.institution} (${edu.year})',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF6D7C93),
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
         ],
       ),
     );
@@ -481,15 +553,13 @@ class _AboutTab extends StatelessWidget {
 // ── Tab Review ──
 class _ReviewTab extends StatelessWidget {
   final List<PsychologistReview> reviews;
-
   const _ReviewTab({required this.reviews});
 
   @override
   Widget build(BuildContext context) {
     if (reviews.isEmpty) {
       return const Center(
-        child: Text('Belum ada ulasan.',
-            style: TextStyle(color: Colors.grey)),
+        child: Text('Belum ada ulasan.', style: TextStyle(color: Colors.grey)),
       );
     }
 
@@ -499,52 +569,52 @@ class _ReviewTab extends StatelessWidget {
     return SingleChildScrollView(
       child: Column(
         children: [
+          // Rating summary
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFD9E3F1)),
+              color: const Color.fromARGB(255, 255, 255, 255),
             ),
             child: Row(
               children: [
                 Expanded(
                   flex: 3,
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         averageRating.toStringAsFixed(1),
                         style: const TextStyle(
-                          fontSize: 24,
+                          fontSize: 36,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF1B517A),
+                          color: Color(0xFF1F3B59),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       _StarRow(rating: averageRating.round()),
                       const SizedBox(height: 4),
                       Text(
                         '${reviews.length} Ulasan',
                         style: const TextStyle(
-                            fontSize: 14, color: Colors.grey),
+                          fontSize: 11,
+                          color: Color(0xFF6D7C93),
+                        ),
                       ),
                     ],
                   ),
                 ),
-                // FIX #4: Hitung rating bar dari data reviews nyata
-                Expanded(
-                  flex: 4,
-                  child: _RatingBars(reviews: reviews),
-                ),
+                const SizedBox(width: 8),
+                Expanded(flex: 5, child: _RatingBars(reviews: reviews)),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          // FIX #5: Tampilkan semua review, bukan hanya .take(1)
           ...reviews.map(
             (review) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.only(bottom: 10),
               child: _ReviewCard(
-                // FIX #6: Label lebih ramah daripada "User u1"
                 name: 'Pengguna ${review.userId}',
                 time: _formatDate(review.createdAt),
                 rating: review.rating.round(),
@@ -567,15 +637,12 @@ class _ReviewTab extends StatelessWidget {
   }
 }
 
-// FIX #4: _RatingBars sekarang menerima data reviews nyata
 class _RatingBars extends StatelessWidget {
   final List<PsychologistReview> reviews;
-
   const _RatingBars({required this.reviews});
 
   @override
   Widget build(BuildContext context) {
-    // Hitung distribusi rating dari data nyata
     final counts = List.filled(5, 0);
     for (final r in reviews) {
       final idx = r.rating.round().clamp(1, 5) - 1;
@@ -589,34 +656,46 @@ class _RatingBars extends StatelessWidget {
         final count = counts[label - 1];
         final ratio = maxCount > 0 ? count / maxCount : 0.0;
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 3),
+          padding: const EdgeInsets.symmetric(vertical: 3.5),
           child: Row(
             children: [
               Text(
                 '$label',
                 style: const TextStyle(
-                    fontSize: 12, color: Color(0xFF1B517A)),
+                  fontSize: 11,
+                  color: Color(0xFF1F3B59),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               const SizedBox(width: 4),
-              const Icon(Icons.star, size: 12, color: Color(0xFFF4B740)),
+              const Icon(
+                Icons.star_rounded,
+                size: 16,
+                color: Colors.amber,
+              ), // ← biru
               const SizedBox(width: 6),
               Expanded(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
                     value: ratio,
-                    minHeight: 6,
+                    minHeight: 7,
                     backgroundColor: const Color(0xFFE5EAF1),
-                    valueColor: const AlwaysStoppedAnimation(
-                        Color(0xFF1F4C7A)),
+                    valueColor: const AlwaysStoppedAnimation(Color(0xFF1F4C7A)),
                   ),
                 ),
               ),
               const SizedBox(width: 6),
-              Text(
-                count.toString(),
-                style: const TextStyle(
-                    fontSize: 10, color: Color(0xFF6D7C93)),
+              SizedBox(
+                width: 24,
+                child: Text(
+                  count.toString(),
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Color(0xFF6D7C93),
+                  ),
+                ),
               ),
             ],
           ),
@@ -629,12 +708,17 @@ class _RatingBars extends StatelessWidget {
 // ── Tab Program ──
 class _ProgramTab extends StatelessWidget {
   final List<PsychologistSchedule> schedules;
-
   const _ProgramTab({required this.schedules});
 
   String _getDayName(int dayOfWeek) {
     const days = [
-      'Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu',
+      'Minggu',
+      'Senin',
+      'Selasa',
+      'Rabu',
+      'Kamis',
+      'Jumat',
+      'Sabtu',
     ];
     return days[dayOfWeek % 7];
   }
@@ -642,119 +726,24 @@ class _ProgramTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final displaySchedules = schedules.isNotEmpty
-        ? schedules
-        : [
-            const PsychologistSchedule(
-              id: '1', dayOfWeek: 1,
-              startTime: '09:00', endTime: '17:00', isAvailable: true,
-            ),
-          ];
+        ? schedules.where((s) => s.isAvailable).toList()
+        : <PsychologistSchedule>[];
 
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Metode Konsultasi
           const Row(
             children: [
-              Icon(Icons.video_call_outlined,
-                  color: Color(0xFF1F4C7A), size: 20),
+              Icon(
+                Icons.video_call_outlined,
+                color: Color(0xFF1F4C7A),
+                size: 20,
+              ),
               SizedBox(width: 8),
               Text(
                 'Metode Konsultasi',
-                style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: Color(0xFF1F3B59)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Row(
-            children: [
-              Expanded(
-                  child: _MethodCard(
-                      icon: Icons.chat_bubble_outline, label: 'Chat')),
-              SizedBox(width: 12),
-              Expanded(
-                  child: _MethodCard(
-                      icon: Icons.graphic_eq, label: 'Voice')),
-              SizedBox(width: 12),
-              Expanded(
-                  child: _MethodCard(
-                      icon: Icons.videocam_outlined, label: 'Video')),
-            ],
-          ),
-          const SizedBox(height: 20),
-          const Row(
-            children: [
-              Icon(Icons.calendar_month_outlined,
-                  color: Color(0xFF1F4C7A), size: 20),
-              SizedBox(width: 8),
-              Text(
-                'Jadwal & Ketersediaan',
-                style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: Color(0xFF1F3B59)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: const Color(0xFFE6F3FD),
-              border: Border.all(color: const Color(0xFFD9E3F1)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: displaySchedules
-                  .where((s) => s.isAvailable)
-                  .map(
-                    (s) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: _ScheduleRow(
-                        day: '${_getDayName(s.dayOfWeek)}:',
-                        time: '${s.startTime} - ${s.endTime}',
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// FIX #3: Tab baru untuk menampilkan data education dari API
-class _EducationTab extends StatelessWidget {
-  final List<PsychologistEducation> education;
-
-  const _EducationTab({required this.education});
-
-  @override
-  Widget build(BuildContext context) {
-    if (education.isEmpty) {
-      return const Center(
-        child: Text('Data pendidikan tidak tersedia.',
-            style: TextStyle(color: Colors.grey)),
-      );
-    }
-
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.school_outlined,
-                  color: Color(0xFF1F4C7A), size: 20),
-              SizedBox(width: 8),
-              Text(
-                'Riwayat Pendidikan',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
@@ -764,58 +753,85 @@ class _EducationTab extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ...education.map(
-            (edu) => Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0F6FF),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFD9E3F1)),
+          Row(
+            children: const [
+              Expanded(
+                child: _MethodCard(
+                  icon: Icons.chat_bubble_outline_rounded,
+                  label: 'Chat',
+                ),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1F4C7A),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      edu.level,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
+              SizedBox(width: 12),
+              Expanded(
+                child: _MethodCard(
+                  icon: Icons.graphic_eq_rounded,
+                  label: 'Voice',
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: _MethodCard(
+                  icon: Icons.videocam_outlined,
+                  label: 'Video',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Jadwal & Ketersediaan
+          const Row(
+            children: [
+              Icon(
+                Icons.calendar_month_outlined,
+                color: Color(0xFF1F4C7A),
+                size: 20,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Jadwal & Ketersediaan',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  color: Color(0xFF1F3B59),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          DottedBorder(
+            options: const RoundedRectDottedBorderOptions(
+              color: Color(0xFF3D7AB5),
+              strokeWidth: 1.5,
+              dashPattern: [10, 10],
+              radius: Radius.circular(14),
+            ),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFD),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: displaySchedules.isEmpty
+                  ? const Text(
+                      'Tidak ada jadwal tersedia.',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF6D7C93)),
+                    )
+                  : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          edu.institution,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1F3B59),
-                          ),
-                        ),
-                        Text(
-                          'Lulus ${edu.year}',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFF6D7C93),
+                        ...displaySchedules.map(
+                          (s) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _ScheduleRow(
+                              day: '${_getDayName(s.dayOfWeek)}:',
+                              time: '${s.startTime} - ${s.endTime}',
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
             ),
           ),
         ],
@@ -839,41 +855,55 @@ class _InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, color: const Color(0xFF1F4C7A), size: 18),
-            const SizedBox(width: 6),
-            Text(
-              title,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-                color: Color(0xFF1B517A),
-              ),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: const Color.fromARGB(255, 255, 255, 255),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE7EDF5),
+              borderRadius: BorderRadius.circular(8),
             ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Text(
-          subtitle,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey,
-            height: 1.3,
+            child: Icon(icon, color: const Color(0xFF1F4C7A), size: 16),
           ),
-        ),
-      ],
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: Color(0xFF1F3B59),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Color(0xFF6D7C93),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 class _StarRow extends StatelessWidget {
   final int rating;
-
   const _StarRow({required this.rating});
 
   @override
@@ -882,8 +912,8 @@ class _StarRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(5, (index) {
         return Icon(
-          index < rating ? Icons.star : Icons.star_border,
-          color: const Color(0xFFF4B740),
+          index < rating ? Icons.star_rounded : Icons.star_border_rounded,
+          color: const Color(0xFF1F4C7A), // ← biru
           size: 16,
         );
       }),
@@ -907,7 +937,7 @@ class _ReviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -918,12 +948,21 @@ class _ReviewCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const CircleAvatar(
-                radius: 18,
-                backgroundColor: Color(0xFF1F4C7A),
-                child: Icon(Icons.person, color: Colors.white, size: 18),
+              // Icon profile dengan gradient horizontal
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: AppGradients.horizontal,
+                ),
+                child: const Icon(
+                  Icons.person_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -932,35 +971,41 @@ class _ReviewCard extends StatelessWidget {
                       name,
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
+                        fontSize: 13,
                         color: Color(0xFF1F3B59),
-                        fontSize: 12,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
+                    // Bintang biru di review card
                     Row(
-                      children: [
-                        _StarRow(rating: rating),
-                        const SizedBox(width: 8),
-                        Text(
-                          time,
-                          style: const TextStyle(
-                              fontSize: 10, color: Color(0xFF6D7C93)),
-                        ),
-                      ],
+                      children: List.generate(5, (index) {
+                        return Icon(
+                          index < rating
+                              ? Icons.star_rounded
+                              : Icons.star_border_rounded,
+                          color: const Color(0xFF1F4C7A), // ← biru
+                          size: 14,
+                        );
+                      }),
                     ),
                   ],
                 ),
               ),
+              Text(
+                time,
+                style: const TextStyle(fontSize: 10, color: Color(0xFF9BAFC5)),
+              ),
             ],
           ),
           if (message.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               message,
               style: const TextStyle(
-                  fontSize: 11,
-                  color: Color(0xFF6D7C93),
-                  height: 1.4),
+                fontSize: 12,
+                color: Color(0xFF6D7C93),
+                height: 1.5,
+              ),
             ),
           ],
         ],
@@ -978,7 +1023,7 @@ class _MethodCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFD9E3F1)),
@@ -986,8 +1031,14 @@ class _MethodCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(icon, color: const Color(0xFF1F4C7A)),
-          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 255, 255, 255),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: const Color(0xFF1F4C7A), size: 22),
+          ),
           Text(
             label,
             style: const TextStyle(
@@ -1011,20 +1062,40 @@ class _ScheduleRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          day,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFF1F3B59),
-            fontWeight: FontWeight.w700,
-          ),
+        Row(
+          children: [
+            const Icon(
+              Icons.access_time_rounded,
+              size: 14,
+              color: Color(0xFF4D79A6),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              day,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF1F3B59),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 8),
-        Text(
-          time,
-          style:
-              const TextStyle(fontSize: 12, color: Color(0xFF1F3B59)),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE7EDF5),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            time,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF1F4C7A),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ],
     );

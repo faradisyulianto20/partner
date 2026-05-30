@@ -72,7 +72,7 @@ class AIPartner extends StatelessWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed:
-                      onChat ?? () => context.go('/partner/ai-partner/chat'),
+                      onChat ?? () => context.push('/partner/ai-partner/chat', extra: {'sessionId': null}),
                   icon: const Icon(Icons.chat_bubble_outline, size: 16),
                   label: const Text('Chat'),
                   style: OutlinedButton.styleFrom(
@@ -103,7 +103,7 @@ class AIPartner extends StatelessWidget {
                   ),
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      context.go('/partner/ai-partner/voice');
+                      context.push('/partner/ai-partner/voice', extra: {'sessionId': null});
                     },
                     icon: const Icon(Icons.mic, size: 16),
                     label: const Text('Voice'),

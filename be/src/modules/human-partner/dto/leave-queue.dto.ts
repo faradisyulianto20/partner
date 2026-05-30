@@ -1,3 +1,3 @@
 export class LeaveQueueDto {
-    userId!: string;
+  userId!: string;
 }

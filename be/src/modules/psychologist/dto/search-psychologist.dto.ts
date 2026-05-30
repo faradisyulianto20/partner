@@ -1,5 +1,5 @@
 export class SearchPsychologistDto {
-    userId?: string;
-    criteria?: string;
-    limit?: number;
+  userId?: string;
+  criteria?: string;
+  limit?: number;
 }

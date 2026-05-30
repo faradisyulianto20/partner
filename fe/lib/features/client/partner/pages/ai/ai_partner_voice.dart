@@ -15,6 +15,7 @@ import 'package:record/record.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:hackathon/core/constants.dart';
 import 'package:hackathon/core/services/auth_state.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AIPartnerVoice extends StatefulWidget {
   const AIPartnerVoice({super.key});
@@ -38,7 +39,6 @@ class _AIPartnerVoiceState extends State<AIPartnerVoice>
   String _assistantText = '';
 
   bool _isRecording = false;
-  bool _isPaused = false;
   bool _isConnecting = false;
 
   @override
@@ -61,11 +61,7 @@ class _AIPartnerVoiceState extends State<AIPartnerVoice>
 
   Future<void> _toggleRecording() async {
     if (_isRecording) {
-      if (_isPaused) {
-        await _resumeRecording();
-      } else {
-        await _pauseRecording();
-      }
+      await _stopRecording();
       return;
     }
 
@@ -81,6 +77,7 @@ class _AIPartnerVoiceState extends State<AIPartnerVoice>
       return;
     }
 
+    debugPrint('🎤 _startRecording — connecting socket');
     setState(() {
       _isConnecting = true;
       _assistantText = '';
@@ -104,32 +101,24 @@ class _AIPartnerVoiceState extends State<AIPartnerVoice>
 
     setState(() {
       _isRecording = true;
-      _isPaused = false;
       _isConnecting = false;
     });
   }
 
-  Future<void> _pauseRecording() async {
-    if (!_isRecording || _isPaused) return;
-    await _recorder.pause();
-    setState(() => _isPaused = true);
-  }
-
-  Future<void> _resumeRecording() async {
-    if (!_isRecording || !_isPaused) return;
-    await _recorder.resume();
-    setState(() => _isPaused = false);
-  }
-
   Future<void> _stopRecording() async {
     if (!_isRecording && !_isConnecting) return;
+    debugPrint('🛑 _stopRecording — emitting stop');
     await _audioSubscription?.cancel();
     _audioSubscription = null;
-    await _recorder.stop();
+    try {
+      await _recorder.stop();
+    } catch (_) {}
+
     _socket?.emit('stop');
+
+    if (!mounted) return;
     setState(() {
       _isRecording = false;
-      _isPaused = false;
       _isConnecting = false;
     });
   }
@@ -145,20 +134,32 @@ class _AIPartnerVoiceState extends State<AIPartnerVoice>
           .build(),
     );
 
-    socket.onConnect((_) {
+    socket.onConnect((_) async {
       final userId = authState.userId;
-      socket.emit('start', {'userId': userId, 'sampleRate': 16000});
+      final prefs = await SharedPreferences.getInstance();
+      final sessionId = prefs.getString('ai_chat_session_id_${authState.userId}');
+      debugPrint(
+        '🔌 Socket connected — emitting start | userId: $userId | sessionId: $sessionId',
+      );
+      socket.emit('start', {
+        'userId': userId,
+        'sampleRate': 16000,
+        'sessionId': sessionId,
+      });
     });
 
     socket.on('session', (data) {
       if (data is Map) {
         _sessionId = data['sessionId']?.toString();
+        debugPrint('📋 onSession — sessionId: $_sessionId');
       }
     });
 
     socket.on('transcript', (data) {
       if (data is Map) {
         final text = data['text']?.toString() ?? '';
+        final isFinal = data['isFinal'] == true;
+        debugPrint('📝 onTranscript — isFinal: $isFinal | text: $text');
         setState(() => _partialTranscript = text);
       }
     });
@@ -166,6 +167,7 @@ class _AIPartnerVoiceState extends State<AIPartnerVoice>
     socket.on('assistant_text', (data) {
       if (data is Map) {
         final text = data['text']?.toString() ?? '';
+        debugPrint('🤖 onAssistantText — text: $text');
         setState(() => _assistantText = text);
       }
     });
@@ -174,10 +176,16 @@ class _AIPartnerVoiceState extends State<AIPartnerVoice>
       if (data is Map) {
         final chunk = data['chunk']?.toString();
         final isLast = data['isLast'] == true;
+        debugPrint(
+          '🔊 onAssistantAudio — chunkLen: ${chunk?.length ?? 0} | isLast: $isLast',
+        );
         if (chunk != null && chunk.isNotEmpty) {
           _assistantAudioBytes.addAll(base64Decode(chunk));
         }
         if (isLast && _assistantAudioBytes.isNotEmpty) {
+          debugPrint(
+            '▶️ Playing audio — total bytes: ${_assistantAudioBytes.length}',
+          );
           await _playAssistantAudio(Uint8List.fromList(_assistantAudioBytes));
           _assistantAudioBytes.clear();
         }
@@ -186,15 +194,16 @@ class _AIPartnerVoiceState extends State<AIPartnerVoice>
 
     socket.on('error', (data) {
       final message = data is Map ? data['message']?.toString() : null;
+      debugPrint('❌ Socket error: $message');
       if (message != null && message.isNotEmpty) {
         _showSnackBar(message);
       }
     });
 
     socket.onDisconnect((_) {
+      debugPrint('🔌 Socket disconnected');
       setState(() {
         _isRecording = false;
-        _isPaused = false;
         _isConnecting = false;
       });
     });
@@ -221,7 +230,7 @@ class _AIPartnerVoiceState extends State<AIPartnerVoice>
 
   @override
   Widget build(BuildContext context) {
-    final isWaveActive = _isRecording && !_isPaused;
+    final isWaveActive = _isRecording;
 
     return SafeArea(
       child: Scaffold(
@@ -238,12 +247,22 @@ class _AIPartnerVoiceState extends State<AIPartnerVoice>
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded),
-            onPressed: () => context.pop(),
+            onPressed: () async {
+              await _stopRecording();
+              if (context.mounted) context.pop();
+            },
           ),
           actions: [
             IconButton(
               icon: const Icon(Icons.message_rounded),
-              onPressed: () => {},
+              onPressed: () async {
+                await _stopRecording();
+                if (context.mounted)
+                  context.push(
+                    '/partner/ai-partner/chat',
+                    extra: {'sessionId': _sessionId},
+                  );
+              },
             ),
           ],
           flexibleSpace: Container(
@@ -314,7 +333,6 @@ class _AIPartnerVoiceState extends State<AIPartnerVoice>
             _VoiceControlPanel(
               onToggle: _toggleRecording,
               isRecording: _isRecording,
-              isPaused: _isPaused,
               isConnecting: _isConnecting,
             ),
           ],
@@ -327,13 +345,11 @@ class _AIPartnerVoiceState extends State<AIPartnerVoice>
 class _VoiceControlPanel extends StatelessWidget {
   final VoidCallback onToggle;
   final bool isRecording;
-  final bool isPaused;
   final bool isConnecting;
 
   const _VoiceControlPanel({
     required this.onToggle,
     required this.isRecording,
-    required this.isPaused,
     required this.isConnecting,
   });
 

@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dotted_border/dotted_border.dart';
-import 'package:hackathon/core/theme/app_gradients.dart';
 
 class VerificationDocumentsStep extends StatefulWidget {
-  final VoidCallback onNext;
+  final void Function(Map<String, dynamic> data) onNext;
 
   const VerificationDocumentsStep({super.key, required this.onNext});
 
@@ -36,10 +35,24 @@ class _VerificationDocumentsStepState extends State<VerificationDocumentsStep> {
     }
   }
 
+  void _handleNext() {
+    if (!_agreed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Anda harus menyetujui Syarat & Ketentuan.')),
+      );
+      return;
+    }
+
+    widget.onNext({
+      'ktpUrl': 'https://cdn1.katadata.co.id/media/images/thumb/2024/08/19/2024_08_19-12_25_12_49cbea96-5df2-11ef-b67d-0242ac120007_960x640_thumb.jpg',
+      'faceWithKtpUrl': 'https://cdn1.katadata.co.id/media/images/thumb/2024/08/19/2024_08_19-12_25_12_49cbea96-5df2-11ef-b67d-0242ac120007_960x640_thumb.jpg',
+      'strLicenseUrl': 'https://cdn1.katadata.co.id/media/images/thumb/2024/08/19/2024_08_19-12_25_12_49cbea96-5df2-11ef-b67d-0242ac120007_960x640_thumb.jpg',
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bool canSubmit =
-        _agreed && _ktpFile != null && _selfieFile != null && _strFile != null;
+    final bool canSubmit = _agreed;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -85,19 +98,16 @@ class _VerificationDocumentsStepState extends State<VerificationDocumentsStep> {
             Expanded(
               child: Text.rich(
                 TextSpan(
-                  text: 'Saya menyetujui ', // Teks biasa di awal
+                  text: 'Saya menyetujui ',
                   style: GoogleFonts.nunito(
                     fontSize: 12,
                     color: Colors.black54,
-                    fontWeight:
-                        FontWeight.w600, // Font weight dasar untuk kalimat
+                    fontWeight: FontWeight.w600,
                   ),
                   children: [
                     TextSpan(
-                      text: 'Syarat & Ketentuan.', // Teks yang mau di-bold
-                      style: GoogleFonts.nunito(
-                        // Atau langsung timpa beratnya ke Bold keras:
-                        fontWeight: FontWeight.w800,),
+                      text: 'Syarat & Ketentuan.',
+                      style: GoogleFonts.nunito(fontWeight: FontWeight.w800),
                     ),
                   ],
                 ),
@@ -116,7 +126,7 @@ class _VerificationDocumentsStepState extends State<VerificationDocumentsStep> {
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: canSubmit ? widget.onNext : null,
+                onTap: canSubmit ? _handleNext : null,
                 borderRadius: BorderRadius.circular(30),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 14),

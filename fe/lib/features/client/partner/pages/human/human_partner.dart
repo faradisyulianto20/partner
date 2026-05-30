@@ -295,7 +295,7 @@ class _SearchingState extends StatelessWidget {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: onCancel,
+                  onTap: () => context.pop(),
                   borderRadius: BorderRadius.circular(12),
                   child: const Padding(
                     padding: EdgeInsets.symmetric(vertical: 14),

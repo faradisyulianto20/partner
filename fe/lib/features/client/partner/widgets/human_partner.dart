@@ -84,7 +84,7 @@ class HumanPartner extends StatelessWidget {
             ),
             child: ElevatedButton(
               onPressed: () {
-                context.go('/partner/human-partner');
+                context.push('/partner/human-partner');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors

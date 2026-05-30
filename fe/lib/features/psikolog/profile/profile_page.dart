@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:hackathon/core/constants.dart';
+import 'package:hackathon/core/services/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfilePsychologistPage extends StatefulWidget {
@@ -24,6 +27,57 @@ class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
   );
 
   bool _isActive = true;
+  bool _isUploading = false;
+  static final String _baseUrl = AppConstants.baseUrl;
+  late final ApiClient _apiClient = ApiClient(baseUrl: _baseUrl, autoLoadToken: true);
+
+  Future<void> _pickAndUploadPhoto() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70, maxWidth: 512);
+    if (picked == null) return;
+
+    setState(() => _isUploading = true);
+
+    try {
+      final bytes = await picked.readAsBytes();
+      final base64Str = base64Encode(bytes);
+      final dataUri = 'data:image/jpeg;base64,$base64Str';
+
+      final data = <String, dynamic>{
+        'fullName': _psychologistData?['fullName'] ?? '',
+        'phoneNumber': _psychologistData?['phoneNumber'] ?? '',
+        'gender': _psychologistData?['gender'] ?? 'MALE',
+        'location': _psychologistData?['location'] ?? '',
+        'clinicName': _psychologistData?['clinicName'] ?? '',
+        'specialization': _psychologistData?['specialization'] ?? '',
+        'yearsExperience': _psychologistData?['yearsExperience'] ?? 0,
+        'nik': _psychologistData?['nik'] ?? '',
+        'strNumber': _psychologistData?['strNumber'] ?? '',
+        'education': _psychologistData?['education']?.map((e) => e is Map ? (e['institution'] ?? '') : e.toString()).toList() ?? [],
+        'photoUrl': dataUri,
+      };
+
+      final response = await _apiClient.post('/profile/psychologist', body: data);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        setState(() {
+          _psychologistData ??= {};
+          _psychologistData!['photoUrl'] = dataUri;
+        });
+        _showSnackBar('Foto profil berhasil diperbarui.');
+      } else {
+        _showSnackBar('Gagal mengunggah foto.');
+      }
+    } catch (e) {
+      debugPrint('Upload photo error: $e');
+      _showSnackBar('Terjadi kesalahan.');
+    }
+    setState(() => _isUploading = false);
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
 
   List<_ProfileOption> get _options => const [
     _ProfileOption(
@@ -49,7 +103,6 @@ class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
   ];
 
   static const String _psychologistId = '4a63c647-72f7-4cd7-8e45-476b6ffdd8f4';
-  static String get _baseUrl => AppConstants.baseUrl;
   Map<String, dynamic>? _psychologistData;
 
   Future<void> _fetchPsychologistProfile() async {
@@ -83,6 +136,7 @@ class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
   void initState() {
     super.initState();
     _fetchPsychologistProfile();
+    _updateStatus(_psychologistData?['isAcceptingSessions'] ?? true);
   }
 
   @override
@@ -114,6 +168,17 @@ class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
     );
   }
 
+  ImageProvider _getImageProvider(String? url) {
+    if (url == null) return const AssetImage('assets/images/doctor1.png');
+    if (url.startsWith('data:')) {
+      final parts = url.split(',');
+      if (parts.length == 2) {
+        return MemoryImage(base64Decode(parts[1]));
+      }
+    }
+    return NetworkImage(url);
+  }
+
   Widget _buildProfileHeader() {
     final String? photoUrl = _psychologistData?['photoUrl'] as String?;
     return Container(
@@ -137,41 +202,66 @@ class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
         children: [
           Stack(
             alignment: Alignment.bottomRight,
-
             children: [
-              const SizedBox(height: 124), // Placeholder untuk ukuran avatar
-              // Ambil photoUrl dari data
-
-              // Di Stack, ganti CircleAvatar dengan:
-              photoUrl != null
-                  ? CircleAvatar(
-                      radius: 44,
-                      backgroundImage: NetworkImage(photoUrl),
-                      backgroundColor: Colors.white,
-                    )
-                  : CircleAvatar(
-                      radius: 44,
-                      backgroundColor: const Color(0xFF3A6E9E),
-                      child: const Icon(
-                        Icons.person,
-                        size: 44,
-                        color: Colors.white,
-                      ),
-                    ),
-
-              Positioned(
-                bottom: 6, // Mengangkat lingkaran hijau ke atas (naik 4 piksel)
-                right: 6,
-                child: Container(
-                  width: 14,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF46C37B),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 1),
+              GestureDetector(
+                onTap: _isUploading ? null : _pickAndUploadPhoto,
+                child: CircleAvatar(
+                  radius: 46,
+                  backgroundColor: Colors.white,
+                  child: CircleAvatar(
+                    radius: 42,
+                    backgroundImage: _getImageProvider(photoUrl),
+                    backgroundColor: Colors.white,
                   ),
                 ),
               ),
+              if (_isUploading)
+                Positioned(
+                  bottom: 6,
+                  right: 6,
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1B517A),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  ),
+                )
+              else ...[
+                Positioned(
+                  bottom: 6,
+                  right: 38,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF46C37B),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 2,
+                  right: 2,
+                  child: GestureDetector(
+                    onTap: _pickAndUploadPhoto,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1B517A),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 12),
@@ -206,6 +296,28 @@ class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
 
     if (!context.mounted) return;
     context.go('/login');
+  }
+
+  Future<void> _updateStatus(bool active) async {
+    setState(() => _isActive = active);
+
+    try {
+      final response = await _apiClient.patch<Map<String, dynamic>>(
+        '/psychologist/me/status',
+        body: {'isAcceptingSessions': active},
+      );
+
+      if (!mounted) return;
+
+      if (response.isSuccess) {
+        setState(() {
+          _psychologistData = response.data;
+        });
+      }
+    } catch (e) {
+      debugPrint('Update status error: $e');
+      setState(() => _isActive = !active);
+    }
   }
 
   Widget _buildStatusCard() {
@@ -251,24 +363,17 @@ class _ProfilePsychologistPageState extends State<ProfilePsychologistPage> {
           ),
           Switch(
             value: _isActive,
-            onChanged: (value) => setState(() => _isActive = value),
+            onChanged: (value) => _updateStatus(value),
 
-            // 1. Warna lingkaran saat AKTIF (Putih)
             activeThumbColor: Colors.white,
-            // 2. Warna background saat AKTIF (Primary Color)
             activeTrackColor: _primaryColor,
-
-            // 3. Warna lingkaran saat NON-AKTIF (Putih)
             inactiveThumbColor: Colors.white,
-            // 4. Warna background saat NON-AKTIF (Abu-abu)
             inactiveTrackColor: Colors.grey.shade300,
 
-            // 5. CRITICAL (Material 3 Fix): Menghilangkan border luar bawaan agar warna penuh
             trackOutlineColor: WidgetStateProperty.resolveWith<Color?>((
               Set<WidgetState> states,
             ) {
-              return Colors
-                  .transparent; // Membuat border bawaan menjadi transparan
+              return Colors.transparent;
             }),
           ),
         ],

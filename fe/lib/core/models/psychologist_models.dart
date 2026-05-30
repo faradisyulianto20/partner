@@ -213,10 +213,10 @@ class PsychologistDetailResponse {
   final String strNumber;
   final String bio;
   final List<String> tags;
+  final String? photoUrl; // ← tambah
+  final bool isAcceptingSessions; // ← tambah
   final double rating;
   final int reviewCount;
-  // FIX #8: Tambah field price. Jika API belum mengembalikan field ini,
-  // gunakan nilai default 0 agar tidak crash.
   final int price;
   final List<PsychologistEducation> education;
   final List<PsychologistReview> reviews;
@@ -237,9 +237,11 @@ class PsychologistDetailResponse {
     required this.strNumber,
     required this.bio,
     required this.tags,
+    this.photoUrl,
+    this.isAcceptingSessions = true,
     required this.rating,
     required this.reviewCount,
-    this.price = 0, // default 0 sampai API mengembalikan field ini
+    this.price = 0,
     required this.education,
     required this.reviews,
     required this.schedules,
@@ -261,9 +263,11 @@ class PsychologistDetailResponse {
       strNumber: json['strNumber'] as String? ?? '',
       bio: json['bio'] as String,
       tags: List<String>.from(json['tags'] as List),
+      photoUrl: json['photoUrl'] as String?, // ← tambah
+      isAcceptingSessions:
+          json['isAcceptingSessions'] as bool? ?? true, // ← tambah
       rating: (json['rating'] as num).toDouble(),
       reviewCount: json['reviewCount'] as int,
-      // FIX #8: parse price dengan fallback 0 jika belum ada di response
       price: (json['price'] as num?)?.toInt() ?? 0,
       education: (json['education'] as List)
           .map((e) => PsychologistEducation.fromJson(e as Map<String, dynamic>))
@@ -282,13 +286,13 @@ class PsychologistEducation {
   final String id;
   final String level;
   final String institution;
-  final int year;
+  final int? year; // ← nullable karena response bisa null
 
   const PsychologistEducation({
     required this.id,
     required this.level,
     required this.institution,
-    required this.year,
+    this.year,
   });
 
   factory PsychologistEducation.fromJson(Map<String, dynamic> json) {
@@ -296,7 +300,7 @@ class PsychologistEducation {
       id: json['id'] as String,
       level: json['level'] as String,
       institution: json['institution'] as String,
-      year: json['year'] as int,
+      year: json['year'] as int?, // ← nullable
     );
   }
 }

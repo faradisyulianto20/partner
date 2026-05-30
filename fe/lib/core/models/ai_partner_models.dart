@@ -27,18 +27,11 @@ class AiChatSessionResponse {
 }
 
 class AiChatMessageRequest {
-  final String? userId;
   final String content;
 
-  const AiChatMessageRequest({this.userId, required this.content});
+  const AiChatMessageRequest({required this.content});
 
-  Map<String, dynamic> toJson() {
-    final json = <String, dynamic>{'content': content};
-    if (userId != null) {
-      json['userId'] = userId;
-    }
-    return json;
-  }
+  Map<String, dynamic> toJson() => {'content': content};
 }
 
 class AiChatMessageResponse {
